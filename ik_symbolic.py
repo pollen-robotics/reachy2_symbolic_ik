@@ -6,6 +6,7 @@ import tf_transformations
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+import time
 
 SHOW_GRAPH = False
 
@@ -20,6 +21,7 @@ class IK_symbolic:
         gripper_size=0.15,
         x_offset=3.0,
         wrist_limit=45,
+        shoulder_orientation_offset=[10, 0, 15],
     ):
         self.grasp_marker_tip_len = grasp_marker_tip_len
         self.grasp_marker_width = grasp_marker_width
@@ -28,8 +30,10 @@ class IK_symbolic:
         self.gripper_size = gripper_size
         self.x_offset = x_offset
         self.wrist_limit = wrist_limit
+        self.shoulder_orientation_offset = shoulder_orientation_offset
         self.torso_pose = [0.0, 0.0, 0.0]
         self.shoulder_posistion = [0.0, -0.2, 0.0]
+
         if SHOW_GRAPH:
             fig = plt.figure()
             self.ax = fig.add_subplot(111, projection="3d")
@@ -333,13 +337,14 @@ class IK_symbolic:
                     return [0, 2 * np.pi]
                 else:
                     return []
-            for point in points:
-                plt.plot(
-                    point[0] + self.wrist_position[0],
-                    point[1] + self.wrist_position[1],
-                    point[2] + self.wrist_position[2],
-                    "ro",
-                )
+            if SHOW_GRAPH:
+                for point in points:
+                    plt.plot(
+                        point[0] + self.wrist_position[0],
+                        point[1] + self.wrist_position[1],
+                        point[2] + self.wrist_position[2],
+                        "ro",
+                    )
 
             if len(points) == 1:
                 point = [points[0][0], points[0][1], points[0][2], 1]
@@ -412,8 +417,8 @@ class IK_symbolic:
         A = np.array([n1, -n2, v]).T
         b = p2 - p1
         s, t, _ = np.linalg.lstsq(A, b, rcond=None)[0]
-        q1 = p1 + s * (np.cross(v, n1))
-        q2 = p2 + t * (np.cross(v, n2))
+        # q1 = p1 + s * (np.cross(v, n1))
+        # q2 = p2 + t * (np.cross(v, n2))
         vect1 = np.cross(v, n1)
         v = v / np.linalg.norm(v)
         # ax.plot([center1[0], center1[0]+vect1[0]], [center1[1], center1[1]+vect1[1]], [center1[2], center1[2]+vect1[2]], 'r' )
@@ -499,7 +504,7 @@ class IK_symbolic:
         # print("tip_position", tip_position)
         # print("-------------------")
 
-        T_shoulder_torso = self.make_transformation_matrix(shoulder_position, [0.0, 0.0, 0.0])
+        T_shoulder_torso = self.make_transformation_matrix(shoulder_position, np.radians(self.shoulder_orientation_offset))
 
         # --- Get elbow pose in shoulder frame ---
         elbow_in_shoulder = np.dot(
@@ -536,11 +541,12 @@ class IK_symbolic:
 
         # print("alpha_shoulder", alpha_shoulder)
         # print("beta_shoulder", beta_shoulder)
-
+        offset_axe = R.from_euler("xyz", self.shoulder_orientation_offset, degrees=True)
         roll_axe = R.from_euler("xyz", [0.0, 90.0, 0.0], degrees=True)
         rot_y = R.from_euler("xyz", [0.0, alpha_shoulder, 0.0])
         rot_x = R.from_euler("xyz", [0.0, 0.0, beta_shoulder])
-        orientation = roll_axe * rot_y
+        orientation = offset_axe * roll_axe
+        orientation = orientation * rot_y
         orientation = orientation * rot_x
 
         # --------------------------------------------------------
@@ -647,6 +653,116 @@ class IK_symbolic:
         rot_z = R.from_euler("xyz", [gamma_wrist, 0.0, 0.0])
         orientation = orientation * rot_z
 
-        joints = [alpha_shoulder, beta_shoulder, alpha_elbow, beta_elbow, alpha_wrist, beta_wrist, gamma_wrist]
+        joints = [alpha_shoulder, beta_shoulder, alpha_elbow, beta_elbow, beta_wrist, alpha_wrist, gamma_wrist]
         # print(joints)
+
+        norm = np.sqrt(
+            (self.shoulder_posistion[0] - self.wrist_position[0]) ** 2
+            + (self.shoulder_posistion[1] - self.wrist_position[1]) ** 2
+            + (self.shoulder_posistion[2] - self.wrist_position[2]) ** 2
+        )
+        wrist = np.array(self.wrist_position)
+        shoulder = np.array(self.shoulder_posistion)
+        norm = np.linalg.norm(shoulder - wrist)
+        # print(norm)
+        # print(joints[3])
+        # print(joints[3]/norm)
+        # print(2*0.28* np.sin(joints[3]/2))
         return joints
+
+
+if __name__ == "__main__":
+    ik = IK_symbolic()
+
+    goal_position = [0.4, 0.1, -0.4]
+    goal_orientation = [20, -80, 10]
+    goal_orientation = np.deg2rad(goal_orientation)
+    goal_pose = [goal_position, goal_orientation]
+
+    # start_time = time.time()
+    # for i in range(10000):
+    #     ik.is_reachable(goal_pose)
+    # end_time = time.time()
+    # print("is_reachable", end_time - start_time)
+
+    # start_time = time.time()
+    # for i in range(10000):
+    #     ik.get_wrist_position(goal_pose)
+    # end_time = time.time()
+    # print("get_wrist_position", end_time - start_time)
+
+    ik.wrist_position = ik.get_wrist_position(goal_pose)
+
+    # start_time = time.time()
+    # for i in range(10000):
+    #     ik.get_limitation_wrist_circle(goal_pose)
+    # end_time = time.time()
+    # print("get_limitation_wrist_circle", end_time - start_time)
+
+    # start_time = time.time()
+    # for i in range(10000):
+    #     ik.get_intersection_circle(goal_pose)
+    # end_time = time.time()
+    # print("get_intersection_circle", end_time - start_time)
+
+    start_time = time.time()
+    for i in range(10000):
+        ik.are_circles_linked(ik.get_intersection_circle(goal_pose), ik.get_limitation_wrist_circle(goal_pose))
+    end_time = time.time()
+    print("are_circles_linked", end_time - start_time)
+
+    # limitation_wrist_circle = ik.get_limitation_wrist_circle(goal_pose)
+    # intersection_circle = ik.get_intersection_circle(goal_pose)
+
+    # start_time = time.time()
+    # for i in range(10000):
+    #     ik.rotation_matrix_from_vectors(np.array([1, 0, 0]), limitation_wrist_circle[2])
+    # end_time = time.time()
+    # print("rotation_matrix_from_vectors", end_time - start_time)
+    # [p1, r1, n1] = limitation_wrist_circle
+    # [p2, r2, n2] = intersection_circle
+
+    # Rmat_limitation = ik.rotation_matrix_from_vectors(np.array([1, 0, 0]), n1)
+    # Tmat_limitation = np.array(
+    #     [
+    #         [Rmat_limitation[0][0], Rmat_limitation[0][1], Rmat_limitation[0][2], p1[0]],
+    #         [Rmat_limitation[1][0], Rmat_limitation[1][1], Rmat_limitation[1][2], p1[1]],
+    #         [Rmat_limitation[2][0], Rmat_limitation[2][1], Rmat_limitation[2][2], p1[2]],
+    #         [0, 0, 0, 1],
+    #     ]
+    # )
+
+    # start_time = time.time()
+    # for i in range(10000):
+    #     Tmat_limitation = np.array(
+    #         [0,0,0,1]
+    #     )
+    # end_time = time.time()
+    # print("np.array", end_time - start_time)
+
+    # P = [0.0, 0.0, 0.0, 1.0]
+    # start_time = time.time()
+    # for i in range(10000):
+    #     np.dot(Tmat_limitation, P)
+    # end_time = time.time()
+    # print("np.dot", end_time - start_time)
+
+    # start_time = time.time()
+    # for i in range(10000):
+    #     Tmat_limitation_t = np.linalg.inv(Tmat_limitation)
+    # end_time = time.time()
+    # print("np.linalg.inv", end_time - start_time)
+
+    # start_time = time.time()
+    # for i in range(10000):
+    #     ik.points_of_nearest_approach(limitation_wrist_circle[0], limitation_wrist_circle[2], intersection_circle[0], intersection_circle[2])
+    # end_time = time.time()
+    # print("points_of_nearest_approach", end_time - start_time)
+
+    # q,v = ik.points_of_nearest_approach(limitation_wrist_circle[0], limitation_wrist_circle[2], intersection_circle[0], intersection_circle[2])
+
+    # start_time = time.time()
+    # for i in range(10000):
+    #     ik.intersection_circle_line_3d_vd(limitation_wrist_circle[0], limitation_wrist_circle[1], v, q)
+    # end_time = time.time()
+    # print("intersection_circle_line_3d_vd", end_time - start_time)
