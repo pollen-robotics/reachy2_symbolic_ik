@@ -24,13 +24,36 @@ class IKSymbolicTest:
             robot_version="reachy_2",
             velocity_limit=50.0,
         )
-        self.ik_reachy.setup(urdf_path="../reachy_placo/reachy_placo/reachy/new_new_reachy2_2.urdf")
+        self.ik_reachy.setup(urdf_path="../reachy_placo/reachy_placo/reachy/new_new_reachy2_1.urdf")
         self.ik_reachy.create_tasks()
         self.green = "\033[92m"  # GREEN
         self.blue = "\033[94m"  # BLUE
         self.yellow = "\033[93m"  # YELLOW
         self.red = "\033[91m"  # RED
         self.reset_color = "\033[0m"  # RESET COLOR
+
+    def make_line(self, start_position, end_position, start_orientation, end_orientation, nb_points=100):
+        x = np.linspace(start_position[0], end_position[0], nb_points)
+        y = np.linspace(start_position[1], end_position[1], nb_points)
+        z = np.linspace(start_position[2], end_position[2], nb_points)
+        roll = np.linspace(start_orientation[0], end_orientation[0], nb_points)
+        pitch = np.linspace(start_orientation[1], end_orientation[1], nb_points)
+        yaw = np.linspace(start_orientation[2], end_orientation[2], nb_points)
+        time.sleep(5)
+        for i in range(nb_points):
+            goal_pose = [[x[i], y[i], z[i]], [roll[i], pitch[i], yaw[i]]]
+            result = self.ik.is_reachable(goal_pose)
+
+            if result[0]:
+                angle = np.linspace(result[1][0], result[1][1], 3)[1]
+                # print(angle)
+                joints = result[2](angle)
+                # print(result[1])
+                print(result[1])
+                self.go_to_position(joints, wait=0.0)
+                # time.sleep(0.1)
+            else:
+                print("Pose not reachable")
 
     def time_test(self):
         # TODO : tester le temps de calcul
@@ -54,7 +77,7 @@ class IKSymbolicTest:
         result = self.ik.is_reachable(goal_pose)
         start = time.time()
         for i in range(1000):
-            result[2](limits[0])
+            result[2](result[1][0])
         end = time.time()
         print("time shoulder : ", end - start)
 
@@ -66,6 +89,8 @@ class IKSymbolicTest:
         symbolic_success = 0
         symbolic_fail = 0
         print("succes test")
+        pose_fail = []
+        goal_pose = [[], []]
         for k in range(100):
             print("--------------------")
             shoulder_pitch = np.random.uniform(-math.pi, math.pi)
@@ -89,6 +114,7 @@ class IKSymbolicTest:
             goal_pose_matrix = self.ik_reachy.robot.get_T_a_b("torso", "r_tip_joint")
             goal_pose[0] = goal_pose_matrix[:3, 3]
             goal_pose[1] = R.from_matrix(goal_pose_matrix[:3, :3]).as_euler("xyz")
+            print("goal_pose : ", goal_pose)
             is_reachable, joints_placo, errors = self.ik_reachy.is_pose_reachable(
                 goal_pose_matrix,
                 arm_name="r_arm",
@@ -99,7 +125,7 @@ class IKSymbolicTest:
             )
             if is_reachable:
                 print(self.green + "Placo reachable" + self.reset_color)
-                self.go_to_position(joints_placo, wait=5.0)
+                # self.go_to_position(joints_placo, wait=5.0)
                 placo_success += 1
             else:
                 print(self.red + "Placo not reachable" + self.reset_color)
@@ -107,9 +133,15 @@ class IKSymbolicTest:
             if result[0]:
                 print(self.green + "Symbolic reachable" + self.reset_color)
                 symbolic_success += 1
+                result[2](result[1][0])
+                result[2](result[1][1])
+                result[2]((result[1][0] + result[1][1]) / 2)
             else:
                 print(self.red + "Symbolic not reachable" + self.reset_color)
-            time.sleep(0.5)
+                print("goal_pose : ", goal_pose)
+                pose_fail.append(np.copy(goal_pose))
+                print("pose fail : ", pose_fail)
+            time.sleep(0.2)
         print("fail test")
         for k in range(100):
             print("--------------------")
@@ -146,7 +178,8 @@ class IKSymbolicTest:
                 symbolic_fail += 1
             else:
                 print(self.red + "Symbolic not reachable" + self.reset_color)
-            time.sleep(0.5)
+            # time.sleep(0.5)
+        print("Pose fail : ", pose_fail)
         print("Placo success : ", placo_success)
         print("Symbolic success : ", symbolic_success)
         print("Placo fail : ", placo_fail)
@@ -170,13 +203,14 @@ class IKSymbolicTest:
                 for angle in angles:
                     # print("limits : ", result[1])
                     joints = result[2](angle)
-                    # print(joints)
+
+                    print(joints)
                     self.go_to_position(joints, wait=0.0)
-                    # time.sleep(0.1)
+                    time.sleep(0.1)
         else:
             print("Pose not reachable")
 
-    def good_poses_test(self, goal_pose, angle_precision=0.5):
+    def good_poses_test(self, goal_pose, angle_precision=7):
         # TODO : tester une pose atteignable par Placo et qu'on peut obtenir la meme solution
         goal_pose_matrix = get_homogeneous_matrix_msg_from_euler(goal_pose[0], goal_pose[1])
         is_reachable, joints_placo, errors = self.ik_reachy.is_pose_reachable(
@@ -187,7 +221,9 @@ class IKSymbolicTest:
             max_iter=45,
             nb_stepper_solve=25,
         )
-        self.go_to_position(joints_placo, wait=5.0)
+        # self.go_to_position(joints_placo, wait=5.0)
+        joints_placo = [(joint + 2 * np.pi) % (2 * np.pi) for joint in joints_placo]
+        joints_placo = np.array(joints_placo)
         if is_reachable:
             result = self.ik.is_reachable(goal_pose)
             if result[0]:
@@ -196,13 +232,20 @@ class IKSymbolicTest:
                 for theta in thetas:
                     # print("theta : ", theta)
                     joints_symbolic = result[2](theta)
-                    joints_placo = np.array(joints_placo)
+
+                    # self.go_to_position(joints_symbolic, wait=0.1)
+                    joints_symbolic = [(joint + 2 * np.pi) % (2 * np.pi) for joint in joints_symbolic]
+
                     joints_symbolic = np.array(joints_symbolic)
+                    # joints_placo = (joints_placo + 2*np.pi) % 2*np.pi;
+                    # joints_symbolic = (joints_symbolic + 2*np.pi) % 2*np.pi;
+
                     if np.all(np.abs(joints_symbolic - joints_placo) < np.deg2rad(angle_precision)):
-                        print("Same solution for theta : ", theta)
-                        joints_success = joints_symbolic
+                        print("joints_placo : ", np.degrees(joints_placo))
+                        print("joints_symbolic : ", np.degrees(joints_symbolic))
+                        print("Same solution for theta : ", theta, np.degrees(np.abs(joints_symbolic - joints_placo)))
+                        # self.go_to_position(joints_symbolic, wait=5.0)
                 print("The end")
-                self.go_to_position(joints_success, wait=5.0)
             else:
                 print("Not reachable by symbolic")
         else:
@@ -218,8 +261,9 @@ class IKSymbolicTest:
         position = T_torso_tip[:3, 3]
         orientation = T_torso_tip[:3, :3]
         orientation = R.from_matrix(orientation).as_euler("xyz")
+        goal_position = goal_pose[0]
+        goal_orientation = goal_pose[1]
 
-        print("goal_orientation : ", goal_pose[1])
         print("Position : ", position)
         print("Orientation : ", orientation)
         print("Goal Position : ", goal_position)
@@ -242,7 +286,7 @@ class IKSymbolicTest:
             joint_pose: joint pose of the arm
             wait: time to wait before closing the window
         """
-        # self.ik_reachy.setup(urdf_path="../reachy_placo/reachy_placo/reachy/new_new_reachy2_2.urdf")
+        # self.ik_reachy.setup(urdf_path="../reachy_placo/reachy_placo/reachy/new_new_reachy2_1.urdf")
         names = self.r_arm_joint_names()
         for i in range(len(names)):
             self.ik_reachy.robot.set_joint(names[i], joint_pose[i])
@@ -286,26 +330,27 @@ class IKSymbolicTest:
 if __name__ == "__main__":
     ik_symbolic_test = IKSymbolicTest()
 
-    goal_position = [0.4, -0.2, -0.1]
-    goal_orientation = [30, -50, 20]
-    goal_orientation = np.deg2rad(goal_orientation)
-    goal_pose = [goal_position, goal_orientation]
+    # ------ Ik function test ------
 
-    [is_reachable, limits, get_joints] = ik_symbolic_test.ik.is_reachable(goal_pose)
-    # ik_symbolic_test.go_to_position(get_joints(limits[0]), wait=8)
-    # print(is_reachable)
-    # print(is_reachable, limits)
-    # if is_reachable:
-    #     joints = get_joints(np.pi)
-    #     print(joints)
-    #     is_correct = ik_symbolic_test.are_joints_correct(joints, goal_pose)
-    #     print(is_correct)
+    # goal_position = [0.4, 0.1, -0.4]
+    # goal_orientation = [20, -80, 10]
+    # goal_orientation = np.deg2rad(goal_orientation)
+    # goal_pose = [goal_position, goal_orientation]
+
+    # result = ik_symbolic_test.ik.is_reachable(goal_pose)
+    # if result[0]:
+    #     joints = result[2](result[1][0])
     #     ik_symbolic_test.go_to_position(joints, wait=8)
-    # else:
-    #     print("Pose not reachable")
 
-    # ik_symbolic_test.go_to_position([0.0,0.0, 0.0, -math.pi / 2, 0.0, 0.0, 0.0], wait=8)
-    # print(ik_symbolic_test.ik_reachy.robot.get_T_a_b("torso", "r_tip_joint"))
+    # ------ Make line test ------
+
+    # start_position = [0.4, 0.1, -0.4]
+    # end_position = [0.3, -0.2, -0.1]
+    # start_orientation = np.deg2rad([20, -80, 10])
+    # end_orientation = np.deg2rad([0, -0, 0])
+    # ik_symbolic_test.make_line(start_position, end_position, start_orientation, end_orientation, nb_points=300)
+
+    # ------ Make movement test ------
 
     # goal_position = [0.2, -0.2, -0.1]
     # goal_orientation = [-0,-90,0]
@@ -313,7 +358,64 @@ if __name__ == "__main__":
     # goal_pose = [goal_position, goal_orientation]
     # ik_symbolic_test.make_movement_test(goal_pose)
 
-    # ik_symbolic_test.time_test()
+    # ------ Good poses test ------
+
+    # goal_position = [0.2, -0.2, -0.1]
+    # goal_orientation = [-0,-90,0]
+    # goal_orientation = np.deg2rad(goal_orientation)
+    # goal_pose = [goal_position, goal_orientation]
+    # ik_symbolic_test.good_poses_test(goal_pose)
+
+    # ------ Are joints correct test ------
+
+    # goal_position = [0.2, -0.2, -0.1]
+    # goal_orientation = [-0,-90,0]
+    # goal_orientation = np.deg2rad(goal_orientation)
+    # goal_pose = [goal_position, goal_orientation]
+    # [is_reachable, limits, get_joints] = ik_symbolic_test.ik.is_reachable(goal_pose)
+    # if is_reachable:
+    #     joints = get_joints(limits[0])
+    #     is_correct = ik_symbolic_test.are_joints_correct(joints, goal_pose)
+    #     print(is_correct)
+    #     ik_symbolic_test.go_to_position(joints, wait=8)
+    # else:
+    #     print("Pose not reachable")
+
+    # ------ Go to position test ------
+
+    # ik_symbolic_test.go_to_position([0.0,0.0, 0.0, -math.pi / 2, 0.0, 0.0, 0.0], wait=8)
+    # print(ik_symbolic_test.ik_reachy.robot.get_T_a_b("torso", "r_tip_joint"))
+
+    # ------ Joints space test ------
+
     # ik_symbolic_test.joints_space_test()
+
+    # ------ Task space test ------
+
     # ik_symbolic_test.task_space_test()
-    ik_symbolic_test.good_poses_test(goal_pose)
+
+    # ------ Time test ------
+
+    ik_symbolic_test.time_test()
+
+    # ------ Other tests ------
+
+    # goal_poses = [[[-0.16451815, -0.4785408 ,  0.00735828], [-0.34020077, -0.22254548, -0.24598186]],
+    #    [[ 0.17320635, -0.28877271,  0.12595165], [ 1.91043709,  0.02182434, -0.59891522]],
+    #    [[ 0.11657383, -0.31879514, -0.18552353], [-2.06584127, -0.50205104,  0.56725307]],
+    #    [[ 0.16831123, -0.12026895, -0.03128163],[-0.71848228,  0.5489851 ,  1.28165872]],
+    #    [[ 0.20250884, -0.25782176,  0.29294886], [-0.91518747,  1.10257414,  2.48795061]],
+    #    [[-0.26389982, -0.28966803,  0.03440583], [-2.63976015,  0.98274754, -0.90832566]],
+    #    [[-0.19330538, -0.50181275,  0.22097992], [-1.05261722,  0.03576907,  0.11900632]],
+    #    [[ 0.06531758,  0.03234202, -0.29959564], [-0.66863851,  0.68699396, -0.77430419]],
+    #    [[0.19536822, 0.06314997, 0.15404791], [3.05383503, 0.31518798, 2.62346594]],
+    #    [[ 0.01433523, -0.22712099, -0.32676204], [-1.14603432, -0.70486436, -2.91049123]],
+    #    [[ 0.11424737, -0.02766657,  0.02796033],[-2.34392801,  0.66672375,  0.71425915]],
+    #    [[-0.19752591, -0.57261312, -0.06887125], [-0.06028131, -0.34602401, -0.91035576]],
+    #    [[-0.04438143,  0.05823801, -0.24362076], [ 2.2769857 ,  0.61654679,  0.85133659]],
+    #    [[-0.03828849,  0.12047255,  0.09052939],[ 2.97823218, -0.08923544,  1.40832877]]]
+
+    # for goal_pose in goal_poses:
+    #     ik_symbolic_test = IKSymbolicTest()
+    #     [is_reachable, limits, get_joints] = ik_symbolic_test.ik.is_reachable(goal_pose)
+    #     print(is_reachable)
