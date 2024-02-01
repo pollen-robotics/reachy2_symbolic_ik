@@ -1,8 +1,11 @@
-from reachy2_symbolic_ik.ik_symbolic import IK_symbolic
 import numpy as np
+
 from reachy_placo.ik_reachy_placo import IKReachyQP
 from scipy.spatial.transform import Rotation as R
 import time
+
+from reachy2_symbolic_ik.ik_symbolic import IK_symbolic
+
 
 def test_class() -> None:
     symbolic_ik = IK_symbolic(upper_arm_size=0.28, forearm_size=0.28, gripper_size=0.15)
@@ -18,16 +21,15 @@ def test_class() -> None:
     placo_ik.setup(urdf_path="src/config_files/new_new_reachy2_1.urdf")
     placo_ik.create_tasks()
     assert symbolic_ik is not None
-    
 
     goal_position = [0.4, 0.2, 0.1]
-    goal_orientation = [-60,-90,20]
+    goal_orientation = [-60, -90, 20]
     goal_orientation = np.deg2rad(goal_orientation)
     goal_pose = [goal_position, goal_orientation]
 
     result = symbolic_ik.is_reachable(goal_pose)
 
-    assert not(result[0])
+    assert not (result[0])
     assert result[1] == []
     assert result[2] is None
 
@@ -49,18 +51,16 @@ def test_class() -> None:
 
     assert len(joints) == 7
 
-
     goal_position = [0.0, -0.2, -0.71]
-    goal_orientation = [-0,0,0]
+    goal_orientation = [-0, 0, 0]
     goal_orientation = np.deg2rad(goal_orientation)
     goal_pose = [goal_position, goal_orientation]
 
     result = symbolic_ik.is_reachable(goal_pose)
 
     assert result[0]
-    assert result[1] == [0,np.pi*2]
+    assert result[1] == [0, np.pi * 2]
     assert result[2] is not None
-
 
     joints = result[2](0)
 
@@ -80,6 +80,3 @@ def test_class() -> None:
 
     assert np.allclose(position, goal_position)
     assert np.allclose(orientation, goal_orientation)
-
-
-
