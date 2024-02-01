@@ -1,8 +1,4 @@
-from visualization_msgs.msg import MarkerArray
-from visualization_msgs.msg import Marker
 from scipy.spatial.transform import Rotation as R
-import copy
-import tf_transformations
 import math
 import numpy as np
 import matplotlib.pyplot as plt

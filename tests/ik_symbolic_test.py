@@ -1,4 +1,4 @@
-from ik_symbolic import IK_symbolic
+from reachy2_symbolic_ik.ik_symbolic import IK_symbolic
 import numpy as np
 from reachy_placo.ik_reachy_placo import IKReachyQP
 import math
