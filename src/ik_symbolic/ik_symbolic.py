@@ -318,9 +318,9 @@ class IK_symbolic:
         A = np.vstack((v1, -v2)).T
         b = p02 - p01
         params, _, _, _ = np.linalg.lstsq(A, b, rcond=None)
-        print(A)
-        print(b)
-        print(params)
+        # print(A)
+        # print(b)
+        # print(params)
 
         if np.all(np.isclose(params, params[0])):
             return None
@@ -590,11 +590,11 @@ if __name__ == "__main__":
     # end_time = time.time()
     # print("get_joints", end_time - start_time)
 
-    # start_time = time.time()
-    # for i in range(10000):
-    #     ik.is_reachable(goal_pose)
-    # end_time = time.time()
-    # print("is_reachable", end_time - start_time)
+    start_time = time.time()
+    for i in range(10000):
+        ik.is_reachable(goal_pose)
+    end_time = time.time()
+    print("is_reachable", end_time - start_time)
 
     # start_time = time.time()
     # for i in range(10000):
@@ -604,17 +604,17 @@ if __name__ == "__main__":
 
     # ik.wrist_position = ik.get_wrist_position(goal_pose)
 
-    # start_time = time.time()
-    # for i in range(10000):
-    #     ik.get_limitation_wrist_circle(goal_pose)
-    # end_time = time.time()
-    # print("get_limitation_wrist_circle", end_time - start_time)
+    start_time = time.time()
+    for i in range(10000):
+        ik.get_limitation_wrist_circle(goal_pose)
+    end_time = time.time()
+    print("get_limitation_wrist_circle", end_time - start_time)
 
-    # start_time = time.time()
-    # for i in range(10000):
-    #     ik.get_intersection_circle(goal_pose)
-    # end_time = time.time()
-    # print("get_intersection_circle", end_time - start_time)
+    start_time = time.time()
+    for i in range(10000):
+        ik.get_intersection_circle(goal_pose)
+    end_time = time.time()
+    print("get_intersection_circle", end_time - start_time)
 
     # intersection_circle = ik.get_intersection_circle(goal_pose)
     # limitation_wrist_circle = ik.get_limitation_wrist_circle(goal_pose)
