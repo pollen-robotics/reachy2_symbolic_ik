@@ -1,0 +1,1032 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot name="reachy_v2">
+	<material name="camblack">
+		<color rgba="0.2 0.2 0.2 1"></color>
+	</material>
+	<material name="neckwhite">
+		<color rgba="0.9 0.9 0.9 1"></color>
+	</material>
+	<link name="world"></link>
+	<link name="torso">
+		<collision>
+			<origin rpy="0 0.0 0" xyz="-0.05 0 -0.05"></origin>
+			<geometry>
+				<box size="0.1 0.2 0.22"></box>
+			</geometry>
+		</collision>
+		<collision>
+			<origin rpy="0 0 0" xyz="-0.15 0 -0.5"></origin>
+			<geometry>
+				<cylinder length="1" radius="0.03"></cylinder>
+			</geometry>
+		</collision>
+		<visual>
+			<origin rpy="0 0.0 0" xyz="-0.05 0 -0.05"></origin>
+			<geometry>
+				<box size="0.1 0.2 0.22"></box>
+			</geometry>
+			<material name="torsoblack">
+				<color rgba="0.5 0.5 0.5 1.0"></color>
+			</material>
+		</visual>
+		<visual>
+			<origin rpy="0 0 0" xyz="-0.15 0 -0.5"></origin>
+			<geometry>
+				<cylinder length="1" radius="0.03"></cylinder>
+			</geometry>
+			<material name="torsoblack">
+				<color rgba="0.5 0.5 0.5 1.0"></color>
+			</material>
+		</visual>
+		<inertial>
+			<mass value="10"></mass>
+			<origin rpy="0 0 0" xyz="0 0 0.5"></origin>
+			<inertia ixx="0.8354166666666666" ixy="0.0" ixz="0.0" iyy="0.8354166666666666" iyz="0.0" izz="0.0041666666666666675"></inertia>
+		</inertial>
+	</link>
+	<link name="neck_dummy_link1">
+		<inertial>
+			<mass value="0.005"></mass>
+			<origin rpy="0 0 0" xyz="0 0 0"></origin>
+			<inertia ixx="2.5416666666666668e-06" ixy="0.0" ixz="0.0" iyy="2.5416666666666668e-06" iyz="0.0" izz="3e-06"></inertia>
+		</inertial>
+	</link>
+	<link name="neck_dummy_link2">
+		<inertial>
+			<mass value="0.005"></mass>
+			<origin rpy="0 0 0" xyz="0 0 0"></origin>
+			<inertia ixx="2.5416666666666668e-06" ixy="0.0" ixz="0.0" iyy="2.5416666666666668e-06" iyz="0.0" izz="3e-06"></inertia>
+		</inertial>
+	</link>
+	<link name="neck_link">
+		<visual>
+			<origin rpy="0 0 0" xyz="0 0 0.025"></origin>
+			<geometry>
+				<cylinder length="0.05" radius="0.03"></cylinder>
+			</geometry>
+			<material name="orbita3d_yellow">
+				<color rgba="0.8 0.8 0.0 1"></color>
+			</material>
+		</visual>
+		<collision>
+			<origin rpy="0 0 0" xyz="0 0 0.025"></origin>
+			<geometry>
+				<cylinder length="0.05" radius="0.03"></cylinder>
+			</geometry>
+		</collision>
+		<inertial>
+			<mass value="0.24"></mass>
+			<origin rpy="0 0 0" xyz="0 0 -0.025"></origin>
+			<inertia ixx="0.000122" ixy="0.0" ixz="0.0" iyy="0.000122" iyz="0.0" izz="0.000144"></inertia>
+		</inertial>
+	</link>
+	<link name="neck_ball_link">
+		<visual>
+			<origin rpy="0 0 0" xyz="0 0 0"></origin>
+			<geometry>
+				<sphere radius="0.036"></sphere>
+			</geometry>
+			<material name="orbita3d_grey">
+				<color rgba="0.8 0.8 0.8 1"></color>
+			</material>
+		</visual>
+		<collision>
+			<origin rpy="0 0 0" xyz="0 0 0"></origin>
+			<geometry>
+				<sphere radius="0.036"></sphere>
+			</geometry>
+		</collision>
+		<inertial>
+			<mass value="0.25"></mass>
+			<origin xyz="0 0 0"></origin>
+			<inertia ixx="0.00012959999999999998" ixy="0.0" ixz="0.0" iyy="0.00012959999999999998" iyz="0.0" izz="0.00012959999999999998"></inertia>
+		</inertial>
+	</link>
+	<link name="head">
+		<inertial>
+			<origin rpy="0.0 0.0 0.0" xyz="-0.009 -0.002 0.059"></origin>
+			<mass value="0.237"></mass>
+			<inertia ixx="1.676e-3" ixy="3.068e-6" ixz="1.2449e-4" iyy="1.368e-3" iyz="3.360e-5" izz="8.425e-4"></inertia>
+		</inertial>
+		<visual name="">
+			<origin rpy="0.0 0.0 0.0" xyz="0.0075 0.0 0.085"></origin>
+			<geometry>
+				<box size="0.015 0.1245 0.0265"></box>
+			</geometry>
+			<material name="camblack"></material>
+		</visual>
+		<collision>
+			<origin rpy="0.0 0.0 0.0" xyz="0.0075 0.0 0.085"></origin>
+			<geometry>
+				<box size="0.015 0.1245 0.0265"></box>
+			</geometry>
+		</collision>
+	</link>
+	<link name="head_base">
+		<visual name="">
+			<origin rpy="0.0 0.0 0.0" xyz="0.00 0.0 0.0425"></origin>
+			<geometry>
+				<cylinder length="0.07" radius="0.0225"></cylinder>
+			</geometry>
+			<material name="neckwhite"></material>
+		</visual>
+	</link>
+	<link name="head_tip"></link>
+	<link name="camera_optical_left"></link>
+	<link name="left_camera">
+		<inertial>
+			<mass value="1e-5"></mass>
+			<origin rpy="0 0 0" xyz="0 0 0"></origin>
+			<inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6"></inertia>
+		</inertial>
+	</link>
+	<link name="left_camera_optical"></link>
+	<link name="right_camera">
+		<inertial>
+			<mass value="1e-5"></mass>
+			<origin rpy="0 0 0" xyz="0 0 0"></origin>
+			<inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6"></inertia>
+		</inertial>
+	</link>
+	<link name="right_camera_optical"></link>
+	<link name="depth_camera_link">
+		<inertial>
+			<mass value="1e-5"></mass>
+			<origin rpy="0 0 0" xyz="0 0 0"></origin>
+			<inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6"></inertia>
+		</inertial>
+	</link>
+	<link name="depth_camera_optical"></link>
+	<link name="r_shoulder_dummy_link">
+		<inertial>
+			<mass value="0.005"></mass>
+			<origin rpy="0 0 0" xyz="0 0 0"></origin>
+			<inertia ixx="3.416666666666667e-05" ixy="0.0" ixz="0.0" iyy="3.416666666666667e-05" iyz="0.0" izz="3e-06"></inertia>
+		</inertial>
+	</link>
+	<link name="r_shoulder_link">
+		<collision>
+			<origin rpy="0 0 0" xyz="0 0 -0.14"></origin>
+			<geometry>
+				<box size="0.075 0.06 0.28"></box>
+			</geometry>
+		</collision>
+		<visual>
+			<origin rpy="0 0 0" xyz="0 0 -0.14"></origin>
+			<geometry>
+				<box size="0.075 0.06 0.28"></box>
+			</geometry>
+			<material name="orbita2dmetal">
+				<color rgba="0.85 0.85 0.85 1.0"></color>
+			</material>
+		</visual>
+		<inertial>
+			<mass value="0.245"></mass>
+			<origin rpy="0 0 0" xyz="0 0 -0.14"></origin>
+			<inertia ixx="0.001674166666666667" ixy="0.0" ixz="0.0" iyy="0.001674166666666667" iyz="0.0" izz="0.000147"></inertia>
+		</inertial>
+	</link>
+	<link name="r_shoulder_ball_link">
+		<visual>
+			<origin rpy="0 0 0" xyz="0 0 0"></origin>
+			<geometry>
+				<sphere radius="0.036"></sphere>
+			</geometry>
+			<material name="orbita2dgrey">
+				<color rgba="0.8 0.8 0.8 1.0"></color>
+			</material>
+		</visual>
+		<collision>
+			<origin rpy="0 0 0" xyz="0 0 0"></origin>
+			<geometry>
+				<sphere radius="0.036"></sphere>
+			</geometry>
+		</collision>
+		<inertial>
+			<mass value="0.25"></mass>
+			<origin xyz="0 0 0"></origin>
+			<inertia ixx="0.00012959999999999998" ixy="0.0" ixz="0.0" iyy="0.00012959999999999998" iyz="0.0" izz="0.00012959999999999998"></inertia>
+		</inertial>
+	</link>
+	<link name="r_elbow_dummy_link">
+		<inertial>
+			<mass value="0.0045000000000000005"></mass>
+			<origin rpy="0 0 0" xyz="0 0 0"></origin>
+			<inertia ixx="3.033750000000001e-05" ixy="0.0" ixz="0.0" iyy="3.033750000000001e-05" iyz="0.0" izz="1.8750000000000007e-06"></inertia>
+		</inertial>
+	</link>
+	<link name="r_elbow_link">
+		<collision>
+			<origin rpy="0 0 0" xyz="0 0 -0.14"></origin>
+			<geometry>
+				<box size="0.0625 0.05 0.28"></box>
+			</geometry>
+		</collision>
+		<visual>
+			<origin rpy="0 0 0" xyz="0 0 -0.14"></origin>
+			<geometry>
+				<box size="0.0625 0.05 0.28"></box>
+			</geometry>
+			<material name="orbita2dmetal">
+				<color rgba="0.85 0.85 0.85 1.0"></color>
+			</material>
+		</visual>
+		<inertial>
+			<mass value="0.2205"></mass>
+			<origin rpy="0 0 0" xyz="0 0 -0.14"></origin>
+			<inertia ixx="0.0014865375000000002" ixy="0.0" ixz="0.0" iyy="0.0014865375000000002" iyz="0.0" izz="9.187500000000001e-05"></inertia>
+		</inertial>
+	</link>
+	<link name="r_elbow_ball_link">
+		<visual>
+			<origin rpy="0 0 0" xyz="0 0 0"></origin>
+			<geometry>
+				<sphere radius="0.03"></sphere>
+			</geometry>
+			<material name="orbita2dgrey">
+				<color rgba="0.8 0.8 0.8 1.0"></color>
+			</material>
+		</visual>
+		<collision>
+			<origin rpy="0 0 0" xyz="0 0 0"></origin>
+			<geometry>
+				<sphere radius="0.03"></sphere>
+			</geometry>
+		</collision>
+		<inertial>
+			<mass value="0.225"></mass>
+			<origin xyz="0 0 0"></origin>
+			<inertia ixx="8.1e-05" ixy="0.0" ixz="0.0" iyy="8.1e-05" iyz="0.0" izz="8.1e-05"></inertia>
+		</inertial>
+	</link>
+	<link name="r_wrist_dummy_link1">
+		<inertial>
+			<mass value="0.003"></mass>
+			<origin rpy="0 0 0" xyz="0 0 0"></origin>
+			<inertia ixx="4.25e-07" ixy="0.0" ixz="0.0" iyy="4.25e-07" iyz="0.0" izz="8.000000000000001e-07"></inertia>
+		</inertial>
+	</link>
+	<link name="r_wrist_dummy_link2">
+		<inertial>
+			<mass value="0.003"></mass>
+			<origin rpy="0 0 0" xyz="0 0 0"></origin>
+			<inertia ixx="4.25e-07" ixy="0.0" ixz="0.0" iyy="4.25e-07" iyz="0.0" izz="8.000000000000001e-07"></inertia>
+		</inertial>
+	</link>
+	<link name="r_wrist_link">
+		<visual>
+			<origin rpy="0 0 0" xyz="0 0 0.005"></origin>
+			<geometry>
+				<cylinder length="0.01" radius="0.02"></cylinder>
+			</geometry>
+			<material name="orbita3d_yellow">
+				<color rgba="0.8 0.8 0.0 1"></color>
+			</material>
+		</visual>
+		<collision>
+			<origin rpy="0 0 0" xyz="0 0 0.005"></origin>
+			<geometry>
+				<cylinder length="0.01" radius="0.02"></cylinder>
+			</geometry>
+		</collision>
+		<inertial>
+			<mass value="0.144"></mass>
+			<origin rpy="0 0 0" xyz="0 0 -0.005"></origin>
+			<inertia ixx="2.0399999999999998e-05" ixy="0.0" ixz="0.0" iyy="2.0399999999999998e-05" iyz="0.0" izz="3.84e-05"></inertia>
+		</inertial>
+	</link>
+	<link name="r_wrist_ball_link">
+		<visual>
+			<origin rpy="0 0 0" xyz="0 0 0"></origin>
+			<geometry>
+				<sphere radius="0.024"></sphere>
+			</geometry>
+			<material name="orbita3d_grey">
+				<color rgba="0.8 0.8 0.8 1"></color>
+			</material>
+		</visual>
+		<collision>
+			<origin rpy="0 0 0" xyz="0 0 0"></origin>
+			<geometry>
+				<sphere radius="0.024"></sphere>
+			</geometry>
+		</collision>
+		<inertial>
+			<mass value="0.15"></mass>
+			<origin xyz="0 0 0"></origin>
+			<inertia ixx="3.456e-05" ixy="0.0" ixz="0.0" iyy="3.456e-05" iyz="0.0" izz="3.456e-05"></inertia>
+		</inertial>
+	</link>
+	<link name="r_gripper_palm_link">
+		<collision>
+			<origin rpy="0 0 0" xyz="0 0 0.055"></origin>
+			<geometry>
+				<box size="0.03 0.06 0.11"></box>
+			</geometry>
+		</collision>
+		<visual>
+			<origin rpy="0 0 0" xyz="0 0 0.03 "></origin>
+			<geometry>
+				<box size="0.03 0.06 0.06"></box>
+			</geometry>
+			<material name="gripperblack">
+				<color rgba="0.4 0.4 0.4 1"></color>
+			</material>
+		</visual>
+		<inertial>
+			<mass value="0.2125"></mass>
+			<origin rpy="0 0 0" xyz="0 0 0.03"></origin>
+			<inertia ixx="0.00012749999999999998" ixy="0.0" ixz="0.0" iyy="7.968749999999999e-05" iyz="0.0" izz="7.968749999999999e-05"></inertia>
+		</inertial>
+	</link>
+	<link name="r_gripper_index_link">
+		<collision>
+			<origin rpy="0 0 0" xyz="0 0 0.03 "></origin>
+			<geometry>
+				<box size="0.03 0.01 0.06"></box>
+			</geometry>
+		</collision>
+		<visual>
+			<origin rpy="0 0 0" xyz="0 0 0.03 "></origin>
+			<geometry>
+				<box size="0.03 0.01 0.06"></box>
+			</geometry>
+			<material name="gripperwhite">
+				<color rgba="0.9 0.9 0.9 1"></color>
+			</material>
+		</visual>
+		<inertial>
+			<mass value="0.025"></mass>
+			<origin rpy="0 0 0" xyz="0 0.03 0.03"></origin>
+			<inertia ixx="7.708333333333334e-06" ixy="0.0" ixz="0.0" iyy="9.375e-06" iyz="0.0" izz="2.0833333333333334e-06"></inertia>
+		</inertial>
+	</link>
+	<link name="r_gripper_index_mimic_link">
+		<collision>
+			<origin rpy="0 0 0" xyz="0 0 0.03 "></origin>
+			<geometry>
+				<box size="0.03 0.01 0.06"></box>
+			</geometry>
+		</collision>
+		<visual>
+			<origin rpy="0 0 0" xyz="0 0 0.03 "></origin>
+			<geometry>
+				<box size="0.03 0.01 0.06"></box>
+			</geometry>
+			<material name="gripperwhite">
+				<color rgba="0.9 0.9 0.9 1"></color>
+			</material>
+		</visual>
+		<inertial>
+			<mass value="0.025"></mass>
+			<origin rpy="0 0 0" xyz="0 0.03 0.03"></origin>
+			<inertia ixx="7.708333333333334e-06" ixy="0.0" ixz="0.0" iyy="9.375e-06" iyz="0.0" izz="2.0833333333333334e-06"></inertia>
+		</inertial>
+	</link>
+	<link name="r_arm_tip"></link>
+	<link name="l_shoulder_dummy_link">
+		<inertial>
+			<mass value="0.005"></mass>
+			<origin rpy="0 0 0" xyz="0 0 0"></origin>
+			<inertia ixx="3.416666666666667e-05" ixy="0.0" ixz="0.0" iyy="3.416666666666667e-05" iyz="0.0" izz="3e-06"></inertia>
+		</inertial>
+	</link>
+	<link name="l_shoulder_link">
+		<collision>
+			<origin rpy="0 0 0" xyz="0 0 -0.14"></origin>
+			<geometry>
+				<box size="0.075 0.06 0.28"></box>
+			</geometry>
+		</collision>
+		<visual>
+			<origin rpy="0 0 0" xyz="0 0 -0.14"></origin>
+			<geometry>
+				<box size="0.075 0.06 0.28"></box>
+			</geometry>
+			<material name="orbita2dmetal">
+				<color rgba="0.85 0.85 0.85 1.0"></color>
+			</material>
+		</visual>
+		<inertial>
+			<mass value="0.245"></mass>
+			<origin rpy="0 0 0" xyz="0 0 -0.14"></origin>
+			<inertia ixx="0.001674166666666667" ixy="0.0" ixz="0.0" iyy="0.001674166666666667" iyz="0.0" izz="0.000147"></inertia>
+		</inertial>
+	</link>
+	<link name="l_shoulder_ball_link">
+		<visual>
+			<origin rpy="0 0 0" xyz="0 0 0"></origin>
+			<geometry>
+				<sphere radius="0.036"></sphere>
+			</geometry>
+			<material name="orbita2dgrey">
+				<color rgba="0.8 0.8 0.8 1.0"></color>
+			</material>
+		</visual>
+		<collision>
+			<origin rpy="0 0 0" xyz="0 0 0"></origin>
+			<geometry>
+				<sphere radius="0.036"></sphere>
+			</geometry>
+		</collision>
+		<inertial>
+			<mass value="0.25"></mass>
+			<origin xyz="0 0 0"></origin>
+			<inertia ixx="0.00012959999999999998" ixy="0.0" ixz="0.0" iyy="0.00012959999999999998" iyz="0.0" izz="0.00012959999999999998"></inertia>
+		</inertial>
+	</link>
+	<link name="l_elbow_dummy_link">
+		<inertial>
+			<mass value="0.0045000000000000005"></mass>
+			<origin rpy="0 0 0" xyz="0 0 0"></origin>
+			<inertia ixx="3.033750000000001e-05" ixy="0.0" ixz="0.0" iyy="3.033750000000001e-05" iyz="0.0" izz="1.8750000000000007e-06"></inertia>
+		</inertial>
+	</link>
+	<link name="l_elbow_link">
+		<collision>
+			<origin rpy="0 0 0" xyz="0 0 -0.14"></origin>
+			<geometry>
+				<box size="0.0625 0.05 0.28"></box>
+			</geometry>
+		</collision>
+		<visual>
+			<origin rpy="0 0 0" xyz="0 0 -0.14"></origin>
+			<geometry>
+				<box size="0.0625 0.05 0.28"></box>
+			</geometry>
+			<material name="orbita2dmetal">
+				<color rgba="0.85 0.85 0.85 1.0"></color>
+			</material>
+		</visual>
+		<inertial>
+			<mass value="0.2205"></mass>
+			<origin rpy="0 0 0" xyz="0 0 -0.14"></origin>
+			<inertia ixx="0.0014865375000000002" ixy="0.0" ixz="0.0" iyy="0.0014865375000000002" iyz="0.0" izz="9.187500000000001e-05"></inertia>
+		</inertial>
+	</link>
+	<link name="l_elbow_ball_link">
+		<visual>
+			<origin rpy="0 0 0" xyz="0 0 0"></origin>
+			<geometry>
+				<sphere radius="0.03"></sphere>
+			</geometry>
+			<material name="orbita2dgrey">
+				<color rgba="0.8 0.8 0.8 1.0"></color>
+			</material>
+		</visual>
+		<collision>
+			<origin rpy="0 0 0" xyz="0 0 0"></origin>
+			<geometry>
+				<sphere radius="0.03"></sphere>
+			</geometry>
+		</collision>
+		<inertial>
+			<mass value="0.225"></mass>
+			<origin xyz="0 0 0"></origin>
+			<inertia ixx="8.1e-05" ixy="0.0" ixz="0.0" iyy="8.1e-05" iyz="0.0" izz="8.1e-05"></inertia>
+		</inertial>
+	</link>
+	<link name="l_wrist_dummy_link1">
+		<inertial>
+			<mass value="0.003"></mass>
+			<origin rpy="0 0 0" xyz="0 0 0"></origin>
+			<inertia ixx="4.25e-07" ixy="0.0" ixz="0.0" iyy="4.25e-07" iyz="0.0" izz="8.000000000000001e-07"></inertia>
+		</inertial>
+	</link>
+	<link name="l_wrist_dummy_link2">
+		<inertial>
+			<mass value="0.003"></mass>
+			<origin rpy="0 0 0" xyz="0 0 0"></origin>
+			<inertia ixx="4.25e-07" ixy="0.0" ixz="0.0" iyy="4.25e-07" iyz="0.0" izz="8.000000000000001e-07"></inertia>
+		</inertial>
+	</link>
+	<link name="l_wrist_link">
+		<visual>
+			<origin rpy="0 0 0" xyz="0 0 0.005"></origin>
+			<geometry>
+				<cylinder length="0.01" radius="0.02"></cylinder>
+			</geometry>
+			<material name="orbita3d_yellow">
+				<color rgba="0.8 0.8 0.0 1"></color>
+			</material>
+		</visual>
+		<collision>
+			<origin rpy="0 0 0" xyz="0 0 0.005"></origin>
+			<geometry>
+				<cylinder length="0.01" radius="0.02"></cylinder>
+			</geometry>
+		</collision>
+		<inertial>
+			<mass value="0.144"></mass>
+			<origin rpy="0 0 0" xyz="0 0 -0.005"></origin>
+			<inertia ixx="2.0399999999999998e-05" ixy="0.0" ixz="0.0" iyy="2.0399999999999998e-05" iyz="0.0" izz="3.84e-05"></inertia>
+		</inertial>
+	</link>
+	<link name="l_wrist_ball_link">
+		<visual>
+			<origin rpy="0 0 0" xyz="0 0 0"></origin>
+			<geometry>
+				<sphere radius="0.024"></sphere>
+			</geometry>
+			<material name="orbita3d_grey">
+				<color rgba="0.8 0.8 0.8 1"></color>
+			</material>
+		</visual>
+		<collision>
+			<origin rpy="0 0 0" xyz="0 0 0"></origin>
+			<geometry>
+				<sphere radius="0.024"></sphere>
+			</geometry>
+		</collision>
+		<inertial>
+			<mass value="0.15"></mass>
+			<origin xyz="0 0 0"></origin>
+			<inertia ixx="3.456e-05" ixy="0.0" ixz="0.0" iyy="3.456e-05" iyz="0.0" izz="3.456e-05"></inertia>
+		</inertial>
+	</link>
+	<link name="l_gripper_palm_link">
+		<collision>
+			<origin rpy="0 0 0" xyz="0 0 0.03 "></origin>
+			<geometry>
+				<box size="0.03 0.06 0.06"></box>
+			</geometry>
+		</collision>
+		<visual>
+			<origin rpy="0 0 0" xyz="0 0 0.03 "></origin>
+			<geometry>
+				<box size="0.03 0.06 0.06"></box>
+			</geometry>
+			<material name="gripperblack">
+				<color rgba="0.4 0.4 0.4 1"></color>
+			</material>
+		</visual>
+		<inertial>
+			<mass value="0.2125"></mass>
+			<origin rpy="0 0 0" xyz="0 0 0.03"></origin>
+			<inertia ixx="0.00012749999999999998" ixy="0.0" ixz="0.0" iyy="7.968749999999999e-05" iyz="0.0" izz="7.968749999999999e-05"></inertia>
+		</inertial>
+	</link>
+	<link name="l_gripper_index_link">
+		<collision>
+			<origin rpy="0 0 0" xyz="0 0 0.03 "></origin>
+			<geometry>
+				<box size="0.03 0.01 0.06"></box>
+			</geometry>
+		</collision>
+		<visual>
+			<origin rpy="0 0 0" xyz="0 0 0.03 "></origin>
+			<geometry>
+				<box size="0.03 0.01 0.06"></box>
+			</geometry>
+			<material name="gripperwhite">
+				<color rgba="0.9 0.9 0.9 1"></color>
+			</material>
+		</visual>
+		<inertial>
+			<mass value="0.025"></mass>
+			<origin rpy="0 0 0" xyz="0 0.03 0.03"></origin>
+			<inertia ixx="7.708333333333334e-06" ixy="0.0" ixz="0.0" iyy="9.375e-06" iyz="0.0" izz="2.0833333333333334e-06"></inertia>
+		</inertial>
+	</link>
+	<link name="l_gripper_index_mimic_link">
+		<collision>
+			<origin rpy="0 0 0" xyz="0 0 0.03 "></origin>
+			<geometry>
+				<box size="0.03 0.01 0.06"></box>
+			</geometry>
+		</collision>
+		<visual>
+			<origin rpy="0 0 0" xyz="0 0 0.03 "></origin>
+			<geometry>
+				<box size="0.03 0.01 0.06"></box>
+			</geometry>
+			<material name="gripperwhite">
+				<color rgba="0.9 0.9 0.9 1"></color>
+			</material>
+		</visual>
+		<inertial>
+			<mass value="0.025"></mass>
+			<origin rpy="0 0 0" xyz="0 0.03 0.03"></origin>
+			<inertia ixx="7.708333333333334e-06" ixy="0.0" ixz="0.0" iyy="9.375e-06" iyz="0.0" izz="2.0833333333333334e-06"></inertia>
+		</inertial>
+	</link>
+	<link name="l_arm_tip"></link>
+	<joint name="world_joint" type="fixed">
+		<origin rpy="0 0 0" xyz="0 0 1.0"></origin>
+		<parent link="world"></parent>
+		<child link="torso"></child>
+	</joint>
+	<joint name="neck_ball_joint" type="fixed">
+		<origin rpy="0 0 0" xyz="0 0 0"></origin>
+		<parent link="neck_link"></parent>
+		<child link="neck_ball_link"></child>
+	</joint>
+	<joint name="neck_roll" type="revolute">
+		<origin rpy="0 0 0.0" xyz="-0.032893 0 0.110675"></origin>
+		<parent link="torso"></parent>
+		<child link="neck_dummy_link1"></child>
+		<axis xyz="1 0 0"></axis>
+		<limit effort="1000.0" lower="-0.35" upper="0.35" velocity="100.0"></limit>
+		<dynamics damping="0.1" friction="0.1"></dynamics>
+	</joint>
+	<joint name="neck_pitch" type="revolute">
+		<origin rpy="0 0 0" xyz="0 0 0"></origin>
+		<parent link="neck_dummy_link1"></parent>
+		<child link="neck_dummy_link2"></child>
+		<axis xyz="0 1 0"></axis>
+		<limit effort="1000.0" lower="-0.35" upper="0.35" velocity="100.0"></limit>
+		<dynamics damping="0.1" friction="0.1"></dynamics>
+	</joint>
+	<joint name="neck_yaw" type="revolute">
+		<origin rpy="0 0 0" xyz="0 0 0"></origin>
+		<parent link="neck_dummy_link2"></parent>
+		<child link="neck_link"></child>
+		<axis xyz="0 0 1"></axis>
+		<limit effort="1000.0" lower="-1.57" upper="1.57" velocity="100.0"></limit>
+		<dynamics damping="0.1" friction="0.1"></dynamics>
+	</joint>
+	<joint name="neck_fixed" type="fixed">
+		<origin rpy="0.0 0.0 0.0" xyz="0 0 0"></origin>
+		<parent link="neck_ball_link"></parent>
+		<child link="head"></child>
+	</joint>
+	<joint name="head_base_fixed" type="fixed">
+		<origin rpy="0.0 0.0 0" xyz="0.0 0 0.0"></origin>
+		<parent link="head"></parent>
+		<child link="head_base"></child>
+	</joint>
+	<joint name="head_tip_fixed" type="fixed">
+		<origin rpy="0 0.0 0" xyz="0.030 0.022 0.085"></origin>
+		<parent link="head"></parent>
+		<child link="head_tip"></child>
+	</joint>
+	<joint name="camera_optical_left" type="fixed">
+		<origin rpy="-1.57 0.0 -1.57" xyz="0.030 0.022 0.085"></origin>
+		<parent link="head"></parent>
+		<child link="camera_optical_left"></child>
+	</joint>
+	<joint name="left_cam_fixed" type="fixed">
+		<origin rpy="0.0 0.0  -0.0" xyz="0.02 0.03625 0.06105"></origin>
+		<parent link="head"></parent>
+		<child link="left_camera"></child>
+	</joint>
+	<joint name="left_camera_optical_joint" type="fixed">
+		<origin rpy="-1.5707963267948966 0 -1.5707963267948966" xyz="0 0 0"></origin>
+		<parent link="left_camera"></parent>
+		<child link="left_camera_optical"></child>
+	</joint>
+	<joint name="right_cam_fixed" type="fixed">
+		<origin rpy="0.0 0.0 0.0" xyz="0.02 -0.03625 0.06105"></origin>
+		<parent link="head"></parent>
+		<child link="right_camera"></child>
+	</joint>
+	<joint name="right_camera_optical_joint" type="fixed">
+		<origin rpy="-1.5707963267948966 0 -1.5707963267948966" xyz="0 0 0"></origin>
+		<parent link="right_camera"></parent>
+		<child link="right_camera_optical"></child>
+	</joint>
+	<joint name="depth_cam_fixed" type="fixed">
+		<origin rpy="0.0 0.0 0" xyz="0.02 0 0.06105"></origin>
+		<parent link="head"></parent>
+		<child link="depth_camera_link"></child>
+	</joint>
+	<joint name="depth_camera_optical_joint" type="fixed">
+		<origin rpy="-1.5707963267948966 0 -1.5707963267948966" xyz="0 0 0"></origin>
+		<parent link="depth_camera_link"></parent>
+		<child link="depth_camera_optical"></child>
+	</joint>
+	<joint name="r_shoulder_pitch" type="revolute">
+		<origin rpy="0.17453292519943295 0 0.2617993877991494" xyz="0 -0.2 0"></origin>
+		<parent link="torso"></parent>
+		<child link="r_shoulder_dummy_link"></child>
+		<axis xyz="0 1 0"></axis>
+		<limit effort="1000.0" lower="-6.283185307179586" upper="6.283185307179586" velocity="100.0"></limit>
+		<safety_controller k_position="500" k_velocity="500" soft_lower_limit="-3.1415" soft_upper_limit="3.1415"></safety_controller>
+		<dynamics damping="0.1" friction="0.1"></dynamics>
+	</joint>
+	<joint name="r_shoulder_roll" type="revolute">
+		<origin rpy="0 0 0" xyz="0 0 0"></origin>
+		<parent link="r_shoulder_dummy_link"></parent>
+		<child link="r_shoulder_link"></child>
+		<axis xyz="1 0 0"></axis>
+		<limit effort="1000.0" lower="-2.6179938779914944" upper="0.6981317007977318" velocity="100.0"></limit>
+		<safety_controller k_position="500" k_velocity="500" soft_lower_limit="-3.1415" soft_upper_limit="3.1415"></safety_controller>
+		<dynamics damping="0.1" friction="0.1"></dynamics>
+	</joint>
+	<joint name="r_shoulder_ball_joint" type="fixed">
+		<origin rpy="0 0 0" xyz="0 0 0"></origin>
+		<parent link="r_shoulder_link"></parent>
+		<child link="r_shoulder_ball_link"></child>
+	</joint>
+	<joint name="r_elbow_yaw" type="revolute">
+		<origin rpy="0 0 0" xyz="0 0 -0.28"></origin>
+		<parent link="r_shoulder_ball_link"></parent>
+		<child link="r_elbow_dummy_link"></child>
+		<axis xyz="0 0 1"></axis>
+		<limit effort="1000.0" lower="-6.283185307179586" upper="6.283185307179586" velocity="100.0"></limit>
+		<safety_controller k_position="500" k_velocity="500" soft_lower_limit="-3.1415" soft_upper_limit="3.1415"></safety_controller>
+		<dynamics damping="0.1" friction="0.1"></dynamics>
+	</joint>
+	<joint name="r_elbow_pitch" type="revolute">
+		<origin rpy="0 0 0" xyz="0 0 0"></origin>
+		<parent link="r_elbow_dummy_link"></parent>
+		<child link="r_elbow_link"></child>
+		<axis xyz="0 1 0"></axis>
+		<limit effort="1000.0" lower="-2.2689280275926285" upper="0.0" velocity="100.0"></limit>
+		<safety_controller k_position="500" k_velocity="500" soft_lower_limit="-3.1415" soft_upper_limit="3.1415"></safety_controller>
+		<dynamics damping="0.1" friction="0.1"></dynamics>
+	</joint>
+	<joint name="r_elbow_ball_joint" type="fixed">
+		<origin rpy="0 0 0" xyz="0 0 0"></origin>
+		<parent link="r_elbow_link"></parent>
+		<child link="r_elbow_ball_link"></child>
+	</joint>
+	<joint name="r_wrist_ball_joint" type="fixed">
+		<origin rpy="0.0 0.0 0 " xyz="0 0 0."></origin>
+		<parent link="r_wrist_link"></parent>
+		<child link="r_wrist_ball_link"></child>
+	</joint>
+	<joint name="r_wrist_roll" type="revolute">
+		<origin rpy="3.141592653589793 0 0" xyz="0 0 -0.28"></origin>
+		<parent link="r_elbow_ball_link"></parent>
+		<child link="r_wrist_dummy_link1"></child>
+		<axis xyz="1 0 0"></axis>
+		<limit effort="1000.0" lower="-0.7853981633974483" upper="0.7853981633974483" velocity="100.0"></limit>
+		<dynamics damping="0.1" friction="0.1"></dynamics>
+	</joint>
+	<joint name="r_wrist_pitch" type="revolute">
+		<origin rpy="0 0 0" xyz="0 0 0"></origin>
+		<parent link="r_wrist_dummy_link1"></parent>
+		<child link="r_wrist_dummy_link2"></child>
+		<axis xyz="0 1 0"></axis>
+		<limit effort="1000.0" lower="-0.7853981633974483" upper="0.7853981633974483" velocity="100.0"></limit>
+		<dynamics damping="0.1" friction="0.1"></dynamics>
+	</joint>
+	<joint name="r_wrist_yaw" type="revolute">
+		<origin rpy="0 0 0" xyz="0 0 0"></origin>
+		<parent link="r_wrist_dummy_link2"></parent>
+		<child link="r_wrist_link"></child>
+		<axis xyz="0 0 1"></axis>
+		<limit effort="1000.0" lower="-6.283185307179586" upper="6.283185307179586" velocity="100.0"></limit>
+		<dynamics damping="0.1" friction="0.1"></dynamics>
+	</joint>
+	<joint name="r_gripper_palm" type="fixed">
+		<origin rpy="0.0 0 0.0" xyz="0 0 0"></origin>
+		<parent link="r_wrist_ball_link"></parent>
+		<child link="r_gripper_palm_link"></child>
+	</joint>
+	<joint name="r_gripper_finger" type="revolute">
+		<origin rpy="0 0 0" xyz="0 0.03 0.11"></origin>
+		<parent link="r_gripper_palm_link"></parent>
+		<child link="r_gripper_index_link"></child>
+		<axis xyz="1 0 0"></axis>
+		<limit effort="1000.0" lower="-0.785" upper="2.094" velocity="0.0"></limit>
+		<dynamics damping="0.1" friction="0.1"></dynamics>
+	</joint>
+	<joint name="r_gripper_finger_mimic" type="revolute">
+		<origin rpy="0 0 0" xyz="0 -0.03 0.11"></origin>
+		<parent link="r_gripper_palm_link"></parent>
+		<child link="r_gripper_index_mimic_link"></child>
+		<axis xyz="1 0 0"></axis>
+		<limit effort="1000.0" lower="-0.785" upper="2.094" velocity="0.0"></limit>
+		<dynamics damping="0.1" friction="0.1"></dynamics>
+		<mimic joint="r_gripper_finger" multiplier="-1" offset="0"></mimic>
+	</joint>
+	<joint name="r_tip_joint" type="fixed">
+		<origin rpy="3.141592653589793 0 0" xyz="0 0 0.15"></origin>
+		<parent link="r_gripper_palm_link"></parent>
+		<child link="r_arm_tip"></child>
+	</joint>
+	<joint name="l_shoulder_pitch" type="revolute">
+		<origin rpy="0 0 -0.2617993877991494" xyz="-0.0479 0.1913 0.025"></origin>
+		<parent link="torso"></parent>
+		<child link="l_shoulder_dummy_link"></child>
+		<axis xyz="0 1 0"></axis>
+		<limit effort="1000.0" lower="-1.5707963267948966" upper="1.5707963267948966" velocity="100.0"></limit>
+		<safety_controller k_position="500" k_velocity="500" soft_lower_limit="-3.1415" soft_upper_limit="3.1415"></safety_controller>
+		<dynamics damping="0.1" friction="0.1"></dynamics>
+	</joint>
+	<joint name="l_shoulder_roll" type="revolute">
+		<origin rpy="0 0 0" xyz="0 0 0"></origin>
+		<parent link="l_shoulder_dummy_link"></parent>
+		<child link="l_shoulder_link"></child>
+		<axis xyz="1 0 0"></axis>
+		<limit effort="1000.0" lower="-1.5707963267948966" upper="0.0" velocity="100.0"></limit>
+		<safety_controller k_position="500" k_velocity="500" soft_lower_limit="-3.1415" soft_upper_limit="3.1415"></safety_controller>
+		<dynamics damping="0.1" friction="0.1"></dynamics>
+	</joint>
+	<joint name="l_shoulder_ball_joint" type="fixed">
+		<origin rpy="0 0 0" xyz="0 0 0"></origin>
+		<parent link="l_shoulder_link"></parent>
+		<child link="l_shoulder_ball_link"></child>
+	</joint>
+	<joint name="l_elbow_yaw" type="revolute">
+		<origin rpy="0 0 0" xyz="0 0 -0.28"></origin>
+		<parent link="l_shoulder_ball_link"></parent>
+		<child link="l_elbow_dummy_link"></child>
+		<axis xyz="0 0 1"></axis>
+		<limit effort="1000.0" lower="-1.5707963267948966" upper="1.5707963267948966" velocity="100.0"></limit>
+		<safety_controller k_position="500" k_velocity="500" soft_lower_limit="-3.1415" soft_upper_limit="3.1415"></safety_controller>
+		<dynamics damping="0.1" friction="0.1"></dynamics>
+	</joint>
+	<joint name="l_elbow_pitch" type="revolute">
+		<origin rpy="0 0 0" xyz="0 0 0"></origin>
+		<parent link="l_elbow_dummy_link"></parent>
+		<child link="l_elbow_link"></child>
+		<axis xyz="0 1 0"></axis>
+		<limit effort="1000.0" lower="-2.25" upper="0.1" velocity="100.0"></limit>
+		<safety_controller k_position="500" k_velocity="500" soft_lower_limit="-3.1415" soft_upper_limit="3.1415"></safety_controller>
+		<dynamics damping="0.1" friction="0.1"></dynamics>
+	</joint>
+	<joint name="l_elbow_ball_joint" type="fixed">
+		<origin rpy="0 0 0" xyz="0 0 0"></origin>
+		<parent link="l_elbow_link"></parent>
+		<child link="l_elbow_ball_link"></child>
+	</joint>
+	<joint name="l_wrist_ball_joint" type="fixed">
+		<origin rpy="0 0 0" xyz="0 0 0"></origin>
+		<parent link="l_wrist_link"></parent>
+		<child link="l_wrist_ball_link"></child>
+	</joint>
+	<joint name="l_wrist_roll" type="revolute">
+		<origin rpy="3.141592653589793 0 0" xyz="0 0 -0.28"></origin>
+		<parent link="l_elbow_ball_link"></parent>
+		<child link="l_wrist_dummy_link1"></child>
+		<axis xyz="1 0 0"></axis>
+		<limit effort="1000.0" lower="-0.35" upper="0.35" velocity="100.0"></limit>
+		<dynamics damping="0.1" friction="0.1"></dynamics>
+	</joint>
+	<joint name="l_wrist_pitch" type="revolute">
+		<origin rpy="0 0 0" xyz="0 0 0"></origin>
+		<parent link="l_wrist_dummy_link1"></parent>
+		<child link="l_wrist_dummy_link2"></child>
+		<axis xyz="0 1 0"></axis>
+		<limit effort="1000.0" lower="-0.35" upper="0.35" velocity="100.0"></limit>
+		<dynamics damping="0.1" friction="0.1"></dynamics>
+	</joint>
+	<joint name="l_wrist_yaw" type="revolute">
+		<origin rpy="0 0 0" xyz="0 0 0"></origin>
+		<parent link="l_wrist_dummy_link2"></parent>
+		<child link="l_wrist_link"></child>
+		<axis xyz="0 0 1"></axis>
+		<limit effort="1000.0" lower="-1.57" upper="1.57" velocity="100.0"></limit>
+		<dynamics damping="0.1" friction="0.1"></dynamics>
+	</joint>
+	<joint name="l_gripper_palm" type="fixed">
+		<origin rpy="0.0 0 0.0" xyz="0 0 0"></origin>
+		<parent link="l_wrist_ball_link"></parent>
+		<child link="l_gripper_palm_link"></child>
+	</joint>
+	<joint name="l_gripper_finger" type="revolute">
+		<origin rpy="0 0 0" xyz="0 -0.03 0.06"></origin>
+		<parent link="l_gripper_palm_link"></parent>
+		<child link="l_gripper_index_link"></child>
+		<axis xyz="1 0 0"></axis>
+		<limit effort="1000.0" lower="-2.094" upper="0.785" velocity="0.0"></limit>
+		<dynamics damping="0.1" friction="0.1"></dynamics>
+	</joint>
+	<joint name="l_gripper_finger_mimic" type="revolute">
+		<origin rpy="0 0 0" xyz="0 0.03 0.06"></origin>
+		<parent link="l_gripper_palm_link"></parent>
+		<child link="l_gripper_index_mimic_link"></child>
+		<axis xyz="1 0 0"></axis>
+		<limit effort="1000.0" lower="-2.094" upper="0.785" velocity="0.0"></limit>
+		<dynamics damping="0.1" friction="0.1"></dynamics>
+		<mimic joint="l_gripper_finger" multiplier="-1" offset="0"></mimic>
+	</joint>
+	<joint name="l_tip_joint" type="fixed">
+		<origin rpy="3.141592653589793 0 0" xyz="0 0 0.1"></origin>
+		<parent link="l_gripper_palm_link"></parent>
+		<child link="l_arm_tip"></child>
+	</joint>
+	<gazebo reference="torso">
+		<material>Gazebo/Black</material>
+		<static>true</static>
+	</gazebo>
+	<gazebo reference="left_camera">
+		<sensor name="left_camera" type="camera">
+			<always_on>0</always_on>
+			<update_rate>30</update_rate>
+			<camera name="left_camera">
+				<horizontal_fov>1.3962634</horizontal_fov>
+				<image>
+					<width>800</width>
+					<height>800</height>
+					<format>R8G8B8</format>
+				</image>
+				<distortion>
+					<k1>0.0</k1>
+					<k2>0.0</k2>
+					<k3>0.0</k3>
+					<p1>0.0</p1>
+					<p2>0.0</p2>
+					<center>0.5 0.5</center>
+				</distortion>
+				<noise>
+					<type>gaussian</type>
+					<mean>0.0</mean>
+					<stddev>0.007</stddev>
+				</noise>
+			</camera>
+			<plugin filename="libgazebo_ros_camera.so" name="left_camera_controller">
+				<ros>
+					<namespace>/</namespace>
+					<remapping>image_raw:=image_raw</remapping>
+					<remapping>camera_info:=camera_info</remapping>
+				</ros>
+				<camera_name>left_image</camera_name>
+				<frame_name>left_camera_optical</frame_name>
+				<hack_baseline>0.07</hack_baseline>
+			</plugin>
+		</sensor>
+	</gazebo>
+	<gazebo reference="right_camera">
+		<sensor name="right_camera" type="camera">
+			<always_on>0</always_on>
+			<update_rate>30</update_rate>
+			<camera name="right_camera">
+				<horizontal_fov>1.3962634</horizontal_fov>
+				<image>
+					<width>800</width>
+					<height>800</height>
+					<format>R8G8B8</format>
+				</image>
+				<distortion>
+					<k1>0.0</k1>
+					<k2>0.0</k2>
+					<k3>0.0</k3>
+					<p1>0.0</p1>
+					<p2>0.0</p2>
+					<center>0.5 0.5</center>
+				</distortion>
+				<noise>
+					<type>gaussian</type>
+					<mean>0.0</mean>
+					<stddev>0.007</stddev>
+				</noise>
+			</camera>
+			<plugin filename="libgazebo_ros_camera.so" name="right_camera_controller">
+				<ros>
+					<namespace>/</namespace>
+					<remapping>image_raw:=image_raw</remapping>
+					<remapping>camera_info:=camera_info</remapping>
+				</ros>
+				<camera_name>right_image</camera_name>
+				<frame_name>right_camera_optical</frame_name>
+				<hack_baseline>0.07</hack_baseline>
+			</plugin>
+		</sensor>
+	</gazebo>
+	<gazebo reference="depth_camera_link">
+		<sensor name="depth_camera" type="depth">
+			<always_on>true</always_on>
+			<update_rate>15</update_rate>
+			<pose>0 0 0 0 0 0</pose>
+			<camera name="realsense_depth_camera">
+				<horizontal_fov>1.46608</horizontal_fov>
+				<image>
+					<width>424</width>
+					<height>240</height>
+					<format>B8G8R8</format>
+				</image>
+				<clip>
+					<near>0.05</near>
+					<far>8</far>
+				</clip>
+			</camera>
+			<plugin filename="libgazebo_ros_camera.so" name="intel_realsense_r200_depth_driver">
+				<ros>
+					<namespace>depth_camera</namespace>
+					<remapping>depth_camera/image_raw:=color/image_raw</remapping>
+					<remapping>depth_camera/depth/image_raw:=depth/image_rect_raw</remapping>
+					<remapping>depth_camera/camera_info:=camera_info</remapping>
+					<remapping>depth_camera/depth/camera_info:=depth/camera_info</remapping>
+					<remapping>depth_camera/points:=depth/points</remapping>
+				</ros>
+				<camera_name>depth_camera</camera_name>
+				<frame_name>depth_camera_optical</frame_name>
+				<hack_baseline>0.07</hack_baseline>
+				<min_depth>0.05</min_depth>
+				<max_depth>8.0</max_depth>
+			</plugin>
+		</sensor>
+	</gazebo>
+	<gazebo reference="r_shoulder_link">
+		<material>Gazebo/Orange</material>
+	</gazebo>
+	<gazebo reference="r_elbow_link">
+		<material>Gazebo/Orange</material>
+	</gazebo>
+	<gazebo reference="l_shoulder_link">
+		<material>Gazebo/Orange</material>
+	</gazebo>
+	<gazebo reference="l_elbow_link">
+		<material>Gazebo/Orange</material>
+	</gazebo>
+	<gazebo>
+		<plugin filename="libgazebo_ros2_control.so" name="gazebo_ros2_control">
+			<parameters>/home/remi/reachy_ws/install/reachy_bringup/share/reachy_bringup/config/ros2_controllers_ultimate_combo_top_moumoute.yaml</parameters>
+			<robotNamespace>/reachy</robotNamespace>
+		</plugin>
+	</gazebo>
+</robot>
