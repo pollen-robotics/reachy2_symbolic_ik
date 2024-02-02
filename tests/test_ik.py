@@ -3,11 +3,21 @@ import numpy as np
 from reachy_placo.ik_reachy_placo import IKReachyQP
 from scipy.spatial.transform import Rotation as R
 import time
-
+from importlib.resources import files
 from reachy2_symbolic_ik.ik_symbolic import IK_symbolic
 
 
 def test_class() -> None:
+
+
+    urdf_path = files("config_files")
+    for file in urdf_path.glob("**/*.urdf"):
+        if file.stem == "reachy2":
+            urdf_path = file.resolve()
+            break
+
+    
+
     symbolic_ik = IK_symbolic(upper_arm_size=0.28, forearm_size=0.28, gripper_size=0.15)
     placo_ik = IKReachyQP(
         viewer_on=True,
@@ -18,7 +28,7 @@ def test_class() -> None:
         robot_version="reachy_2",
         velocity_limit=50.0
     )
-    placo_ik.setup(urdf_path="src/config_files/new_new_reachy2_1.urdf")
+    placo_ik.setup(urdf_path=str(urdf_path))
     placo_ik.create_tasks()
     assert symbolic_ik is not None
 
