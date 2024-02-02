@@ -8,15 +8,11 @@ from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
 
 
 def test_class() -> None:
-
-
     urdf_path = files("config_files")
     for file in urdf_path.glob("**/*.urdf"):
         if file.stem == "reachy2":
             urdf_path = file.resolve()
             break
-
-    
 
     symbolic_ik = SymbolicIK(upper_arm_size=0.28, forearm_size=0.28, gripper_size=0.15)
     placo_ik = IKReachyQP(
@@ -26,7 +22,7 @@ def test_class() -> None:
         position_weight=1.9,
         orientation_weight=1e-2,
         robot_version="reachy_2",
-        velocity_limit=50.0
+        velocity_limit=50.0,
     )
     placo_ik.setup(urdf_path=str(urdf_path))
     placo_ik.create_tasks()
@@ -43,9 +39,8 @@ def test_class() -> None:
     assert result[1] == []
     assert result[2] is None
 
-
     goal_position = [0.3, -0.2, -0.3]
-    goal_orientation = [-0,-90,0]
+    goal_orientation = [-0, -90, 0]
     goal_orientation = np.deg2rad(goal_orientation)
     goal_pose = [goal_position, goal_orientation]
 
@@ -53,9 +48,8 @@ def test_class() -> None:
 
     assert result[0]
     assert result[1][0] >= 0
-    assert result[1][1] <= 4*np.pi
+    assert result[1][1] <= 4 * np.pi
     assert result[2] is not None
-
 
     joints = result[2](result[1][0])
 
@@ -76,7 +70,15 @@ def test_class() -> None:
 
     assert len(joints) == 7
 
-    names = ["r_shoulder_pitch", "r_shoulder_roll", "r_elbow_yaw", "r_elbow_pitch", "r_wrist_roll", "r_wrist_pitch", "r_wrist_yaw"]
+    names = [
+        "r_shoulder_pitch",
+        "r_shoulder_roll",
+        "r_elbow_yaw",
+        "r_elbow_pitch",
+        "r_wrist_roll",
+        "r_wrist_pitch",
+        "r_wrist_yaw",
+    ]
     for i in range(len(names)):
         placo_ik.robot.set_joint(names[i], joints[i])
     placo_ik._tick_viewer()
