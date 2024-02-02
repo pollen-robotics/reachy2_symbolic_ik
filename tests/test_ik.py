@@ -4,7 +4,7 @@ from reachy_placo.ik_reachy_placo import IKReachyQP
 from scipy.spatial.transform import Rotation as R
 import time
 from importlib.resources import files
-from reachy2_symbolic_ik.ik_symbolic import IK_symbolic
+from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
 
 
 def test_class() -> None:
@@ -18,7 +18,7 @@ def test_class() -> None:
 
     
 
-    symbolic_ik = IK_symbolic(upper_arm_size=0.28, forearm_size=0.28, gripper_size=0.15)
+    symbolic_ik = SymbolicIK(upper_arm_size=0.28, forearm_size=0.28, gripper_size=0.15)
     placo_ik = IKReachyQP(
         viewer_on=True,
         collision_avoidance=False,

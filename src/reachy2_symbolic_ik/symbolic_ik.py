@@ -7,7 +7,7 @@ import time
 SHOW_GRAPH = False
 
 
-class IK_symbolic:
+class SymbolicIK:
     def __init__(
         self,
         grasp_marker_tip_len=0.2,
@@ -542,7 +542,7 @@ class IK_symbolic:
 
 
 if __name__ == "__main__":
-    ik = IK_symbolic()
+    ik = SymbolicIK()
 
     goal_position = [0.3, -0.1, 0.1]
     goal_orientation = [20, -50, 20]

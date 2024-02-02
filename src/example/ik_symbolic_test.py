@@ -1,4 +1,4 @@
-from reachy2_symbolic_ik.ik_symbolic import IK_symbolic
+from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
 import numpy as np
 from reachy_placo.ik_reachy_placo import IKReachyQP
 import math
@@ -10,7 +10,7 @@ from grasping_utils.utils import get_homogeneous_matrix_msg_from_euler
 class IKSymbolicTest:
     def __init__(self):
         print("--- IK Symbolic Test ---")
-        self.ik = IK_symbolic()
+        self.ik = SymbolicIK()
         self.ik_reachy = IKReachyQP(
             viewer_on=True,
             collision_avoidance=False,
