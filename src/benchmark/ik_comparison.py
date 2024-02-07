@@ -1,11 +1,14 @@
-from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
-import numpy as np
-from reachy_placo.ik_reachy_placo import IKReachyQP
 import math
 import time
-from scipy.spatial.transform import Rotation as R
+from pathlib import Path
+from typing import List
+
+import numpy as np
 from grasping_utils.utils import get_homogeneous_matrix_msg_from_euler
-from importlib.resources import files
+from reachy_placo.ik_reachy_placo import IKReachyQP
+from scipy.spatial.transform import Rotation as R
+
+from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
 from reachy2_symbolic_ik.utils import go_to_position
 
 
@@ -60,7 +63,7 @@ def time_test(symbolic_ik: SymbolicIK, placo_ik: IKReachyQP) -> None:
     print("placo ik : ", end - start)
 
 
-def joints_space_test(symbolic_ik: SymbolicIK, placo_ik: IKReachyQP, verbose=False) -> None:
+def joints_space_test(symbolic_ik: SymbolicIK, placo_ik: IKReachyQP, verbose: bool = False) -> None:
     green = "\033[92m"  # GREEN
     blue = "\033[94m"  # BLUE
     yellow = "\033[93m"  # YELLOW
@@ -72,7 +75,7 @@ def joints_space_test(symbolic_ik: SymbolicIK, placo_ik: IKReachyQP, verbose=Fal
     symbolic_success = 0
     symbolic_fail = 0
     # pose_fail = []
-    goal_pose = [[], []]
+    goal_pose: List[List[float]] = []
     for k in range(100):
         shoulder_pitch = np.random.uniform(-math.pi, math.pi)
         shoulder_roll = np.random.uniform(-math.pi, math.pi)
@@ -96,7 +99,6 @@ def joints_space_test(symbolic_ik: SymbolicIK, placo_ik: IKReachyQP, verbose=Fal
         goal_pose_matrix = placo_ik.robot.get_T_a_b("torso", "r_tip_joint")
         goal_pose[0] = goal_pose_matrix[:3, 3]
         goal_pose[1] = R.from_matrix(goal_pose_matrix[:3, :3]).as_euler("xyz")
-        # print("goal_pose : ", goal_pose)
         is_reachable, joints_placo, errors = placo_ik.is_pose_reachable(
             goal_pose_matrix,
             arm_name="r_arm",
@@ -124,49 +126,49 @@ def joints_space_test(symbolic_ik: SymbolicIK, placo_ik: IKReachyQP, verbose=Fal
                 print(red + "Symbolic not reachable" + reset_color)
             # print("goal_pose : ", goal_pose)
             # pose_fail.append(np.copy(goal_pose))
-        if verbose:
-            time.sleep(0.2)
+        # if verbose:
+        #     time.sleep(0.2)
 
-    for k in range(100):
-        shoulder_pitch = np.random.uniform(-math.pi, math.pi)
-        shoulder_roll = np.random.uniform(-math.pi, math.pi)
-        elbow_yaw = np.random.uniform(-math.pi, math.pi)
-        elbow_pitch = np.random.uniform(-math.pi, math.pi)
-        wrist_pitch = np.random.uniform(math.pi / 4, 2 * math.pi - math.pi / 4)
-        wrist_roll = np.random.uniform(math.pi / 4, 2 * math.pi - math.pi / 4)
-        wrist_yaw = np.random.uniform(-math.pi, math.pi)
-        joints = [shoulder_pitch, shoulder_roll, elbow_yaw, elbow_pitch, wrist_pitch, wrist_roll, wrist_yaw]
-        if verbose:
-            print(blue + str(np.degrees(joints)) + reset_color)
-        go_to_position(placo_ik, joints, wait=0.0)
-        goal_pose_matrix = placo_ik.robot.get_T_a_b("torso", "r_tip_joint")
-        goal_pose[0] = goal_pose_matrix[:3, 3]
-        goal_pose[1] = R.from_matrix(goal_pose_matrix[:3, :3]).as_euler("xyz")
-        is_reachable, joints_placo, errors = placo_ik.is_pose_reachable(
-            goal_pose_matrix,
-            arm_name="r_arm",
-            q0=[0.0, 0.0, 0.0, -math.pi / 2, 0, 0.0, 0.0],
-            tolerances=[0.001, 0.001, 0.001, 0.02, 0.02, 0.02],
-            max_iter=45,
-            nb_stepper_solve=25,
-        )
-        if is_reachable:
-            if verbose:
-                print(green + "Placo reachable" + reset_color)
-            placo_fail += 1
-        else:
-            if verbose:
-                print(red + "Placo not reachable" + reset_color)
-        result = symbolic_ik.is_reachable(goal_pose)
-        if result[0]:
-            if verbose:
-                print(green + "Symbolic reachable" + reset_color)
-            symbolic_fail += 1
-        else:
-            if verbose:
-                print(red + "Symbolic not reachable" + reset_color)
-        if verbose:
-            time.sleep(0.2)
+    # for k in range(100):
+    #     shoulder_pitch = np.random.uniform(-math.pi, math.pi)
+    #     shoulder_roll = np.random.uniform(-math.pi, math.pi)
+    #     elbow_yaw = np.random.uniform(-math.pi, math.pi)
+    #     elbow_pitch = np.random.uniform(-math.pi, math.pi)
+    #     wrist_pitch = np.random.uniform(math.pi / 4, 2 * math.pi - math.pi / 4)
+    #     wrist_roll = np.random.uniform(math.pi / 4, 2 * math.pi - math.pi / 4)
+    #     wrist_yaw = np.random.uniform(-math.pi, math.pi)
+    #     joints = [shoulder_pitch, shoulder_roll, elbow_yaw, elbow_pitch, wrist_pitch, wrist_roll, wrist_yaw]
+    #     if verbose:
+    #         print(blue + str(np.degrees(joints)) + reset_color)
+    #     go_to_position(placo_ik, joints, wait=0.0)
+    #     goal_pose_matrix = placo_ik.robot.get_T_a_b("torso", "r_tip_joint")
+    #     goal_pose[0] = goal_pose_matrix[:3, 3]
+    #     goal_pose[1] = R.from_matrix(goal_pose_matrix[:3, :3]).as_euler("xyz")
+    #     is_reachable, joints_placo, errors = placo_ik.is_pose_reachable(
+    #         goal_pose_matrix,
+    #         arm_name="r_arm",
+    #         q0=[0.0, 0.0, 0.0, -math.pi / 2, 0, 0.0, 0.0],
+    #         tolerances=[0.001, 0.001, 0.001, 0.02, 0.02, 0.02],
+    #         max_iter=45,
+    #         nb_stepper_solve=25,
+    #     )
+    #     if is_reachable:
+    #         if verbose:
+    #             print(green + "Placo reachable" + reset_color)
+    #         placo_fail += 1
+    #     else:
+    #         if verbose:
+    #             print(red + "Placo not reachable" + reset_color)
+    #     result = symbolic_ik.is_reachable(goal_pose)
+    #     if result[0]:
+    #         if verbose:
+    #             print(green + "Symbolic reachable" + reset_color)
+    #         symbolic_fail += 1
+    #     else:
+    #         if verbose:
+    #             print(red + "Symbolic not reachable" + reset_color)
+    #     if verbose:
+    #         time.sleep(0.2)
     print("JOINTS SPACE TEST")
     # print("Pose fail : ", pose_fail)
     print("Placo success : ", placo_success)
@@ -178,12 +180,12 @@ def joints_space_test(symbolic_ik: SymbolicIK, placo_ik: IKReachyQP, verbose=Fal
 def task_space_test(
     symbolic_ik: SymbolicIK,
     placo_ik: IKReachyQP,
-    x_step=0.15,
-    y_step=0.15,
-    z_step=0.15,
-    roll_step=45,
-    pitch_step=45,
-    yaw_step=45,
+    x_step: float = 0.15,
+    y_step: float = 0.15,
+    z_step: float = 0.15,
+    roll_step: int = 45,
+    pitch_step: int = 45,
+    yaw_step: int = 45,
 ) -> None:
     print("TASK SPACE TEST")
     shoulder_position = symbolic_ik.shoulder_position
@@ -204,8 +206,7 @@ def task_space_test(
                 for roll in np.arange(0, 360, roll_step):
                     for pitch in np.arange(0, 360, pitch_step):
                         for yaw in np.arange(0, 360, yaw_step):
-                            goal_orientation = (roll, pitch, yaw)
-                            goal_orientation = np.deg2rad(goal_orientation)
+                            goal_orientation = [np.radians(roll), np.radians(pitch), np.radians(yaw)]
                             goal_pose = [goal_position, goal_orientation]
                             goal_poses.append(goal_pose)
     end_time = time.time()
@@ -225,7 +226,7 @@ def task_space_test(
 
 def main_test() -> None:
     symbolib_ik = SymbolicIK()
-    urdf_path = files("config_files")
+    urdf_path = Path("src/config_files")
     for file in urdf_path.glob("**/*.urdf"):
         if file.stem == "reachy2":
             urdf_path = file.resolve()

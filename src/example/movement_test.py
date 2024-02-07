@@ -1,11 +1,14 @@
-from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
+from pathlib import Path
+from typing import List
+
 import numpy as np
-from reachy2_symbolic_ik.utils import go_to_position
 from reachy_placo.ik_reachy_placo import IKReachyQP
-from importlib.resources import files
+
+from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
+from reachy2_symbolic_ik.utils import go_to_position
 
 
-def make_movement_test(symbolic_ik: SymbolicIK, placo_ik: IKReachyQP, goal_pose) -> None:
+def make_movement_test(symbolic_ik: SymbolicIK, placo_ik: IKReachyQP, goal_pose: List[List[float]]) -> None:
     result = symbolic_ik.is_reachable(goal_pose)
     if result[0]:
         print(int((result[1][1] - result[1][0]) * 50))
@@ -21,12 +24,12 @@ def make_movement_test(symbolic_ik: SymbolicIK, placo_ik: IKReachyQP, goal_pose)
 def make_line(
     symbolic_ik: SymbolicIK,
     placo_ik: IKReachyQP,
-    start_position,
-    end_position,
-    start_orientation,
-    end_orientation,
-    nb_points=100,
-):
+    start_position: List[float],
+    end_position: List[float],
+    start_orientation: List[float],
+    end_orientation: List[float],
+    nb_points: int = 100,
+) -> None:
     x = np.linspace(start_position[0], end_position[0], nb_points)
     y = np.linspace(start_position[1], end_position[1], nb_points)
     z = np.linspace(start_position[2], end_position[2], nb_points)
@@ -45,8 +48,8 @@ def make_line(
 
 
 def main_test() -> None:
-    symbolib_ik = SymbolicIK()
-    urdf_path = files("config_files")
+    symbolic_ik = SymbolicIK()
+    urdf_path = Path("src/config_files")
     for file in urdf_path.glob("**/*.urdf"):
         if file.stem == "reachy2":
             urdf_path = file.resolve()
@@ -71,9 +74,9 @@ def main_test() -> None:
 
     start_position = [0.4, 0.1, -0.4]
     end_position = [0.3, -0.2, -0.1]
-    start_orientation = np.deg2rad([20, -80, 10])
-    end_orientation = np.deg2rad([0, -0, 0])
-    make_line(symbolib_ik, placo_ik, start_position, end_position, start_orientation, end_orientation, nb_points=300)
+    start_orientation = [0.35, -1.40, 0.17]
+    end_orientation = [0.0, -0.0, 0.0]
+    make_line(symbolic_ik, placo_ik, start_position, end_position, start_orientation, end_orientation, nb_points=300)
 
 
 if __name__ == "__main__":

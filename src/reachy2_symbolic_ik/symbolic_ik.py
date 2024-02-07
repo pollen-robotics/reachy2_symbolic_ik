@@ -1,8 +1,10 @@
-from scipy.spatial.transform import Rotation as R
 import math
-import numpy as np
-import matplotlib.pyplot as plt
 import time
+from typing import Any, List, Optional, Tuple
+
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.spatial.transform import Rotation as R
 
 SHOW_GRAPH = False
 
@@ -10,21 +12,15 @@ SHOW_GRAPH = False
 class SymbolicIK:
     def __init__(
         self,
-        grasp_marker_tip_len=0.2,
-        grasp_marker_width=20,
-        upper_arm_size=0.28,
-        forearm_size=0.28,
-        gripper_size=0.15,
-        x_offset=3.0,
-        wrist_limit=45,
-        shoulder_orientation_offset=[10, 0, 15],
-    ):
-        self.grasp_marker_tip_len = grasp_marker_tip_len
-        self.grasp_marker_width = grasp_marker_width
+        upper_arm_size: float = 0.28,
+        forearm_size: float = 0.28,
+        gripper_size: float = 0.15,
+        wrist_limit: int = 45,
+        shoulder_orientation_offset: list[int] = [10, 0, 15],
+    ) -> None:
         self.upper_arm_size = upper_arm_size
         self.forearm_size = forearm_size
         self.gripper_size = gripper_size
-        self.x_offset = x_offset
         self.wrist_limit = wrist_limit
         self.shoulder_orientation_offset = shoulder_orientation_offset
         self.torso_pose = [0.0, 0.0, 0.0]
@@ -40,12 +36,12 @@ class SymbolicIK:
             self.ax.set_ylabel("Y")
             self.ax.set_zlabel("Z")
 
-    def is_reachable(self, goal_pose):
+    def is_reachable(self, goal_pose: List[List[float]]) -> Tuple[bool, list[float], Optional[Any]]:
         self.goal_pose = goal_pose
         self.wrist_position = self.get_wrist_position(goal_pose)
         limitation_wrist_circle = self.get_limitation_wrist_circle(goal_pose)
         intersection_circle = self.get_intersection_circle(goal_pose)
-        if intersection_circle != []:
+        if intersection_circle is not None:
             self.intersection_circle = intersection_circle
             intervalle = self.are_circles_linked(intersection_circle, limitation_wrist_circle)
             if intervalle != []:
@@ -76,7 +72,7 @@ class SymbolicIK:
                     self.show_point(self.torso_pose, "y")
                     self.show_sphere(self.wrist_position, self.forearm_size, "r")
                     self.show_sphere(self.shoulder_position, self.upper_arm_size, "b")
-                    if intersection_circle != []:
+                    if intersection_circle is not None:
                         self.show_circle(
                             intersection_circle[0], intersection_circle[1], intersection_circle[2], [[0, 2 * np.pi]], "g"
                         )
@@ -88,7 +84,7 @@ class SymbolicIK:
                         "y",
                     )
                     plt.show()
-                return [True, intervalle, self.get_joints]
+                return True, intervalle, self.get_joints
 
             if SHOW_GRAPH:
                 self.show_point(goal_pose[0], "g")
@@ -97,7 +93,7 @@ class SymbolicIK:
                 self.show_point(self.torso_pose, "y")
                 self.show_sphere(self.wrist_position, self.forearm_size, "r")
                 self.show_sphere(self.shoulder_position, self.upper_arm_size, "b")
-                if intersection_circle != []:
+                if intersection_circle is not None:
                     self.show_circle(
                         intersection_circle[0], intersection_circle[1], intersection_circle[2], [[0, 2 * np.pi]], "g"
                     )
@@ -105,7 +101,7 @@ class SymbolicIK:
                     limitation_wrist_circle[0], limitation_wrist_circle[1], limitation_wrist_circle[2], [[0, 2 * np.pi]], "y"
                 )
                 plt.show()
-            return [False, [], None]
+            return False, [], None
 
         if SHOW_GRAPH:
             self.show_point(goal_pose[0], "g")
@@ -114,16 +110,16 @@ class SymbolicIK:
             self.show_point(self.torso_pose, "y")
             self.show_sphere(self.wrist_position, self.forearm_size, "r")
             self.show_sphere(self.shoulder_position, self.upper_arm_size, "b")
-            if intersection_circle != []:
+            if intersection_circle is not None:
                 self.show_circle(intersection_circle[0], intersection_circle[1], intersection_circle[2], [[0, 2 * np.pi]], "g")
             self.show_circle(
                 limitation_wrist_circle[0], limitation_wrist_circle[1], limitation_wrist_circle[2], [[0, 2 * np.pi]], "y"
             )
             plt.show()
 
-        return [False, [], None]
+        return False, [], None
 
-    def get_intersection_circle(self, goal_pose):
+    def get_intersection_circle(self, goal_pose: List[List[float]]) -> Optional[Tuple[List[float], float, List[float]]]:
         wrist_in_shoulder_frame = [
             self.wrist_position[0],
             self.wrist_position[1] - self.shoulder_position[1],
@@ -132,7 +128,7 @@ class SymbolicIK:
         d = np.sqrt(wrist_in_shoulder_frame[0] ** 2 + wrist_in_shoulder_frame[1] ** 2 + wrist_in_shoulder_frame[2] ** 2)
         if d > self.upper_arm_size + self.forearm_size:
             # print("goal not reachable")
-            return []
+            return None
         Mrot = R.from_euler(
             "xyz",
             [
@@ -149,62 +145,77 @@ class SymbolicIK:
         center = [(d**2 - self.forearm_size**2 + self.upper_arm_size**2) / (2 * d), 0, 0]
         center = Mrot.apply(center)
         center = [center[0], center[1] - 0.2, center[2]]
-        normal_vector = [1, 0, 0]
+        normal_vector = [1.0, 0.0, 0.0]
         normal_vector = Mrot.apply(normal_vector)
-        return [center, radius, normal_vector]
+        return center, radius, normal_vector
 
-    def get_limitation_wrist_circle(self, goal_pose):
-        normal_vector = [
-            self.wrist_position[0] - goal_pose[0][0],
-            self.wrist_position[1] - goal_pose[0][1],
-            self.wrist_position[2] - goal_pose[0][2],
-        ]
+    def get_limitation_wrist_circle(self, goal_pose: List[List[float]]) -> Tuple[List[float], float, List[float]]:
+        normal_vector = np.array(
+            [
+                self.wrist_position[0] - goal_pose[0][0],
+                self.wrist_position[1] - goal_pose[0][1],
+                self.wrist_position[2] - goal_pose[0][2],
+            ]
+        )
         radius = np.sin(np.radians(self.wrist_limit)) * self.forearm_size
         vector = normal_vector / np.linalg.norm(normal_vector) * np.sqrt(self.forearm_size**2 - radius**2)
         center = self.wrist_position + vector
-        return [center, radius, normal_vector]
+        return center, radius, list(normal_vector)
 
-    def get_wrist_position(self, goal_pose):
+    def get_wrist_position(self, goal_pose: List[List[float]]) -> List[float]:
         Mrot = R.from_euler("xyz", goal_pose[1])
-        wrist_pos = Mrot.apply([0.0, 0.0, self.gripper_size])
+        wrist_pos = list(Mrot.apply([0.0, 0.0, self.gripper_size]))
         wrist_pos = [wrist_pos[0] + goal_pose[0][0], wrist_pos[1] + goal_pose[0][1], wrist_pos[2] + goal_pose[0][2]]
         return wrist_pos
 
-    def rotation_matrix_from_vectors(self, vec1, vec2):
-        """Find the rotation matrix that aligns vec1 to vec2
-        :param vec1: A 3d "source" vector
-        :param vec2: A 3d "destination" vector
-        :return mat: A transform matrix (3x3) which when applied to vec1, aligns it with vec2.
+    def rotation_matrix_from_vectors(self, vect1: np.ndarray[float], vect2: np.ndarray[float]) -> np.ndarray[float]:
+        """Find the rotation matrix that aligns vect1 to vect2
+        :param vect1: A 3d "source" vector
+        :param vect2: A 3d "destination" vector
+        :return mat: A transform matrix (3x3) which when applied to vect1, aligns it with vect2.
         """
-        if np.all(np.isclose(vec1, vec2)):
+        if np.all(np.isclose(vect1, vect2)):
             return np.eye(3)
-        a, b = (vec1 / np.linalg.norm(vec1)).reshape(3), (vec2 / np.linalg.norm(vec2)).reshape(3)
+        a, b = (vect1 / np.linalg.norm(vect1)).reshape(3), (vect2 / np.linalg.norm(vect2)).reshape(3)
         v = np.cross(a, b)
         c = np.dot(a, b)
         s = np.linalg.norm(v)
         kmat = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
-        rotation_matrix = np.eye(3) + kmat + kmat.dot(kmat) * ((1 - c) / (s**2))
+        rotation_matrix = np.array(np.eye(3) + kmat + kmat.dot(kmat) * ((1 - c) / (s**2)))
         return rotation_matrix
 
-    def are_circles_linked(self, intersection_circle, limitation_wrist_circle):
-        [p1, r1, n1] = limitation_wrist_circle
-        [p2, r2, n2] = intersection_circle
+    def are_circles_linked(
+        self,
+        intersection_circle: Tuple[List[float], float, List[float]],
+        limitation_wrist_circle: Tuple[List[float], float, List[float]],
+    ) -> List[float]:
+        r1 = limitation_wrist_circle[1]
+        r2 = intersection_circle[1]
 
-        p1 = np.array([p1[0] - self.wrist_position[0], p1[1] - self.wrist_position[1], p1[2] - self.wrist_position[2]])
-        p2 = np.array([p2[0] - self.wrist_position[0], p2[1] - self.wrist_position[1], p2[2] - self.wrist_position[2]])
-        n2 = np.array(n2)
-        n1 = np.array(n1)
-
-        Rmat_intersection = self.rotation_matrix_from_vectors(np.array([1, 0, 0]), n2)
-        Tmat_intersection = self.make_homogenous_matrix(p2, Rmat_intersection)
-        Tmat_intersection = np.array(
+        p1 = np.array(
             [
-                [Rmat_intersection[0][0], Rmat_intersection[0][1], Rmat_intersection[0][2], p2[0]],
-                [Rmat_intersection[1][0], Rmat_intersection[1][1], Rmat_intersection[1][2], p2[1]],
-                [Rmat_intersection[2][0], Rmat_intersection[2][1], Rmat_intersection[2][2], p2[2]],
-                [0, 0, 0, 1],
+                limitation_wrist_circle[0][0] - self.wrist_position[0],
+                limitation_wrist_circle[0][1] - self.wrist_position[1],
+                limitation_wrist_circle[0][2] - self.wrist_position[2],
             ]
         )
+        p2 = np.array(
+            [
+                intersection_circle[0][0] - self.wrist_position[0],
+                intersection_circle[0][1] - self.wrist_position[1],
+                intersection_circle[0][2] - self.wrist_position[2],
+            ]
+        )
+        n2 = np.array(intersection_circle[2])
+        n1 = np.array(limitation_wrist_circle[2])
+
+        Rmat_intersection = self.rotation_matrix_from_vectors(np.array([1, 0, 0]), n2)
+        Tmat_intersection = [
+            [Rmat_intersection[0][0], Rmat_intersection[0][1], Rmat_intersection[0][2], p2[0]],
+            [Rmat_intersection[1][0], Rmat_intersection[1][1], Rmat_intersection[1][2], p2[1]],
+            [Rmat_intersection[2][0], Rmat_intersection[2][1], Rmat_intersection[2][2], p2[2]],
+            [0, 0, 0, 1],
+        ]
         Rmat_intersection_t = Rmat_intersection.T
         torso_in_intersection_frame = np.dot(-Rmat_intersection_t, p2)
         Tmat_intersection_t = self.make_homogenous_matrix(torso_in_intersection_frame, Rmat_intersection_t)
@@ -215,7 +226,6 @@ class SymbolicIK:
         Tmat_limitation_t = self.make_homogenous_matrix(torso_in_wrist_limitation_frame, Rmat_limitation_t)
 
         center1 = np.array([p1[0], p1[1], p1[2], 1])
-        center2 = np.array([p2[0], p2[1], p2[2], 1])
         center1_in_sphere_frame = np.dot(Tmat_intersection_t, center1)
         n1_in_sphere_frame = np.dot(Rmat_intersection_t, n1)
 
@@ -235,7 +245,7 @@ class SymbolicIK:
         else:
             # Find the line of intersection of the planes
             q, v = self.points_of_nearest_approach(p1, n1, p2, n2)
-            if q is None:
+            if q == []:
                 if (center1_in_sphere_frame[0] > 0 and n1_in_sphere_frame[0] < 0) or (
                     center1_in_sphere_frame[0] < 0 and n1_in_sphere_frame[0] > 0
                 ):
@@ -252,87 +262,94 @@ class SymbolicIK:
                     return [0, 2 * np.pi]
                 else:
                     return []
-            if SHOW_GRAPH:
-                for point in points:
-                    plt.plot(
-                        point[0] + self.wrist_position[0],
-                        point[1] + self.wrist_position[1],
-                        point[2] + self.wrist_position[2],
-                        "ro",
-                    )
-
-            if len(points) == 1:
-                point = [points[0][0], points[0][1], points[0][2], 1]
-                point_in_sphere_frame = np.dot(Tmat_intersection_t, point)
-                angle = math.atan2(point_in_sphere_frame[2], point_in_sphere_frame[1])
-                if angle < 0:
-                    angle = angle + 2 * np.pi
-                intervalle = [angle, angle]
+            else:
+                intervalle = self.get_intervalle_from_intersection(
+                    points, Tmat_intersection_t, Tmat_intersection, Tmat_limitation_t, r2
+                )
                 return intervalle
 
-            if len(points == 2):
-                point1 = [points[0][0], points[0][1], points[0][2], 1]
-                point2 = [points[1][0], points[1][1], points[1][2], 1]
-                point1_in_sphere_frame = np.dot(Tmat_intersection_t, point1)
-                self.intersection = (
-                    point1[0] + self.wrist_position[0],
-                    point1[1] + self.wrist_position[1],
-                    point1[2] + self.wrist_position[2],
-                )
-
-                point2_in_sphere_frame = np.dot(Tmat_intersection_t, point2)
-                angle1 = math.atan2(point1_in_sphere_frame[2], point1_in_sphere_frame[1])
-                angle2 = math.atan2(point2_in_sphere_frame[2], point2_in_sphere_frame[1])
-
-                if angle1 < 0:
-                    angle1 = angle1 + 2 * np.pi
-                if angle2 < 0:
-                    angle2 = angle2 + 2 * np.pi
-
-                [angle1, angle2] = sorted([angle1, angle2])
-                angle_test = (angle1 + angle2) / 2
-                test_point = np.array([0, math.cos(angle_test) * r2, math.sin(angle_test) * r2, 1])
-                test_point = np.dot(Tmat_intersection, test_point)
-                # test_point = [test_point[0] + self.wrist_position[0], test_point[1] + self.wrist_position[1], test_point[2] + self.wrist_position[2],1]
-                if SHOW_GRAPH:
-                    self.ax.plot(
-                        test_point[0] + self.wrist_position[0],
-                        test_point[1] + self.wrist_position[1],
-                        test_point[2] + self.wrist_position[2],
-                        "ro",
-                    )
-
-                test_point_in_wrist_frame = np.dot(Tmat_limitation_t, test_point)
-
-                if test_point_in_wrist_frame[0] > 0:
-                    intervalle = [angle1, angle2]
-                else:
-                    intervalle = [angle2, np.pi * 2 + angle1]
+    def get_intervalle_from_intersection(
+        self,
+        points: np.ndarray[float],
+        Tmat_intersection_t: List[List[float]],
+        Tmat_intersection: List[List[float]],
+        Tmat_limitation_t: List[List[float]],
+        r2: float,
+    ) -> List[float]:
+        if len(points) == 1:
+            point = [points[0][0], points[0][1], points[0][2], 1]
+            point_in_sphere_frame = np.dot(Tmat_intersection_t, point)
+            angle = math.atan2(point_in_sphere_frame[2], point_in_sphere_frame[1])
+            if angle < 0:
+                angle = angle + 2 * np.pi
+            intervalle = [angle, angle]
             return intervalle
 
-    def intersection_point(self, v1, p01, v2, p02):
+        if len(points) == 2:
+            point1 = [points[0][0], points[0][1], points[0][2], 1]
+            point2 = [points[1][0], points[1][1], points[1][2], 1]
+            point1_in_sphere_frame = np.dot(Tmat_intersection_t, point1)
+            self.intersection = (
+                point1[0] + self.wrist_position[0],
+                point1[1] + self.wrist_position[1],
+                point1[2] + self.wrist_position[2],
+            )
+
+            point2_in_sphere_frame = np.dot(Tmat_intersection_t, point2)
+            angle1 = math.atan2(point1_in_sphere_frame[2], point1_in_sphere_frame[1])
+            angle2 = math.atan2(point2_in_sphere_frame[2], point2_in_sphere_frame[1])
+
+            if angle1 < 0:
+                angle1 = angle1 + 2 * np.pi
+            if angle2 < 0:
+                angle2 = angle2 + 2 * np.pi
+
+            [angle1, angle2] = sorted([angle1, angle2])
+            angle_test = (angle1 + angle2) / 2
+            test_point = np.array([0, math.cos(angle_test) * r2, math.sin(angle_test) * r2, 1])
+            test_point = np.dot(Tmat_intersection, test_point)
+            if SHOW_GRAPH:
+                self.ax.plot(
+                    test_point[0] + self.wrist_position[0],
+                    test_point[1] + self.wrist_position[1],
+                    test_point[2] + self.wrist_position[2],
+                    "ro",
+                )
+
+            test_point_in_wrist_frame = np.dot(Tmat_limitation_t, test_point)
+
+            if test_point_in_wrist_frame[0] > 0:
+                intervalle = [angle1, angle2]
+            else:
+                intervalle = [angle2, np.pi * 2 + angle1]
+        return intervalle
+
+    def intersection_point(
+        self, v1: np.ndarray[float], p01: np.ndarray[float], v2: np.ndarray[float], p02: np.ndarray[float]
+    ) -> List[float]:
         A = np.vstack((v1, -v2)).T
         b = p02 - p01
         params, _, _, _ = np.linalg.lstsq(A, b, rcond=None)
-        # print(A)
-        # print(b)
-        # print(params)
 
         if np.all(np.isclose(params, params[0])):
-            return None
+            return []
 
-        intersection = v1 * params[0] + p01
+        intersection = list(v1 * params[0] + p01)
         return intersection
 
-    def points_of_nearest_approach(self, p1, n1, p2, n2):
+    def points_of_nearest_approach(
+        self, p1: np.ndarray[float], n1: np.ndarray[float], p2: np.ndarray[float], n2: np.ndarray[float]
+    ) -> Tuple[np.ndarray[float], np.ndarray[float]]:
         v = np.cross(n1, n2)
         v = v / np.linalg.norm(v)
         vect1 = np.cross(v, n1)
         vect2 = np.cross(v, n2)
-        q = self.intersection_point(vect1, p1, vect2, p2)
+        q = np.array(self.intersection_point(vect1, p1, vect2, p2))
         return q, v
 
-    def intersection_circle_line_3d_vd(self, center, radius, direction, point_on_line):
+    def intersection_circle_line_3d_vd(
+        self, center: np.ndarray[float], radius: float, direction: np.ndarray[float], point_on_line: np.ndarray[float]
+    ) -> Optional[np.ndarray[np.ndarray[float]]]:
         a = np.dot(direction, direction)
         b = 2 * np.dot(direction, point_on_line - center)
         c = np.dot(point_on_line - center, point_on_line - center) - radius**2
@@ -350,10 +367,20 @@ class SymbolicIK:
             t2 = (-b - np.sqrt(discriminant)) / (2 * a)
             intersection1 = point_on_line + t1 * direction
             intersection2 = point_on_line + t2 * direction
-        return np.vstack((intersection1, intersection2))
 
-    def get_coordinate_cercle(self, intersection_circle, theta):
-        Rmat = self.rotation_matrix_from_vectors(np.array([1, 0, 0]), intersection_circle[2])
+        points = np.vstack((intersection1, intersection2))
+        if SHOW_GRAPH:
+            for point in points:
+                plt.plot(
+                    point[0] + self.wrist_position[0],
+                    point[1] + self.wrist_position[1],
+                    point[2] + self.wrist_position[2],
+                    "ro",
+                )
+        return points
+
+    def get_coordinate_cercle(self, intersection_circle: Tuple[List[float], float, List[float]], theta: float) -> List[float]:
+        Rmat = self.rotation_matrix_from_vectors(np.array([1, 0, 0]), np.array(intersection_circle[2]))
         Tmat = np.array(
             [
                 [Rmat[0][0], Rmat[0][1], Rmat[0][2], intersection_circle[0][0]],
@@ -367,9 +394,9 @@ class SymbolicIK:
         z = intersection_circle[1] * np.sin(theta)
         P = np.array([x, y, z, 1])
         P = np.dot(Tmat, P)
-        return P
+        return list(P)
 
-    def make_transformation_matrix(self, position, orientation):
+    def make_transformation_matrix(self, position: List[float], orientation: List[float]) -> np.ndarray:
         Mrot = (R.from_euler("xyz", orientation)).as_matrix()
         T = np.array(
             [
@@ -381,7 +408,7 @@ class SymbolicIK:
         )
         return T
 
-    def make_homogenous_matrix(self, position, rotation_matrix):
+    def make_homogenous_matrix(self, position: List[float], rotation_matrix: np.ndarray[float]) -> List[List[float]]:
         return [
             [rotation_matrix[0][0], rotation_matrix[0][1], rotation_matrix[0][2], position[0]],
             [rotation_matrix[1][0], rotation_matrix[1][1], rotation_matrix[1][2], position[1]],
@@ -389,7 +416,7 @@ class SymbolicIK:
             [0.0, 0.0, 0.0, 1.0],
         ]
 
-    def get_joints(self, theta):
+    def get_joints(self, theta: float) -> List[float]:
         elbow_position = self.get_coordinate_cercle(self.intersection_circle, theta)
         wrist_position = self.wrist_position
         tip_position = self.goal_pose[0]
@@ -498,10 +525,12 @@ class SymbolicIK:
 
     # ----------------------- show functions -----------------------
 
-    def show_point(self, point, color):
+    def show_point(self, point: List[float], color: str) -> None:
         self.ax.plot(point[0], point[1], point[2], "o", color=color)
 
-    def show_circle(self, center, radius, normal_vector, intervalles, color):
+    def show_circle(
+        self, center: List[float], radius: float, normal_vector: List[float], intervalles: List[List[float]], color: str
+    ) -> None:
         theta = []
         for intervalle in intervalles:
             angle = np.linspace(intervalle[0], intervalle[1], 100)
@@ -511,7 +540,7 @@ class SymbolicIK:
         y = radius * np.cos(theta)
         z = radius * np.sin(theta)
         x = np.zeros(len(theta))
-        Rmat = self.rotation_matrix_from_vectors(np.array([1, 0, 0]), normal_vector)
+        Rmat = self.rotation_matrix_from_vectors(np.array([1.0, 0.0, 0.0]), np.array(normal_vector))
         Tmat = np.array(
             [
                 [Rmat[0][0], Rmat[0][1], Rmat[0][2], center[0]],
@@ -533,8 +562,8 @@ class SymbolicIK:
         self.ax.plot(center[0], center[1], center[2], "o", color=color)
         self.ax.plot(x2, y2, z2, color)
 
-    def show_sphere(self, center, radius, color):
-        u, v = np.mgrid[0 : 2 * np.pi : 30j, 0 : np.pi : 20j]
+    def show_sphere(self, center: List[float], radius: float, color: str) -> None:
+        u, v = np.mgrid[0 : 2 * np.pi : 30j, 0 : np.pi : 20j]  # type: ignore
         x = np.cos(u) * np.sin(v) * radius + center[0]
         y = np.sin(u) * np.sin(v) * radius + center[1]
         z = np.cos(v) * radius + center[2]
@@ -545,8 +574,8 @@ if __name__ == "__main__":
     ik = SymbolicIK()
 
     goal_position = [0.3, -0.1, 0.1]
-    goal_orientation = [20, -50, 20]
-    goal_orientation = np.deg2rad(goal_orientation)
+    goal_orientation = [20.0, -50.0, 20.0]
+    goal_orientation = [np.radians(angle) for angle in goal_orientation]
     goal_pose = [goal_position, goal_orientation]
 
     # T = ik.make_transformation_matrix(goal_position, goal_orientation)
@@ -659,11 +688,17 @@ if __name__ == "__main__":
 
     # start_time = time.time()
     # for i in range(10000):
-    #     ik.points_of_nearest_approach(limitation_wrist_circle[0], limitation_wrist_circle[2], intersection_circle[0], intersection_circle[2])
+    # ik.points_of_nearest_approach(limitation_wrist_circle[0],
+    #                               limitation_wrist_circle[2],
+    #                               intersection_circle[0],
+    #                               intersection_circle[2])
     # end_time = time.time()
     # print("points_of_nearest_approach", end_time - start_time)
 
-    # q,v = ik.points_of_nearest_approach(limitation_wrist_circle[0], limitation_wrist_circle[2], intersection_circle[0], intersection_circle[2])
+    # q,v = ik.points_of_nearest_approach(limitation_wrist_circle[0],
+    #                                     limitation_wrist_circle[2],
+    #                                     intersection_circle[0],
+    #                                     intersection_circle[2])
 
     # start_time = time.time()
     # for i in range(10000):

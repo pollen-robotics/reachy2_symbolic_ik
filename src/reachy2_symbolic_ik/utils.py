@@ -1,10 +1,14 @@
 import math
 import time
-import numpy as np
+from typing import List
+
+# import numpy as np
 from reachy_placo.ik_reachy_placo import IKReachyQP
 
 
-def go_to_position(reachy_placo: IKReachyQP, joint_pose=[0.0, 0.0, 0.0, -math.pi / 2, 0.0, 0.0, 0.0], wait=10) -> None:
+def go_to_position(
+    reachy_placo: IKReachyQP, joint_pose: List[float] = [0.0, 0.0, 0.0, -math.pi / 2, 0.0, 0.0, 0.0], wait: int = 10
+) -> None:
     """
     Show pose with the r_arm in meshcat
     args:
@@ -18,7 +22,7 @@ def go_to_position(reachy_placo: IKReachyQP, joint_pose=[0.0, 0.0, 0.0, -math.pi
     time.sleep(wait)
 
 
-def r_arm_joint_names() -> list:
+def r_arm_joint_names() -> List[str]:
     names = []
     names.append("r_shoulder_pitch")
     names.append("r_shoulder_roll")

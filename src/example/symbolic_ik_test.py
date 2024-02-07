@@ -1,15 +1,15 @@
-from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
+from pathlib import Path
+from typing import List
+
 import numpy as np
 from reachy_placo.ik_reachy_placo import IKReachyQP
-import math
-import time
 from scipy.spatial.transform import Rotation as R
-from grasping_utils.utils import get_homogeneous_matrix_msg_from_euler
-from importlib.resources import files
+
+from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
 from reachy2_symbolic_ik.utils import go_to_position
 
 
-def are_joints_correct(placo_ik: IKReachyQP, joints: list, goal_pose) -> bool:
+def are_joints_correct(placo_ik: IKReachyQP, joints: List[float], goal_pose: List[List[float]]) -> bool:
     go_to_position(placo_ik, joints, wait=0)
     T_torso_tip = placo_ik.robot.get_T_a_b("torso", "r_tip_joint")
     position = T_torso_tip[:3, 3]
@@ -32,7 +32,7 @@ def are_joints_correct(placo_ik: IKReachyQP, joints: list, goal_pose) -> bool:
 
 def main_test() -> None:
     symbolib_ik = SymbolicIK()
-    urdf_path = files("config_files")
+    urdf_path = Path("src/config_files")
     for file in urdf_path.glob("**/*.urdf"):
         if file.stem == "reachy2":
             urdf_path = file.resolve()
@@ -50,8 +50,7 @@ def main_test() -> None:
     placo_ik.create_tasks()
 
     goal_position = [0.4, 0.1, -0.4]
-    goal_orientation = [20, -80, 10]
-    goal_orientation = np.deg2rad(goal_orientation)
+    goal_orientation = [np.radians(20), np.radians(-80), np.radians(10)]
     goal_pose = [goal_position, goal_orientation]
     result = symbolib_ik.is_reachable(goal_pose)
     if result[0]:
