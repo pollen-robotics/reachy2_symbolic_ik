@@ -45,7 +45,7 @@ class SymbolicIK:
         if intersection_circle is not None:
             self.intersection_circle = intersection_circle
             intervalle = self.are_circles_linked(intersection_circle, limitation_wrist_circle)
-            if intervalle != []:
+            if len(intervalle) > 0:
                 if SHOW_GRAPH:
                     elbow_position = self.get_coordinate_cercle(intersection_circle, intervalle[0])
                     self.show_point(elbow_position, "r")
