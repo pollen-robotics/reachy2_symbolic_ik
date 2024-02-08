@@ -20,7 +20,7 @@ jobs:
           pip install .[dev]
       - name: Unit tests
         run: |
-          coverage run -m pytest
+          coverage run -m pytest -m noplaco
           coverage xml
           coverage json
           coverage html

@@ -1,31 +1,17 @@
 from pathlib import Path
 
 import numpy as np
-from reachy_placo.ik_reachy_placo import IKReachyQP
+
+# from scipy.spatial.transform import Rotation as R
+import pytest
 from scipy.spatial.transform import Rotation as R
 
 from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
 
 
+@pytest.mark.noplaco
 def test_class() -> None:
-    urdf_path = Path("src/config_files")
-    for file in urdf_path.glob("**/*.urdf"):
-        if file.stem == "reachy2":
-            urdf_path = file.resolve()
-            break
-
     symbolic_ik = SymbolicIK(upper_arm_size=0.28, forearm_size=0.28, gripper_size=0.15)
-    placo_ik = IKReachyQP(
-        viewer_on=True,
-        collision_avoidance=False,
-        parts=["r_arm"],
-        position_weight=1.9,
-        orientation_weight=1e-2,
-        robot_version="reachy_2",
-        velocity_limit=50.0,
-    )
-    placo_ik.setup(urdf_path=str(urdf_path))
-    placo_ik.create_tasks()
     assert symbolic_ik is not None
 
     goal_position = [0.4, 0.2, 0.1]
@@ -36,7 +22,7 @@ def test_class() -> None:
     result = symbolic_ik.is_reachable(goal_pose)
 
     assert not (result[0])
-    assert result[1] == []
+    assert len(result[1]) == 0
     assert result[2] is None
 
     goal_position = [0.3, -0.2, -0.3]
@@ -67,6 +53,38 @@ def test_class() -> None:
     joints = result[2](0)
 
     assert len(joints) == 7
+
+
+def test_full() -> None:
+    from reachy_placo.ik_reachy_placo import IKReachyQP
+
+    symbolic_ik = SymbolicIK(upper_arm_size=0.28, forearm_size=0.28, gripper_size=0.15)
+    assert symbolic_ik is not None
+
+    urdf_path = Path("src/config_files")
+    for file in urdf_path.glob("**/*.urdf"):
+        if file.stem == "reachy2":
+            urdf_path = file.resolve()
+            break
+
+    placo_ik = IKReachyQP(
+        viewer_on=True,
+        collision_avoidance=False,
+        parts=["r_arm"],
+        position_weight=1.9,
+        orientation_weight=1e-2,
+        robot_version="reachy_2",
+        velocity_limit=50.0,
+    )
+    placo_ik.setup(urdf_path=str(urdf_path))
+    placo_ik.create_tasks()
+
+    goal_position = [0.0, -0.2, -0.71]
+    goal_orientation = [0.0, 0.0, 0.0]
+    goal_pose = [goal_position, goal_orientation]
+
+    result = symbolic_ik.is_reachable(goal_pose)
+    joints = result[2](0)
 
     names = [
         "r_shoulder_pitch",
