@@ -1,7 +1,7 @@
 from pathlib import Path
-from typing import List
 
 import numpy as np
+import numpy.typing as npt
 from reachy_placo.ik_reachy_placo import IKReachyQP
 from scipy.spatial.transform import Rotation as R
 
@@ -9,7 +9,7 @@ from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
 from reachy2_symbolic_ik.utils import go_to_position
 
 
-def are_joints_correct(placo_ik: IKReachyQP, joints: List[float], goal_pose: List[List[float]]) -> bool:
+def are_joints_correct(placo_ik: IKReachyQP, joints: npt.NDArray[float], goal_pose: npt.NDArray[float]) -> bool:
     go_to_position(placo_ik, joints, wait=0)
     T_torso_tip = placo_ik.robot.get_T_a_b("torso", "r_tip_joint")
     position = T_torso_tip[:3, 3]
@@ -51,7 +51,7 @@ def main_test() -> None:
 
     goal_position = [0.4, 0.1, -0.4]
     goal_orientation = [np.radians(20), np.radians(-80), np.radians(10)]
-    goal_pose = [goal_position, goal_orientation]
+    goal_pose = np.array([goal_position, goal_orientation])
     result = symbolib_ik.is_reachable(goal_pose)
     if result[0]:
         joints = result[2](result[1][0])

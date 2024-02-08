@@ -1,6 +1,6 @@
 import math
 import time
-from typing import Any, List, Optional, Tuple
+from typing import Any, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -359,15 +359,15 @@ class SymbolicIK:
         p01: npt.NDArray[np.float64],
         v2: npt.NDArray[np.float64],
         p02: npt.NDArray[np.float64],
-    ) -> List[np.float64]:
+    ) -> npt.NDArray[np.float64]:
         A = np.vstack((v1, -v2)).T
         b = np.subtract(p02, p01)
         params, _, _, _ = np.linalg.lstsq(A, b, rcond=None)
 
         if np.all(np.isclose(params, params[0])):
-            return []
+            return np.array([])
 
-        intersection = list(v1 * params[0] + p01)
+        intersection = v1 * np.float64(params[0]) + p01
         return intersection
 
     def points_of_nearest_approach(
@@ -461,7 +461,7 @@ class SymbolicIK:
             ]
         )
 
-    def get_joints(self, theta: float) -> List[np.float64]:
+    def get_joints(self, theta: float) -> npt.NDArray[np.float64]:
         elbow_position = self.get_coordinate_cercle(self.intersection_circle, theta)
         wrist_position = self.wrist_position
         tip_position = self.goal_pose[0]
@@ -552,7 +552,7 @@ class SymbolicIK:
 
         gamma_wrist = -math.atan2(x_in_wrist[1], x_in_wrist[2])
 
-        joints = [alpha_shoulder, beta_shoulder, alpha_elbow, beta_elbow, beta_wrist, alpha_wrist, gamma_wrist]
+        joints = np.array([alpha_shoulder, beta_shoulder, alpha_elbow, beta_elbow, beta_wrist, alpha_wrist, gamma_wrist])
 
         # norm = np.sqrt(
         #     (self.shoulder_position[0] - self.wrist_position[0]) ** 2
