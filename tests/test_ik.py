@@ -2,12 +2,13 @@
 
 import numpy as np
 
+# from scipy.spatial.transform import Rotation as R
+import pytest
+
 from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
 
-# from reachy_placo.ik_reachy_placo import IKReachyQP
-# from scipy.spatial.transform import Rotation as R
 
-
+@pytest.mark.noplaco
 def test_class() -> None:
     # urdf_path = Path("src/config_files")
     # for file in urdf_path.glob("**/*.urdf"):
@@ -56,7 +57,7 @@ def test_class() -> None:
     assert len(joints) == 7
 
     goal_position = [0.0, -0.2, -0.71]
-    goal_orientation = [0., 0., 0.]
+    goal_orientation = [0.0, 0.0, 0.0]
     goal_pose = [goal_position, goal_orientation]
 
     result = symbolic_ik.is_reachable(goal_pose)
@@ -91,3 +92,9 @@ def test_class() -> None:
 
     # assert np.allclose(position, goal_position)
     # assert np.allclose(orientation, goal_orientation)
+
+
+def test_full() -> None:
+    from reachy_placo.ik_reachy_placo import IKReachyQP
+
+    # Todo move test with Placo here
