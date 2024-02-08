@@ -9,7 +9,7 @@ from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
 from reachy2_symbolic_ik.utils import go_to_position
 
 
-def are_joints_correct(placo_ik: IKReachyQP, joints: npt.NDArray[float], goal_pose: npt.NDArray[float]) -> bool:
+def are_joints_correct(placo_ik: IKReachyQP, joints: npt.NDArray[np.float64], goal_pose: npt.NDArray[np.float64]) -> bool:
     go_to_position(placo_ik, joints, wait=0)
     T_torso_tip = placo_ik.robot.get_T_a_b("torso", "r_tip_joint")
     position = T_torso_tip[:3, 3]
