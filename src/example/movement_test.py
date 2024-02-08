@@ -1,14 +1,14 @@
 from pathlib import Path
-from typing import List
 
 import numpy as np
+import numpy.typing as npt
 from reachy_placo.ik_reachy_placo import IKReachyQP
 
 from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
 from reachy2_symbolic_ik.utils import go_to_position
 
 
-def make_movement_test(symbolic_ik: SymbolicIK, placo_ik: IKReachyQP, goal_pose: List[List[float]]) -> None:
+def make_movement_test(symbolic_ik: SymbolicIK, placo_ik: IKReachyQP, goal_pose: npt.NDArray[np.float64]) -> None:
     result = symbolic_ik.is_reachable(goal_pose)
     if result[0]:
         print(int((result[1][1] - result[1][0]) * 50))
@@ -24,10 +24,10 @@ def make_movement_test(symbolic_ik: SymbolicIK, placo_ik: IKReachyQP, goal_pose:
 def make_line(
     symbolic_ik: SymbolicIK,
     placo_ik: IKReachyQP,
-    start_position: List[float],
-    end_position: List[float],
-    start_orientation: List[float],
-    end_orientation: List[float],
+    start_position: npt.NDArray[np.float64],
+    end_position: npt.NDArray[np.float64],
+    start_orientation: npt.NDArray[np.float64],
+    end_orientation: npt.NDArray[np.float64],
     nb_points: int = 100,
 ) -> None:
     x = np.linspace(start_position[0], end_position[0], nb_points)
@@ -72,10 +72,10 @@ def main_test() -> None:
     # goal_pose = [goal_position, goal_orientation]
     # make_movement_test(symbolib_ik, placo_ik, goal_pose)
 
-    start_position = [0.4, 0.1, -0.4]
-    end_position = [0.3, -0.2, -0.1]
-    start_orientation = [0.35, -1.40, 0.17]
-    end_orientation = [0.0, -0.0, 0.0]
+    start_position = np.array([0.4, 0.1, -0.4])
+    end_position = np.array([0.3, -0.2, -0.1])
+    start_orientation = np.array([0.35, -1.40, 0.17])
+    end_orientation = np.array([0.0, -0.0, 0.0])
     make_line(symbolic_ik, placo_ik, start_position, end_position, start_orientation, end_orientation, nb_points=300)
 
 

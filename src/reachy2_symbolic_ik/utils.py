@@ -2,12 +2,17 @@ import math
 import time
 from typing import List
 
+import numpy as np
+import numpy.typing as npt
+
 # import numpy as np
 from reachy_placo.ik_reachy_placo import IKReachyQP
 
 
 def go_to_position(
-    reachy_placo: IKReachyQP, joint_pose: List[float] = [0.0, 0.0, 0.0, -math.pi / 2, 0.0, 0.0, 0.0], wait: int = 10
+    reachy_placo: IKReachyQP,
+    joint_pose: npt.NDArray[np.float64] = np.array([0.0, 0.0, 0.0, -math.pi / 2, 0.0, 0.0, 0.0]),
+    wait: int = 10,
 ) -> None:
     """
     Show pose with the r_arm in meshcat
