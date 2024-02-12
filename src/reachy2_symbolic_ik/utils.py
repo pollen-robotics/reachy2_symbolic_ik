@@ -56,14 +56,7 @@ def show_circle(
     z = radius * np.sin(theta)
     x = np.zeros(len(theta))
     Rmat = rotation_matrix_from_vectors(np.array([1.0, 0.0, 0.0]), np.array(normal_vector))
-    Tmat = np.array(
-        [
-            [Rmat[0][0], Rmat[0][1], Rmat[0][2], center[0]],
-            [Rmat[1][0], Rmat[1][1], Rmat[1][2], center[1]],
-            [Rmat[2][0], Rmat[2][1], Rmat[2][2], center[2]],
-            [0, 0, 0, 1],
-        ]
-    )
+    Tmat = make_homogenous_matrix_from_rotation_matrix(center, Rmat)
 
     x2 = np.zeros(len(theta))
     y2 = np.zeros(len(theta))

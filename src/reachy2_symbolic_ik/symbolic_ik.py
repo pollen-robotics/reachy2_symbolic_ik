@@ -158,20 +158,20 @@ class SymbolicIK:
     def get_intersection_circle(
         self, goal_pose: npt.NDArray[np.float64]
     ) -> Optional[Tuple[npt.NDArray[np.float64], float, npt.NDArray[np.float64]]]:
-        wrist_in_shoulder_frame = [
+        P_shoulder_wrist = [
             self.wrist_position[0],
             self.wrist_position[1] - self.shoulder_position[1],
             self.wrist_position[2],
         ]
-        d = np.sqrt(wrist_in_shoulder_frame[0] ** 2 + wrist_in_shoulder_frame[1] ** 2 + wrist_in_shoulder_frame[2] ** 2)
+        d = np.sqrt(P_shoulder_wrist[0] ** 2 + P_shoulder_wrist[1] ** 2 + P_shoulder_wrist[2] ** 2)
         if d > self.upper_arm_size + self.forearm_size:
             return None
-        Mrot = R.from_euler(
+        M_torso_intersection = R.from_euler(
             "xyz",
             [
                 0.0,
-                -math.asin(wrist_in_shoulder_frame[2] / d),
-                math.atan2(wrist_in_shoulder_frame[1], wrist_in_shoulder_frame[0]),
+                -math.asin(P_shoulder_wrist[2] / d),
+                math.atan2(P_shoulder_wrist[1], P_shoulder_wrist[0]),
             ],
         )
         radius = (
@@ -179,12 +179,12 @@ class SymbolicIK:
             / (2 * d)
             * np.sqrt(4 * d**2 * self.upper_arm_size**2 - (d**2 - self.forearm_size**2 + self.upper_arm_size**2) ** 2)
         )
-        center_in_intersection_frame = np.array([(d**2 - self.forearm_size**2 + self.upper_arm_size**2) / (2 * d), 0, 0])
-        center_in_shoulder_frame = Mrot.apply(center_in_intersection_frame)
-        center = np.array([center_in_shoulder_frame[0], center_in_shoulder_frame[1] - 0.2, center_in_shoulder_frame[2]])
-        normal_vector = np.array([1.0, 0.0, 0.0])
-        normal_vector = Mrot.apply(normal_vector)
-        return center, radius, normal_vector
+        P_intersection_center = np.array([(d**2 - self.forearm_size**2 + self.upper_arm_size**2) / (2 * d), 0, 0])
+        P_shoulder_center = M_torso_intersection.apply(P_intersection_center)
+        P_torso_center = np.array([P_shoulder_center[0], P_shoulder_center[1] - 0.2, P_shoulder_center[2]])
+        V_intersection_normal = np.array([1.0, 0.0, 0.0])
+        V_torso_normal = M_torso_intersection.apply(V_intersection_normal)
+        return P_torso_center, radius, V_torso_normal
 
     def get_limitation_wrist_circle(
         self, goal_pose: npt.NDArray[np.float64]
@@ -202,24 +202,18 @@ class SymbolicIK:
         return center, radius, normal_vector
 
     def get_wrist_position(self, goal_pose: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
-        Mrot = R.from_euler("xyz", goal_pose[1]).as_matrix()
-        wrist_pos_in_torso_frame = np.dot(Mrot, np.array([0.0, 0.0, self.gripper_size]))
-        wrist_pos = np.array(
-            [
-                wrist_pos_in_torso_frame[0] + goal_pose[0][0],
-                wrist_pos_in_torso_frame[1] + goal_pose[0][1],
-                wrist_pos_in_torso_frame[2] + goal_pose[0][2],
-            ]
-        )
-        return wrist_pos
+        M_torso_goalPosition = R.from_euler("xyz", goal_pose[1]).as_matrix()
+        T_torso_goalPosition = make_homogenous_matrix_from_rotation_matrix(goal_pose[0], M_torso_goalPosition)
+        P_torso_wrist = np.array(np.dot(T_torso_goalPosition, np.array([0.0, 0.0, self.gripper_size, 1.0])))
+        return P_torso_wrist[:3]
 
     def are_circles_linked(
         self,
         intersection_circle: Tuple[npt.NDArray[np.float64], float, npt.NDArray[np.float64]],
         limitation_wrist_circle: Tuple[npt.NDArray[np.float64], float, npt.NDArray[np.float64]],
     ) -> npt.NDArray[np.float64]:
-        r1 = limitation_wrist_circle[1]
-        r2 = intersection_circle[1]
+        radius1 = limitation_wrist_circle[1]
+        radius2 = intersection_circle[1]
 
         p1 = np.array(
             [
@@ -235,65 +229,62 @@ class SymbolicIK:
                 intersection_circle[0][2] - self.wrist_position[2],
             ]
         )
-        n2 = np.array(intersection_circle[2])
-        n1 = np.array(limitation_wrist_circle[2])
 
-        Rmat_intersection = rotation_matrix_from_vectors(np.array([1, 0, 0]), n2)
-        Tmat_intersection = np.array(
-            [
-                [Rmat_intersection[0][0], Rmat_intersection[0][1], Rmat_intersection[0][2], p2[0]],
-                [Rmat_intersection[1][0], Rmat_intersection[1][1], Rmat_intersection[1][2], p2[1]],
-                [Rmat_intersection[2][0], Rmat_intersection[2][1], Rmat_intersection[2][2], p2[2]],
-                [0, 0, 0, 1],
-            ]
-        )
-        Rmat_intersection_t = Rmat_intersection.T
-        torso_in_intersection_frame = np.dot(-Rmat_intersection_t, p2)
-        Tmat_intersection_t = make_homogenous_matrix_from_rotation_matrix(torso_in_intersection_frame, Rmat_intersection_t)
+        V_torso_normal1 = np.array(limitation_wrist_circle[2])
+        V_torso_normal2 = np.array(intersection_circle[2])
 
-        Rmat_limitation = rotation_matrix_from_vectors(np.array([1, 0, 0]), n1)
-        Rmat_limitation_t = Rmat_limitation.T
-        torso_in_wrist_limitation_frame = np.dot(-Rmat_limitation_t, p1)
-        Tmat_limitation_t = make_homogenous_matrix_from_rotation_matrix(torso_in_wrist_limitation_frame, Rmat_limitation_t)
+        R_torso_intersection = rotation_matrix_from_vectors(np.array([1, 0, 0]), V_torso_normal2)
+        T_torso_intersection = make_homogenous_matrix_from_rotation_matrix(p2, R_torso_intersection)
 
-        center1 = np.array([p1[0], p1[1], p1[2], 1])
-        center1_in_sphere_frame = np.dot(Tmat_intersection_t, center1)
-        n1_in_sphere_frame = np.dot(Rmat_intersection_t, n1)
+        R_intersection_torso = R_torso_intersection.T
+        P_intersection_torso = np.dot(-R_intersection_torso, p2)
+        T_intersection_torso = make_homogenous_matrix_from_rotation_matrix(P_intersection_torso, R_intersection_torso)
 
-        if np.any(n1 != 0):
-            n1 = n1 / np.linalg.norm(n1)
-        if np.any(n2 != 0):
-            n2 = n2 / np.linalg.norm(n2)
+        R_torso_limitation = rotation_matrix_from_vectors(np.array([1, 0, 0]), V_torso_normal1)
+        R_limitation_torso = R_torso_limitation.T
+        P_limitation_torso = np.dot(-R_limitation_torso, p1)
+        T_limitation_torso = make_homogenous_matrix_from_rotation_matrix(P_limitation_torso, R_limitation_torso)
 
-        if np.all(np.abs(n2 - n1) < 0.0000001) or np.all(np.abs(n2 + n1) < 0.0000001):
+        P_torso_center1 = np.array([p1[0], p1[1], p1[2], 1])
+        P_intersection_center1 = np.dot(T_intersection_torso, P_torso_center1)
+        V_intersection_normal1 = np.dot(R_intersection_torso, V_torso_normal1)
+
+        if np.any(V_torso_normal1 != 0):
+            V_torso_normal1 = V_torso_normal1 / np.linalg.norm(V_torso_normal1)
+        if np.any(V_torso_normal2 != 0):
+            V_torso_normal2 = V_torso_normal2 / np.linalg.norm(V_torso_normal2)
+
+        if np.all(np.abs(V_torso_normal2 - V_torso_normal1) < 0.0000001) or np.all(
+            np.abs(V_torso_normal2 + V_torso_normal1) < 0.0000001
+        ):
             # print("concurrent or parallel")
-            if (center1_in_sphere_frame[0] > 0 and n1_in_sphere_frame[0] < 0) or (
-                center1_in_sphere_frame[0] < 0 and n1_in_sphere_frame[0] > 0
+            if (P_intersection_center1[0] > 0 and V_intersection_normal1[0] < 0) or (
+                P_intersection_center1[0] < 0 and V_intersection_normal1[0] > 0
             ):
                 return np.array([0, 2 * np.pi])
             else:
                 return np.array([])
         else:
             # Find the line of intersection of the planes
-            q, v = self.points_of_nearest_approach(p1, n1, p2, n2)
+            q, v = self.points_of_nearest_approach(p1, V_torso_normal1, p2, V_torso_normal2)
             if len(q) == 0:
-                if (center1_in_sphere_frame[0] > 0 and n1_in_sphere_frame[0] < 0) or (
-                    center1_in_sphere_frame[0] < 0 and n1_in_sphere_frame[0] > 0
+                if (P_intersection_center1[0] > 0 and V_intersection_normal1[0] < 0) or (
+                    P_intersection_center1[0] < 0 and V_intersection_normal1[0] > 0
                 ):
                     return np.array([0, 2 * np.pi])
                 else:
                     return np.array([])
-            points = self.intersection_circle_line_3d_vd(p1, r1, v, q)
+            points = self.intersection_circle_line_3d_vd(p1, radius1, v, q)
             if points is None:
-                if (center1_in_sphere_frame[0] > 0 and n1_in_sphere_frame[0] < 0) or (
-                    center1_in_sphere_frame[0] < 0 and n1_in_sphere_frame[0] > 0
+                if (P_intersection_center1[0] > 0 and V_intersection_normal1[0] < 0) or (
+                    P_intersection_center1[0] < 0 and V_intersection_normal1[0] > 0
                 ):
                     return np.array([0, 2 * np.pi])
                 else:
                     return np.array([])
             else:
                 intervalle = self.get_intervalle_from_intersection(
-                    points, Tmat_intersection_t, Tmat_intersection, Tmat_limitation_t, r2
+                    points, T_intersection_torso, T_torso_intersection, T_limitation_torso, radius2
                 )
                 return intervalle
 
@@ -303,7 +294,7 @@ class SymbolicIK:
         Tmat_intersection_t: npt.NDArray[np.float64],
         Tmat_intersection: npt.NDArray[np.float64],
         Tmat_limitation_t: npt.NDArray[np.float64],
-        r2: float,
+        radius2: float,
     ) -> npt.NDArray[np.float64]:
         if len(points) == 1:
             point = [points[0][0], points[0][1], points[0][2], 1]
@@ -335,7 +326,7 @@ class SymbolicIK:
 
             [angle1, angle2] = sorted([angle1, angle2])
             angle_test = (angle1 + angle2) / 2
-            test_point = np.array([0, math.cos(angle_test) * r2, math.sin(angle_test) * r2, 1])
+            test_point = np.array([0, math.cos(angle_test) * radius2, math.sin(angle_test) * radius2, 1])
             test_point = np.dot(Tmat_intersection, test_point)
             if SHOW_GRAPH:
                 self.ax.plot(
@@ -371,12 +362,16 @@ class SymbolicIK:
         return intersection
 
     def points_of_nearest_approach(
-        self, p1: npt.NDArray[np.float64], n1: npt.NDArray[np.float64], p2: npt.NDArray[np.float64], n2: npt.NDArray[np.float64]
+        self,
+        p1: npt.NDArray[np.float64],
+        V_torso_normal1: npt.NDArray[np.float64],
+        p2: npt.NDArray[np.float64],
+        V_torso_normal2: npt.NDArray[np.float64],
     ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
-        v = np.cross(n1, n2)
+        v = np.cross(V_torso_normal1, V_torso_normal2)
         v = v / np.linalg.norm(v)
-        vect1 = np.cross(v, n1)
-        vect2 = np.cross(v, n2)
+        vect1 = np.cross(v, V_torso_normal1)
+        vect2 = np.cross(v, V_torso_normal2)
         q = np.array(self.intersection_point(vect1, p1, vect2, p2))
         return q, v
 
@@ -419,21 +414,14 @@ class SymbolicIK:
     def get_coordinate_cercle(
         self, intersection_circle: Tuple[npt.NDArray[np.float64], float, npt.NDArray[np.float64]], theta: float
     ) -> npt.NDArray[np.float64]:
-        Rmat = rotation_matrix_from_vectors(np.array([1, 0, 0]), np.array(intersection_circle[2]))
-        Tmat = np.array(
-            [
-                [Rmat[0][0], Rmat[0][1], Rmat[0][2], intersection_circle[0][0]],
-                [Rmat[1][0], Rmat[1][1], Rmat[1][2], intersection_circle[0][1]],
-                [Rmat[2][0], Rmat[2][1], Rmat[2][2], intersection_circle[0][2]],
-                [0, 0, 0, 1],
-            ]
-        )
+        R_torso_intersection = rotation_matrix_from_vectors(np.array([1, 0, 0]), np.array(intersection_circle[2]))
+        T_torso_intersection = make_homogenous_matrix_from_rotation_matrix(intersection_circle[0], R_torso_intersection)
         x = 0
         y = intersection_circle[1] * np.cos(theta)
         z = intersection_circle[1] * np.sin(theta)
-        P = np.array([x, y, z, 1])
-        P = np.dot(Tmat, P)
-        return P
+        P_intersection_point = np.array([x, y, z, 1])
+        P_torso_point = np.array(np.dot(T_torso_intersection, P_intersection_point))
+        return P_torso_point
 
     def get_joints(self, theta: float) -> npt.NDArray[np.float64]:
         elbow_position = self.get_coordinate_cercle(self.intersection_circle, theta)
@@ -441,81 +429,94 @@ class SymbolicIK:
         tip_position = self.goal_pose[0]
         goal_orientation = self.goal_pose[1]
 
-        shoulder_rotation_matrix = R.from_euler("xyz", np.radians(self.shoulder_orientation_offset))
+        P_torso_shoulder = [self.shoulder_position[0], self.shoulder_position[1], self.shoulder_position[2], 1]
+        P_torso_elbow = [elbow_position[0], elbow_position[1], elbow_position[2], 1]
+        P_torso_wrist = [self.wrist_position[0], self.wrist_position[1], self.wrist_position[2], 1]
+        P_torso_goalPosition = [self.goal_pose[0][0], self.goal_pose[0][1], self.goal_pose[0][2], 1]
+
+        M_torso_shoulder = R.from_euler("xyz", np.radians(self.shoulder_orientation_offset))
         offset_rotation_matrix = R.from_euler("xyz", [0.0, np.pi / 2, 0.0])
-        shoulder_rotation_matrix = shoulder_rotation_matrix * offset_rotation_matrix
-        shoulder_rotation_matrix = shoulder_rotation_matrix.as_matrix()
-        shoulder_rotation_matrix_t = shoulder_rotation_matrix.T
-        torso_in_shoulder_frame = np.dot(-shoulder_rotation_matrix_t, self.shoulder_position)
-        T_torso_shoulder = make_homogenous_matrix_from_rotation_matrix(torso_in_shoulder_frame, shoulder_rotation_matrix_t)
-        elbow_in_shoulder = np.dot(T_torso_shoulder, [elbow_position[0], elbow_position[1], elbow_position[2], 1.0])
-        alpha_shoulder = np.arcsin(-elbow_in_shoulder[2] / np.sqrt(elbow_in_shoulder[2] ** 2 + elbow_in_shoulder[0] ** 2))
-        if elbow_in_shoulder[0] < 0:
+        M_torso_shoulder = M_torso_shoulder * offset_rotation_matrix
+        M_torso_shoulder = M_torso_shoulder.as_matrix()
+        M_shoulder_torso = M_torso_shoulder.T
+        P_shoulder_torso = np.dot(-M_shoulder_torso, P_torso_shoulder[:3])
+        T_shoulder_torso = make_homogenous_matrix_from_rotation_matrix(P_shoulder_torso, M_shoulder_torso)
+        P_shoulder_elbow = np.dot(T_shoulder_torso, P_torso_elbow)
+        alpha_shoulder = np.arcsin(-P_shoulder_elbow[2] / np.sqrt(P_shoulder_elbow[2] ** 2 + P_shoulder_elbow[0] ** 2))
+        if P_shoulder_elbow[0] < 0:
             alpha_shoulder = np.pi - alpha_shoulder
 
-        Ry = R.from_euler("xyz", [0.0, -alpha_shoulder, 0.0]).as_matrix()
-        Ty = make_homogenous_matrix_from_rotation_matrix(np.array([0.0, 0.0, 0.0]), Ry)
-        T_shoulder_elbow = np.dot(Ty, T_torso_shoulder)
+        M_shoulderPitch_shoulder = R.from_euler("xyz", [0.0, -alpha_shoulder, 0.0]).as_matrix()
+        T_shoulderPitch_shoulder = make_homogenous_matrix_from_rotation_matrix(
+            np.array([0.0, 0.0, 0.0]), M_shoulderPitch_shoulder
+        )
+        T_shoulderPitch_torso = np.dot(T_shoulderPitch_shoulder, T_shoulder_torso)
 
-        elbow_in_shoulder_bis = np.dot(T_shoulder_elbow, [elbow_position[0], elbow_position[1], elbow_position[2], 1.0])
-        x_bis = elbow_in_shoulder_bis[0]
-        beta_shoulder = np.arccos(x_bis / self.upper_arm_size)
-        if elbow_in_shoulder[1] < 0:
+        T_shoulderPitch_elbow = np.dot(T_shoulderPitch_torso, P_torso_elbow)
+        x_elbow = T_shoulderPitch_elbow[0]
+        beta_shoulder = np.arccos(x_elbow / self.upper_arm_size)
+        if P_shoulder_elbow[1] < 0:
             beta_shoulder = -beta_shoulder
 
-        Rz = R.from_euler("xyz", [0.0, 0.0, -beta_shoulder]).as_matrix()
-        Tz = make_homogenous_matrix_from_rotation_matrix(np.array([0.0, 0.0, 0.0]), Rz)
-        T_shoulder_elbow = np.dot(Tz, T_shoulder_elbow)
+        M_shoulderRoll_shoulderPitch = R.from_euler("xyz", [0.0, 0.0, -beta_shoulder]).as_matrix()
+        T_shoulderRoll_shoulderPitch = make_homogenous_matrix_from_rotation_matrix(
+            np.array([0.0, 0.0, 0.0]), M_shoulderRoll_shoulderPitch
+        )
+        T_shoulderRoll_torso = np.dot(T_shoulderRoll_shoulderPitch, T_shoulderPitch_torso)
 
-        T_torso_elbow = T_shoulder_elbow
-        T_torso_elbow[0][3] -= self.upper_arm_size
+        T_elbow_torso = T_shoulderRoll_torso
+        T_elbow_torso[0][3] -= self.upper_arm_size
 
-        wrist_in_elbow = np.dot(T_torso_elbow, [wrist_position[0], wrist_position[1], wrist_position[2], 1.0])
-        alpha_elbow = -np.pi / 2 + math.atan2(wrist_in_elbow[2], -wrist_in_elbow[1])
+        P_elbow_wrist = np.dot(T_elbow_torso, P_torso_wrist)
+        alpha_elbow = -np.pi / 2 + math.atan2(P_elbow_wrist[2], -P_elbow_wrist[1])
 
-        Rx = R.from_euler("xyz", np.array([alpha_elbow, 0.0, 0.0])).as_matrix()
-        Tx = make_homogenous_matrix_from_rotation_matrix(np.array([0.0, 0.0, 0.0]), Rx)
-        T_shoulder_elbow = np.dot(Tx, T_torso_elbow)
+        M_elbowYaw_elbow = R.from_euler("xyz", np.array([alpha_elbow, 0.0, 0.0])).as_matrix()
+        T_elbowYaw_elbow = make_homogenous_matrix_from_rotation_matrix(np.array([0.0, 0.0, 0.0]), M_elbowYaw_elbow)
+        T_elbowYaw_torso = np.dot(T_elbowYaw_elbow, T_elbow_torso)
 
-        wrist_in_elbow_bis = np.dot(T_shoulder_elbow, [wrist_position[0], wrist_position[1], wrist_position[2], 1.0])
+        P_elbowYaw_wrist = np.dot(T_elbowYaw_torso, P_torso_wrist)
 
-        beta_elbow = -np.arcsin(wrist_in_elbow_bis[2] / np.sqrt(wrist_in_elbow_bis[0] ** 2 + wrist_in_elbow_bis[2] ** 2))
-        if wrist_in_elbow_bis[0] < 0:
+        beta_elbow = -np.arcsin(P_elbowYaw_wrist[2] / np.sqrt(P_elbowYaw_wrist[0] ** 2 + P_elbowYaw_wrist[2] ** 2))
+        if P_elbowYaw_wrist[0] < 0:
             beta_elbow = np.pi - beta_elbow
 
-        Ry = R.from_euler("xyz", [0.0, -beta_elbow, 0.0]).as_matrix()
-        Ty = make_homogenous_matrix_from_rotation_matrix(np.array([0.0, 0.0, 0.0]), Ry)
-        T_shoulder_elbow = np.dot(Ty, T_shoulder_elbow)
+        R_elbowPitch_elbowYaw = R.from_euler("xyz", [0.0, -beta_elbow, 0.0]).as_matrix()
+        T_elbowPitch_elbowYaw = make_homogenous_matrix_from_rotation_matrix(np.array([0.0, 0.0, 0.0]), R_elbowPitch_elbowYaw)
+        T_elbowPitch_torso = np.dot(T_elbowPitch_elbowYaw, T_elbowYaw_torso)
 
-        T_torso_wrist = T_shoulder_elbow
-        T_torso_wrist[0][3] -= self.forearm_size
+        T_wrist_torso = T_elbowPitch_torso
+        T_wrist_torso[0][3] -= self.forearm_size
 
-        tip_in_wrist = np.dot(T_torso_wrist, [tip_position[0], tip_position[1], tip_position[2], 1.0])
+        P_wrist_tip = np.dot(T_wrist_torso, P_torso_goalPosition)
 
-        beta_wrist = np.pi - math.atan2(tip_in_wrist[1], -tip_in_wrist[0])
+        beta_wrist = np.pi - math.atan2(P_wrist_tip[1], -P_wrist_tip[0])
 
-        Ry = R.from_euler("xyz", [0.0, 0.0, -beta_wrist]).as_matrix()
-        Ty = make_homogenous_matrix_from_rotation_matrix(np.array([0.0, 0.0, 0.0]), Ry)
-        T_torso_wrist = np.dot(Ty, T_torso_wrist)
+        R_wristRoll_wrist = R.from_euler("xyz", [0.0, 0.0, -beta_wrist]).as_matrix()
+        T_wristRoll_wrist = make_homogenous_matrix_from_rotation_matrix(np.array([0.0, 0.0, 0.0]), R_wristRoll_wrist)
+        T_wristRol_torso = np.dot(T_wristRoll_wrist, T_wrist_torso)
 
-        wrist_in_elbow_bis = np.dot(T_torso_wrist, [tip_position[0], tip_position[1], tip_position[2], 1.0])
+        P_wristRoll_tip = np.dot(T_wristRol_torso, P_torso_goalPosition)
 
-        alpha_wrist = np.arcsin(wrist_in_elbow_bis[2] / np.sqrt(wrist_in_elbow_bis[0] ** 2 + wrist_in_elbow_bis[2] ** 2))
+        alpha_wrist = np.arcsin(P_wristRoll_tip[2] / np.sqrt(P_wristRoll_tip[0] ** 2 + P_wristRoll_tip[2] ** 2))
 
-        Ry = R.from_euler("xyz", [0.0, alpha_wrist, 0.0]).as_matrix()
-        Ty = make_homogenous_matrix_from_rotation_matrix(np.array([0.0, 0.0, 0.0]), Ry)
-        T_torso_wrist = np.dot(Ty, T_torso_wrist)
+        R_wristPitch_wrist_Roll = R.from_euler("xyz", [0.0, alpha_wrist, 0.0]).as_matrix()
+        T_wristPitch_wrist_Roll = make_homogenous_matrix_from_rotation_matrix(
+            np.array([0.0, 0.0, 0.0]), R_wristPitch_wrist_Roll
+        )
+        T_wristPitch_torso = np.dot(T_wristPitch_wrist_Roll, T_wristRol_torso)
 
-        T_torso_tip = T_torso_wrist
-        T_torso_tip[0][3] -= self.gripper_size
+        T_tip_torso = T_wristPitch_torso
+        T_tip_torso[0][3] -= self.gripper_size
 
-        mrot = R.from_euler("xyz", goal_orientation)
-        wrist_pos = mrot.apply([0.1, 0.0, 0.0])
-        wrist_pos = [wrist_pos[0] + tip_position[0], wrist_pos[1] + tip_position[1], wrist_pos[2] + tip_position[2]]
+        M_torso_goal = R.from_euler("xyz", goal_orientation)
+        P_goal_point = [0.1, 0.0, 0.0, 1.0]
 
-        x_in_wrist = np.dot(T_torso_tip, [wrist_pos[0], wrist_pos[1], wrist_pos[2], 1.0])
+        T_torso_goal = make_homogenous_matrix_from_rotation_matrix(P_torso_goalPosition, M_torso_goal.as_matrix())
+        P_torso_point = np.dot(T_torso_goal, P_goal_point)
 
-        gamma_wrist = -math.atan2(x_in_wrist[1], x_in_wrist[2])
+        P_tip_point = np.dot(T_tip_torso, P_torso_point)
+
+        gamma_wrist = -math.atan2(P_tip_point[1], P_tip_point[2])
 
         joints = np.array([alpha_shoulder, beta_shoulder, alpha_elbow, beta_elbow, beta_wrist, alpha_wrist, gamma_wrist])
         return joints
