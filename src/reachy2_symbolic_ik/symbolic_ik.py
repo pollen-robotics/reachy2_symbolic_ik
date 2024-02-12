@@ -425,8 +425,6 @@ class SymbolicIK:
 
     def get_joints(self, theta: float) -> npt.NDArray[np.float64]:
         elbow_position = self.get_coordinate_cercle(self.intersection_circle, theta)
-        wrist_position = self.wrist_position
-        tip_position = self.goal_pose[0]
         goal_orientation = self.goal_pose[1]
 
         P_torso_shoulder = [self.shoulder_position[0], self.shoulder_position[1], self.shoulder_position[2], 1]
