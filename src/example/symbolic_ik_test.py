@@ -56,7 +56,7 @@ def main_test() -> None:
     if result[0]:
         joints = result[2](result[1][0])
         go_to_position(placo_ik, joints, wait=8)
-        joints = result[2](result[1][0])
+        # joints = result[2](result[1][0])
         is_correct = are_joints_correct(placo_ik, joints, goal_pose)
         print(is_correct)
     else:
