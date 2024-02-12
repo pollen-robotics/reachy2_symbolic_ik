@@ -6,7 +6,7 @@ from reachy_placo.ik_reachy_placo import IKReachyQP
 from scipy.spatial.transform import Rotation as R
 
 from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
-from reachy2_symbolic_ik.utils import go_to_position
+from reachy2_symbolic_ik.utils_placo import go_to_position
 
 
 def are_joints_correct(placo_ik: IKReachyQP, joints: npt.NDArray[np.float64], goal_pose: npt.NDArray[np.float64]) -> bool:
