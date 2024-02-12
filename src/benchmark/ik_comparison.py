@@ -1,7 +1,6 @@
 import math
 import time
 from pathlib import Path
-from typing import List
 
 import numpy as np
 from grasping_utils.utils import get_homogeneous_matrix_msg_from_euler
@@ -9,7 +8,7 @@ from reachy_placo.ik_reachy_placo import IKReachyQP
 from scipy.spatial.transform import Rotation as R
 
 from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
-from reachy2_symbolic_ik.utils import go_to_position
+from reachy2_symbolic_ik.utils_placo import go_to_position
 
 
 def time_test(symbolic_ik: SymbolicIK, placo_ik: IKReachyQP) -> None:
@@ -75,7 +74,7 @@ def joints_space_test(symbolic_ik: SymbolicIK, placo_ik: IKReachyQP, verbose: bo
     symbolic_success = 0
     symbolic_fail = 0
     # pose_fail = []
-    goal_pose: List[List[float]] = []
+    # goal_pose: npt.NDArray[np.float64] = np.array[[], []]
     for k in range(100):
         shoulder_pitch = np.random.uniform(-math.pi, math.pi)
         shoulder_roll = np.random.uniform(-math.pi, math.pi)
@@ -97,8 +96,10 @@ def joints_space_test(symbolic_ik: SymbolicIK, placo_ik: IKReachyQP, verbose: bo
                 print(blue + str(np.degrees(joints)) + reset_color)
         go_to_position(placo_ik, joints, wait=0.0)
         goal_pose_matrix = placo_ik.robot.get_T_a_b("torso", "r_tip_joint")
-        goal_pose[0] = goal_pose_matrix[:3, 3]
-        goal_pose[1] = R.from_matrix(goal_pose_matrix[:3, :3]).as_euler("xyz")
+        print(goal_pose_matrix)
+        position = goal_pose_matrix[:3, 3]
+        orientation = R.from_matrix(goal_pose_matrix[:3, :3]).as_euler("xyz")
+        goal_pose = [position, orientation]
         is_reachable, joints_placo, errors = placo_ik.is_pose_reachable(
             goal_pose_matrix,
             arm_name="r_arm",

@@ -5,7 +5,7 @@ import numpy.typing as npt
 from reachy_placo.ik_reachy_placo import IKReachyQP
 
 from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
-from reachy2_symbolic_ik.utils import go_to_position
+from reachy2_symbolic_ik.utils_placo import go_to_position
 
 
 def make_movement_test(symbolic_ik: SymbolicIK, placo_ik: IKReachyQP, goal_pose: npt.NDArray[np.float64]) -> None:
