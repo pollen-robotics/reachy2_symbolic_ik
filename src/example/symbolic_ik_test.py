@@ -49,6 +49,8 @@ def main_test() -> None:
     placo_ik.setup(urdf_path=str(urdf_path))
     placo_ik.create_tasks()
 
+    go_to_position(placo_ik, [0, 0, 0, -np.radians(150), 0, 0, 0], wait=8)
+
     goal_position = [0.4, 0.1, -0.4]
     goal_orientation = [np.radians(20), np.radians(-80), np.radians(10)]
     goal_pose = np.array([goal_position, goal_orientation])

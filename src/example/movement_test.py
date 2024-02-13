@@ -66,17 +66,17 @@ def main_test() -> None:
     placo_ik.setup(urdf_path=str(urdf_path))
     placo_ik.create_tasks()
 
-    # goal_position = [0.55, -0.2, -0.1]
-    # goal_orientation = [-30,-70,20]
-    # goal_orientation = np.deg2rad(goal_orientation)
-    # goal_pose = [goal_position, goal_orientation]
-    # make_movement_test(symbolib_ik, placo_ik, goal_pose)
+    goal_position = [0.20, -0.2, -0.0]
+    goal_orientation = np.array([-20, -60, 10])
+    goal_orientation = np.deg2rad(goal_orientation)
+    goal_pose = np.array([goal_position, goal_orientation])
+    make_movement_test(symbolic_ik, placo_ik, goal_pose)
 
-    start_position = np.array([0.4, 0.1, -0.4])
-    end_position = np.array([0.3, -0.2, -0.1])
-    start_orientation = np.array([0.35, -1.40, 0.17])
-    end_orientation = np.array([0.0, -0.0, 0.0])
-    make_line(symbolic_ik, placo_ik, start_position, end_position, start_orientation, end_orientation, nb_points=300)
+    # start_position = np.array([0.4, 0.1, -0.4])
+    # end_position = np.array([0.3, -0.2, -0.1])
+    # start_orientation = np.array([0.35, -1.40, 0.17])
+    # end_orientation = np.array([0.0, -0.0, 0.0])
+    # make_line(symbolic_ik, placo_ik, start_position, end_position, start_orientation, end_orientation, nb_points=300)
 
 
 if __name__ == "__main__":

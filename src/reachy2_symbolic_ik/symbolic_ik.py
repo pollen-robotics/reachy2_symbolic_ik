@@ -25,12 +25,14 @@ class SymbolicIK:
         gripper_size: np.float64 = np.float64(0.15),
         wrist_limit: int = 45,
         shoulder_orientation_offset: list[int] = [10, 0, 15],
+        elbow_limits: list[int] = [-150, 0],
     ) -> None:
         self.upper_arm_size = upper_arm_size
         self.forearm_size = forearm_size
         self.gripper_size = gripper_size
         self.wrist_limit = wrist_limit
         self.shoulder_orientation_offset = shoulder_orientation_offset
+        self.elbow_limits = elbow_limits
         self.torso_pose = np.array([0.0, 0.0, 0.0])
         self.shoulder_position = np.array([0.0, -0.2, 0.0])
 
@@ -47,6 +49,18 @@ class SymbolicIK:
     def is_reachable(self, goal_pose: npt.NDArray[np.float64]) -> Tuple[bool, npt.NDArray[np.float64], Optional[Any]]:
         self.goal_pose = goal_pose
         self.wrist_position = self.get_wrist_position(goal_pose)
+        d_shoulder_wrist = np.linalg.norm(self.wrist_position - self.shoulder_position)
+        alpha = (
+            np.arcsin(d_shoulder_wrist / (2 * self.upper_arm_size))
+            + np.arcsin(d_shoulder_wrist / (2 * self.forearm_size))
+            - np.pi
+        )
+        # print(alpha)
+        if alpha < np.radians(self.elbow_limits[0]) or alpha > np.radians(self.elbow_limits[1]):
+            print("elbow out of limits")
+            print(alpha)
+            return False, np.array([]), None
+
         limitation_wrist_circle = self.get_limitation_wrist_circle(goal_pose)
         intersection_circle = self.get_intersection_circle(goal_pose)
         if intersection_circle is not None:

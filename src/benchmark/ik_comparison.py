@@ -122,6 +122,7 @@ def joints_space_test(symbolic_ik: SymbolicIK, placo_ik: IKReachyQP, verbose: bo
                 print(green + "Symbolic reachable" + reset_color)
             symbolic_success += 1
             joints = result[2](result[1][0])
+            print(joints[3])
         else:
             if verbose:
                 print(red + "Symbolic not reachable" + reset_color)
@@ -244,7 +245,7 @@ def main_test() -> None:
     placo_ik.setup(urdf_path=str(urdf_path))
     placo_ik.create_tasks()
 
-    time_test(symbolib_ik, placo_ik)
+    # time_test(symbolib_ik, placo_ik)
     joints_space_test(symbolib_ik, placo_ik, verbose=True)
     # task_space_test(symbolib_ik, placo_ik)
 
