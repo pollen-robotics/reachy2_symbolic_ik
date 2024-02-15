@@ -22,7 +22,7 @@ class SymbolicIK:
         self,
         upper_arm_size: np.float64 = np.float64(0.28),
         forearm_size: np.float64 = np.float64(0.28),
-        gripper_size: np.float64 = np.float64(0.15),
+        gripper_size: np.float64 = np.float64(0.10),
         wrist_limit: int = 45,
         shoulder_orientation_offset: list[int] = [10, 0, 15],
         elbow_limits: list[int] = [-150, 0],

@@ -48,6 +48,12 @@ def main_test() -> None:
     )
     placo_ik.setup(urdf_path=str(urdf_path))
     placo_ik.create_tasks()
+    # joints = [0, -10, -15, 0, 180, 45, 180]
+    # go_to_position(placo_ik, np.radians(joints), wait=5)
+    # go_to_position(placo_ik, [0, -np.radians(-160), 0, 0, 0, 0, 0], wait=5)
+    # print(placo_ik.robot.get_T_a_b("torso", "r_tip_joint"))
+    # print(placo_ik.robot.get_T_a_b("torso", "r_wrist_roll"))
+    # print(placo_ik.robot.get_T_a_b("torso", "r_elbow_yaw"))
 
     go_to_position(placo_ik, [0, 0, 0, -np.radians(150), 0, 0, 0], wait=8)
 
@@ -56,9 +62,11 @@ def main_test() -> None:
     goal_pose = np.array([goal_position, goal_orientation])
     result = symbolib_ik.is_reachable(goal_pose)
     if result[0]:
-        joints = result[2](result[1][0])
-        go_to_position(placo_ik, joints, wait=8)
-        # joints = result[2](result[1][0])
+        print(result[1])
+        theta = np.linspace(result[1][0], result[1][1], 3)[1]
+        joints = result[2](theta)
+        go_to_position(placo_ik, joints, wait=3)
+        print(np.degrees(joints))
         is_correct = are_joints_correct(placo_ik, joints, goal_pose)
         print(is_correct)
     else:
