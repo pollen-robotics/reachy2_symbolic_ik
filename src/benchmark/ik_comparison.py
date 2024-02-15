@@ -111,7 +111,6 @@ def joints_space_test(symbolic_ik: SymbolicIK, placo_ik: IKReachyQP, verbose: bo
         if is_reachable:
             if verbose:
                 print(green + "Placo reachable" + reset_color)
-                go_to_position(placo_ik, joints_placo, wait=1.0)
             placo_success += 1
         else:
             if verbose:
@@ -121,8 +120,6 @@ def joints_space_test(symbolic_ik: SymbolicIK, placo_ik: IKReachyQP, verbose: bo
         if result[0]:
             if verbose:
                 print(green + "Symbolic reachable" + reset_color)
-                joints = result[2](result[1][0])
-                go_to_position(placo_ik, joints, wait=1.0)
             symbolic_success += 1
             joints = result[2](result[1][0])
         else:
@@ -232,9 +229,10 @@ def main_test() -> None:
     symbolib_ik = SymbolicIK()
     urdf_path = Path("src/config_files")
     for file in urdf_path.glob("**/*.urdf"):
-        if file.stem == "reachy2":
+        if file.stem == "reachy2_placo":
             urdf_path = file.resolve()
             break
+    print(urdf_path)
     placo_ik = IKReachyQP(
         viewer_on=True,
         collision_avoidance=False,

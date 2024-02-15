@@ -12,6 +12,7 @@ from reachy2_symbolic_ik.utils_placo import go_to_position
 def are_joints_correct(placo_ik: IKReachyQP, joints: npt.NDArray[np.float64], goal_pose: npt.NDArray[np.float64]) -> bool:
     go_to_position(placo_ik, joints, wait=0)
     T_torso_tip = placo_ik.robot.get_T_a_b("torso", "r_tip_joint")
+    print(T_torso_tip)
     position = T_torso_tip[:3, 3]
     orientation = T_torso_tip[:3, :3]
     orientation = R.from_matrix(orientation).as_euler("xyz")
@@ -34,7 +35,7 @@ def main_test() -> None:
     symbolib_ik = SymbolicIK()
     urdf_path = Path("src/config_files")
     for file in urdf_path.glob("**/*.urdf"):
-        if file.stem == "reachy2":
+        if file.stem == "reachy2_ik":
             urdf_path = file.resolve()
             break
     placo_ik = IKReachyQP(
@@ -54,9 +55,11 @@ def main_test() -> None:
     # print(placo_ik.robot.get_T_a_b("torso", "r_tip_joint"))
     # print(placo_ik.robot.get_T_a_b("torso", "r_wrist_roll"))
     # print(placo_ik.robot.get_T_a_b("torso", "r_elbow_yaw"))
+    go_to_position(placo_ik, [0, -np.radians(-0), 0, 0, 0, 0, 0], wait=5)
+    print(placo_ik.robot.get_T_a_b("r_wrist_roll", "r_tip_joint")[0:3, 3])
 
-    goal_position = [0.0, -0.2, -0.65]
-    goal_orientation = [0, 0, 0]
+    goal_position = [0.60, -0.2, -0.01]
+    goal_orientation = [0, -np.radians(80), 0]
     goal_pose = np.array([goal_position, goal_orientation])
     result = symbolib_ik.is_reachable(goal_pose)
     if result[0]:
@@ -67,6 +70,11 @@ def main_test() -> None:
         print(np.degrees(joints))
         is_correct = are_joints_correct(placo_ik, joints, goal_pose)
         print(is_correct)
+        print(placo_ik.robot.get_T_a_b("torso", "r_tip_joint"))
+        print(placo_ik.robot.get_T_a_b("torso", "r_wrist_roll"))
+        print(placo_ik.robot.get_T_a_b("torso", "r_elbow_yaw"))
+        print(placo_ik.robot.get_T_a_b("r_wrist_roll", "r_tip_joint")[0:3, 3])
+
     else:
         print("Pose not reachable")
 

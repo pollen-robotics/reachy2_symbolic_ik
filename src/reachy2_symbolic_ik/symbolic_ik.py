@@ -425,6 +425,10 @@ class SymbolicIK:
 
     def get_joints(self, theta: float) -> npt.NDArray[np.float64]:
         elbow_position = self.get_coordinate_cercle(self.intersection_circle, theta)
+        print("shoulder_position : ", self.shoulder_position)
+        print("elbow_position : ", elbow_position)
+        print("wrist_position : ", self.wrist_position)
+
         goal_orientation = self.goal_pose[1]
 
         P_torso_shoulder = [self.shoulder_position[0], self.shoulder_position[1], self.shoulder_position[2], 1]
@@ -505,6 +509,7 @@ class SymbolicIK:
 
         T_tip_torso = T_wristPitch_torso
         T_tip_torso[0][3] -= self.gripper_size
+        print("position : ", T_tip_torso[0:3, 3])
 
         M_torso_goal = R.from_euler("xyz", goal_orientation)
         P_goal_point = [0.1, 0.0, 0.0, 1.0]
