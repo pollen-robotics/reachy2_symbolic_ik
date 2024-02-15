@@ -111,6 +111,7 @@ def joints_space_test(symbolic_ik: SymbolicIK, placo_ik: IKReachyQP, verbose: bo
         if is_reachable:
             if verbose:
                 print(green + "Placo reachable" + reset_color)
+                go_to_position(placo_ik, joints_placo, wait=1.0)
             placo_success += 1
         else:
             if verbose:
@@ -120,6 +121,8 @@ def joints_space_test(symbolic_ik: SymbolicIK, placo_ik: IKReachyQP, verbose: bo
         if result[0]:
             if verbose:
                 print(green + "Symbolic reachable" + reset_color)
+                joints = result[2](result[1][0])
+                go_to_position(placo_ik, joints, wait=1.0)
             symbolic_success += 1
             joints = result[2](result[1][0])
         else:
@@ -244,9 +247,24 @@ def main_test() -> None:
     placo_ik.setup(urdf_path=str(urdf_path))
     placo_ik.create_tasks()
 
-    time_test(symbolib_ik, placo_ik)
-    joints_space_test(symbolib_ik, placo_ik, verbose=True)
+    # time_test(symbolib_ik, placo_ik)
+    # joints_space_test(symbolib_ik, placo_ik, verbose=True)
     # task_space_test(symbolib_ik, placo_ik)
+
+    goal_position = [[0.11657383, -0.31879514, -0.18552353], [-2.06584127, -0.50205104, 0.56725307]]
+    result = symbolib_ik.is_reachable(goal_position)
+    print(result[0])
+
+    goal_position_matrix = get_homogeneous_matrix_msg_from_euler(goal_position[0], goal_position[1])
+    is_reachable, joints, errors = placo_ik.is_pose_reachable(
+        goal_position_matrix,
+        arm_name="r_arm",
+        q0=[0.0, 0.0, 0.0, -math.pi / 2, 0, 0.0, 0.0],
+        tolerances=[0.001, 0.001, 0.001, 0.02, 0.02, 0.02],
+        max_iter=45,
+        nb_stepper_solve=25,
+    )
+    print(is_reachable)
 
 
 if __name__ == "__main__":

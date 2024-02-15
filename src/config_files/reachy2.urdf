@@ -319,9 +319,9 @@
 	</link>
 	<link name="r_gripper_palm_link">
 		<collision>
-			<origin rpy="0 0 0" xyz="0 0 0.055"></origin>
+			<origin rpy="0 0 0" xyz="0 0 0.03"></origin>
 			<geometry>
-				<box size="0.03 0.06 0.11"></box>
+				<box size="0.03 0.06 0.06"></box>
 			</geometry>
 		</collision>
 		<visual>
@@ -709,7 +709,7 @@
 		<parent link="r_shoulder_dummy_link"></parent>
 		<child link="r_shoulder_link"></child>
 		<axis xyz="1 0 0"></axis>
-		<limit effort="1000.0" lower="-2.6179938779914944" upper="0.6981317007977318" velocity="100.0"></limit>
+		<limit effort="1000.0" lower="-2.792526803190927" upper="0.0" velocity="100.0"></limit>
 		<safety_controller k_position="500" k_velocity="500" soft_lower_limit="-3.1415" soft_upper_limit="3.1415"></safety_controller>
 		<dynamics damping="0.1" friction="0.1"></dynamics>
 	</joint>
@@ -750,8 +750,8 @@
 		<origin rpy="3.141592653589793 0 0" xyz="0 0 -0.28"></origin>
 		<parent link="r_elbow_ball_link"></parent>
 		<child link="r_wrist_dummy_link1"></child>
-		<axis xyz="1 0 0"></axis>
-		<limit effort="1000.0" lower="-0.7853981633974483" upper="0.7853981633974483" velocity="100.0"></limit>
+		<axis xyz="0 0 1"></axis>
+		<limit effort="1000.0" lower="-6.283185307179586" upper="6.283185307179586" velocity="100.0"></limit>
 		<dynamics damping="0.1" friction="0.1"></dynamics>
 	</joint>
 	<joint name="r_wrist_pitch" type="revolute">
@@ -776,7 +776,7 @@
 		<child link="r_gripper_palm_link"></child>
 	</joint>
 	<joint name="r_gripper_finger" type="revolute">
-		<origin rpy="0 0 0" xyz="0 0.03 0.11"></origin>
+		<origin rpy="0 0 0" xyz="0 0.03 0.06"></origin>
 		<parent link="r_gripper_palm_link"></parent>
 		<child link="r_gripper_index_link"></child>
 		<axis xyz="1 0 0"></axis>
@@ -784,7 +784,7 @@
 		<dynamics damping="0.1" friction="0.1"></dynamics>
 	</joint>
 	<joint name="r_gripper_finger_mimic" type="revolute">
-		<origin rpy="0 0 0" xyz="0 -0.03 0.11"></origin>
+		<origin rpy="0 0 0" xyz="0 -0.03 0.06"></origin>
 		<parent link="r_gripper_palm_link"></parent>
 		<child link="r_gripper_index_mimic_link"></child>
 		<axis xyz="1 0 0"></axis>
@@ -793,7 +793,7 @@
 		<mimic joint="r_gripper_finger" multiplier="-1" offset="0"></mimic>
 	</joint>
 	<joint name="r_tip_joint" type="fixed">
-		<origin rpy="3.141592653589793 0 0" xyz="0 0 0.15"></origin>
+		<origin rpy="3.141592653589793 0 0" xyz="0 0 0.1"></origin>
 		<parent link="r_gripper_palm_link"></parent>
 		<child link="r_arm_tip"></child>
 	</joint>

@@ -58,7 +58,7 @@ def test_class() -> None:
 def test_full() -> None:
     from reachy_placo.ik_reachy_placo import IKReachyQP
 
-    symbolic_ik = SymbolicIK(upper_arm_size=0.28, forearm_size=0.28, gripper_size=0.15)
+    symbolic_ik = SymbolicIK(upper_arm_size=0.28, forearm_size=0.28, gripper_size=0.10)
     assert symbolic_ik is not None
 
     urdf_path = Path("src/config_files")
@@ -79,7 +79,7 @@ def test_full() -> None:
     placo_ik.setup(urdf_path=str(urdf_path))
     placo_ik.create_tasks()
 
-    goal_position = [0.0, -0.2, -0.71]
+    goal_position = [0.0, -0.2, -0.65]
     goal_orientation = [0.0, 0.0, 0.0]
     goal_pose = [goal_position, goal_orientation]
 
