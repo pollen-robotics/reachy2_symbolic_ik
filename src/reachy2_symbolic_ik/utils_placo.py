@@ -10,6 +10,7 @@ from reachy_placo.ik_reachy_placo import IKReachyQP
 def go_to_position(
     reachy_placo: IKReachyQP,
     joint_pose: npt.NDArray[np.float64] = np.array([0.0, 0.0, 0.0, -math.pi / 2, 0.0, 0.0, 0.0]),
+    arm: str = "r_arm",
     wait: int = 10,
 ) -> None:
     """
@@ -18,7 +19,10 @@ def go_to_position(
         joint_pose: joint pose of the arm
         wait: time to wait before closing the window
     """
-    names = r_arm_joint_names()
+    if arm == "r_arm":
+        names = r_arm_joint_names()
+    else:
+        names = l_arm_joint_names()
     for i in range(len(names)):
         reachy_placo.robot.set_joint(names[i], joint_pose[i])
     reachy_placo._tick_viewer()
@@ -34,4 +38,16 @@ def r_arm_joint_names() -> List[str]:
     names.append("r_wrist_roll")
     names.append("r_wrist_pitch")
     names.append("r_wrist_yaw")
+    return names
+
+
+def l_arm_joint_names() -> List[str]:
+    names = []
+    names.append("l_shoulder_pitch")
+    names.append("l_shoulder_roll")
+    names.append("l_elbow_yaw")
+    names.append("l_elbow_pitch")
+    names.append("l_wrist_roll")
+    names.append("l_wrist_pitch")
+    names.append("l_wrist_yaw")
     return names

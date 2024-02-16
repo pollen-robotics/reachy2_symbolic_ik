@@ -20,19 +20,26 @@ SHOW_GRAPH = False
 class SymbolicIK:
     def __init__(
         self,
+        arm: str = "r_arm",
         upper_arm_size: np.float64 = np.float64(0.28),
         forearm_size: np.float64 = np.float64(0.28),
         gripper_size: np.float64 = np.float64(0.10),
         wrist_limit: int = 45,
         shoulder_orientation_offset: list[int] = [10, 0, 15],
     ) -> None:
+        self.arm = arm
         self.upper_arm_size = upper_arm_size
         self.forearm_size = forearm_size
         self.gripper_size = gripper_size
         self.wrist_limit = wrist_limit
-        self.shoulder_orientation_offset = shoulder_orientation_offset
+
         self.torso_pose = np.array([0.0, 0.0, 0.0])
-        self.shoulder_position = np.array([0.0, -0.2, 0.0])
+        if self.arm == "r_arm":
+            self.shoulder_position = np.array([0.0, -0.2, 0.0])
+            self.shoulder_orientation_offset = shoulder_orientation_offset
+        else:
+            self.shoulder_position = np.array([0.0, 0.2, 0.0])
+            self.shoulder_orientation_offset = [-x for x in shoulder_orientation_offset]
 
         if SHOW_GRAPH:
             fig = plt.figure()
@@ -181,7 +188,9 @@ class SymbolicIK:
         )
         P_intersection_center = np.array([(d**2 - self.forearm_size**2 + self.upper_arm_size**2) / (2 * d), 0, 0])
         P_shoulder_center = M_torso_intersection.apply(P_intersection_center)
-        P_torso_center = np.array([P_shoulder_center[0], P_shoulder_center[1] - 0.2, P_shoulder_center[2]])
+        P_torso_center = np.array(
+            [P_shoulder_center[0], P_shoulder_center[1] + self.shoulder_position[1], P_shoulder_center[2]]
+        )
         V_intersection_normal = np.array([1.0, 0.0, 0.0])
         V_torso_normal = M_torso_intersection.apply(V_intersection_normal)
         return P_torso_center, radius, V_torso_normal
@@ -424,6 +433,9 @@ class SymbolicIK:
         return P_torso_point
 
     def get_joints(self, theta: float) -> npt.NDArray[np.float64]:
+        # make elbow symetrical
+        if self.arm == "l_arm":
+            theta = np.pi - theta
         elbow_position = self.get_coordinate_cercle(self.intersection_circle, theta)
         goal_orientation = self.goal_pose[1]
 
