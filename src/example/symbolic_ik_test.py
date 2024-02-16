@@ -58,17 +58,16 @@ def main_test() -> None:
     placo_ik.setup(urdf_path=str(urdf_path))
     placo_ik.create_tasks()
     # joints = [0, -0, -0, 0, 0, 0, 0]
-    # go_to_position(placo_ik, np.radians(joints), wait=5)
 
     # go_to_position(placo_ik, [0.5, -np.radians(0), 0, np.radians(-0), 0, 0, 0], arm="l_arm", wait=0)
     # go_to_position(placo_ik, [0.5, -np.radians(0), 0, np.radians(-0), 0, 0, 0], arm="r_arm", wait=5)
     # print(placo_ik.robot.get_T_a_b("torso", "r_tip_joint"))
     # print(placo_ik.robot.get_T_a_b("torso", "r_wrist_roll"))
     # print(placo_ik.robot.get_T_a_b("torso", "r_elbow_yaw"))
-    go_to_position(placo_ik, [0, -np.radians(-0), 0, 0, 0, 0, 0], wait=5)
+    # go_to_position(placo_ik, [0, -np.radians(-0), 0, 0, 0, 0, 0], wait=5)
 
-    goal_position = [0.60, -0.2, -0.01]
-    goal_orientation = [0, -np.radians(80), 0]
+    goal_position = [0.60, 0.2, -0.1]
+    goal_orientation = [0, -np.radians(70), 0]
     goal_pose = np.array([goal_position, goal_orientation])
 
     result_l = symbolib_ik_l.is_reachable(goal_pose)

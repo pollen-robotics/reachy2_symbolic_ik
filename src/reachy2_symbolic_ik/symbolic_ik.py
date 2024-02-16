@@ -433,6 +433,9 @@ class SymbolicIK:
         return P_torso_point
 
     def get_joints(self, theta: float) -> npt.NDArray[np.float64]:
+        # make elbow symetrical
+        if self.arm == "l_arm":
+            theta = np.pi - theta
         elbow_position = self.get_coordinate_cercle(self.intersection_circle, theta)
         goal_orientation = self.goal_pose[1]
 
