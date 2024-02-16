@@ -82,13 +82,9 @@ def main_test() -> None:
     else:
         print("Pose not reachable")
 
-    # goal_position = [0.60, -0.20, -0.1]
-    # goal_orientation = [0, -np.radians(70), 0]
-    # goal_pose = np.array([goal_position, goal_orientation])
-    goal_pose = [
-        [0.10000000000000009, -0.5499999999999999, 0.2500000000000001],
-        [4.71238898038469, 5.497787143782138, 1.5707963267948966],
-    ]
+    goal_position = [0.60, -0.20, -0.1]
+    goal_orientation = [0, -np.radians(70), 0]
+    goal_pose = np.array([goal_position, goal_orientation])
 
     result_r = symbolib_ik_r.is_reachable(goal_pose)
     if result_r[0]:
