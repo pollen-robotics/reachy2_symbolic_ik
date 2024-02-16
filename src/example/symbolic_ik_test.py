@@ -56,7 +56,6 @@ def main_test() -> None:
     # print(placo_ik.robot.get_T_a_b("torso", "r_wrist_roll"))
     # print(placo_ik.robot.get_T_a_b("torso", "r_elbow_yaw"))
     go_to_position(placo_ik, [0, -np.radians(-0), 0, 0, 0, 0, 0], wait=5)
-    print(placo_ik.robot.get_T_a_b("r_wrist_roll", "r_tip_joint")[0:3, 3])
 
     goal_position = [0.60, -0.2, -0.01]
     goal_orientation = [0, -np.radians(80), 0]
@@ -67,14 +66,8 @@ def main_test() -> None:
         theta = np.linspace(result[1][0], result[1][1], 3)[1]
         joints = result[2](theta)
         go_to_position(placo_ik, joints, wait=3)
-        print(np.degrees(joints))
         is_correct = are_joints_correct(placo_ik, joints, goal_pose)
         print(is_correct)
-        print(placo_ik.robot.get_T_a_b("torso", "r_tip_joint"))
-        print(placo_ik.robot.get_T_a_b("torso", "r_wrist_roll"))
-        print(placo_ik.robot.get_T_a_b("torso", "r_elbow_yaw"))
-        print(placo_ik.robot.get_T_a_b("r_wrist_roll", "r_tip_joint")[0:3, 3])
-
     else:
         print("Pose not reachable")
 
