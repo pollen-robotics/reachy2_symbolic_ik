@@ -63,7 +63,7 @@ def test_full() -> None:
 
     urdf_path = Path("src/config_files")
     for file in urdf_path.glob("**/*.urdf"):
-        if file.stem == "reachy2":
+        if file.stem == "reachy2_placo":
             urdf_path = file.resolve()
             break
 
