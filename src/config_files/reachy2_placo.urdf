@@ -798,11 +798,11 @@
 		<child link="r_arm_tip"></child>
 	</joint>
 	<joint name="l_shoulder_pitch" type="revolute">
-		<origin rpy="0 0 -0.2617993877991494" xyz="-0.0479 0.1913 0.025"></origin>
+		<origin rpy="-0.17453292519943295 0 -0.2617993877991494" xyz="0 0.2 0"></origin>
 		<parent link="torso"></parent>
 		<child link="l_shoulder_dummy_link"></child>
 		<axis xyz="0 1 0"></axis>
-		<limit effort="1000.0" lower="-1.5707963267948966" upper="1.5707963267948966" velocity="100.0"></limit>
+		<limit effort="1000.0" lower="-6.283185307179586" upper="6.283185307179586" velocity="100.0"></limit>
 		<safety_controller k_position="500" k_velocity="500" soft_lower_limit="-3.1415" soft_upper_limit="3.1415"></safety_controller>
 		<dynamics damping="0.1" friction="0.1"></dynamics>
 	</joint>
@@ -811,7 +811,7 @@
 		<parent link="l_shoulder_dummy_link"></parent>
 		<child link="l_shoulder_link"></child>
 		<axis xyz="1 0 0"></axis>
-		<limit effort="1000.0" lower="-1.5707963267948966" upper="0.0" velocity="100.0"></limit>
+		<limit effort="1000.0" lower="0" upper="2.792526803190927" velocity="100.0"></limit>
 		<safety_controller k_position="500" k_velocity="500" soft_lower_limit="-3.1415" soft_upper_limit="3.1415"></safety_controller>
 		<dynamics damping="0.1" friction="0.1"></dynamics>
 	</joint>
@@ -825,7 +825,7 @@
 		<parent link="l_shoulder_ball_link"></parent>
 		<child link="l_elbow_dummy_link"></child>
 		<axis xyz="0 0 1"></axis>
-		<limit effort="1000.0" lower="-1.5707963267948966" upper="1.5707963267948966" velocity="100.0"></limit>
+		<limit effort="1000.0" lower="-6.283185307179586" upper="6.283185307179586" velocity="100.0"></limit>
 		<safety_controller k_position="500" k_velocity="500" soft_lower_limit="-3.1415" soft_upper_limit="3.1415"></safety_controller>
 		<dynamics damping="0.1" friction="0.1"></dynamics>
 	</joint>
@@ -834,7 +834,7 @@
 		<parent link="l_elbow_dummy_link"></parent>
 		<child link="l_elbow_link"></child>
 		<axis xyz="0 1 0"></axis>
-		<limit effort="1000.0" lower="-2.25" upper="0.1" velocity="100.0"></limit>
+		<limit effort="1000.0" lower="-2.2689280275926285" upper="0.0" velocity="100.0"></limit>
 		<safety_controller k_position="500" k_velocity="500" soft_lower_limit="-3.1415" soft_upper_limit="3.1415"></safety_controller>
 		<dynamics damping="0.1" friction="0.1"></dynamics>
 	</joint>
@@ -852,8 +852,8 @@
 		<origin rpy="3.141592653589793 0 0" xyz="0 0 -0.28"></origin>
 		<parent link="l_elbow_ball_link"></parent>
 		<child link="l_wrist_dummy_link1"></child>
-		<axis xyz="1 0 0"></axis>
-		<limit effort="1000.0" lower="-0.35" upper="0.35" velocity="100.0"></limit>
+		<axis xyz="0 0 1"></axis>
+		<limit effort="1000.0" lower="-6.283185307179586" upper="6.283185307179586" velocity="100.0"></limit>
 		<dynamics damping="0.1" friction="0.1"></dynamics>
 	</joint>
 	<joint name="l_wrist_pitch" type="revolute">
@@ -861,7 +861,7 @@
 		<parent link="l_wrist_dummy_link1"></parent>
 		<child link="l_wrist_dummy_link2"></child>
 		<axis xyz="0 1 0"></axis>
-		<limit effort="1000.0" lower="-0.35" upper="0.35" velocity="100.0"></limit>
+		<limit effort="1000.0" lower="-0.7853981633974483" upper="0.7853981633974483" velocity="100.0"></limit>
 		<dynamics damping="0.1" friction="0.1"></dynamics>
 	</joint>
 	<joint name="l_wrist_yaw" type="revolute">
@@ -869,7 +869,7 @@
 		<parent link="l_wrist_dummy_link2"></parent>
 		<child link="l_wrist_link"></child>
 		<axis xyz="0 0 1"></axis>
-		<limit effort="1000.0" lower="-1.57" upper="1.57" velocity="100.0"></limit>
+		<limit effort="1000.0" lower="-6.283185307179586" upper="6.283185307179586" velocity="100.0"></limit>
 		<dynamics damping="0.1" friction="0.1"></dynamics>
 	</joint>
 	<joint name="l_gripper_palm" type="fixed">

@@ -20,21 +20,27 @@ SHOW_GRAPH = False
 class SymbolicIK:
     def __init__(
         self,
+        arm: str = "r_arm",
         upper_arm_size: np.float64 = np.float64(0.28),
         forearm_size: np.float64 = np.float64(0.28),
         gripper_size: np.float64 = np.float64(0.10),
         wrist_limit: int = 45,
         shoulder_orientation_offset: list[int] = [10, 0, 15],
-        elbow_limits: list[int] = [-150, 0],
+        elbow_limits: int = 130,
     ) -> None:
+        self.arm = arm
         self.upper_arm_size = upper_arm_size
         self.forearm_size = forearm_size
         self.gripper_size = gripper_size
         self.wrist_limit = wrist_limit
-        self.shoulder_orientation_offset = shoulder_orientation_offset
         self.elbow_limits = elbow_limits
         self.torso_pose = np.array([0.0, 0.0, 0.0])
-        self.shoulder_position = np.array([0.0, -0.2, 0.0])
+        if self.arm == "r_arm":
+            self.shoulder_position = np.array([0.0, -0.2, 0.0])
+            self.shoulder_orientation_offset = shoulder_orientation_offset
+        else:
+            self.shoulder_position = np.array([0.0, 0.2, 0.0])
+            self.shoulder_orientation_offset = [-x for x in shoulder_orientation_offset]
 
         if SHOW_GRAPH:
             fig = plt.figure()
@@ -50,15 +56,14 @@ class SymbolicIK:
         self.goal_pose = goal_pose
         self.wrist_position = self.get_wrist_position(goal_pose)
         d_shoulder_wrist = np.linalg.norm(self.wrist_position - self.shoulder_position)
+        if d_shoulder_wrist > self.upper_arm_size + self.forearm_size:
+            return False, np.array([]), None
         alpha = (
             np.arcsin(d_shoulder_wrist / (2 * self.upper_arm_size))
             + np.arcsin(d_shoulder_wrist / (2 * self.forearm_size))
             - np.pi
         )
-        # print(alpha)
-        if alpha < np.radians(self.elbow_limits[0]) or alpha > np.radians(self.elbow_limits[1]):
-            print("elbow out of limits")
-            print(alpha)
+        if alpha < np.radians(-self.elbow_limits) or alpha > np.radians(self.elbow_limits):
             return False, np.array([]), None
 
         limitation_wrist_circle = self.get_limitation_wrist_circle(goal_pose)
@@ -94,15 +99,14 @@ class SymbolicIK:
                     show_point(self.ax, self.torso_pose, "y")
                     show_sphere(self.ax, self.wrist_position, self.forearm_size, "r")
                     show_sphere(self.ax, self.shoulder_position, self.upper_arm_size, "b")
-                    if intersection_circle is not None:
-                        show_circle(
-                            self.ax,
-                            intersection_circle[0],
-                            intersection_circle[1],
-                            intersection_circle[2],
-                            np.array([[0, 2 * np.pi]]),
-                            "g",
-                        )
+                    show_circle(
+                        self.ax,
+                        intersection_circle[0],
+                        intersection_circle[1],
+                        intersection_circle[2],
+                        np.array([[0, 2 * np.pi]]),
+                        "g",
+                    )
                     show_circle(
                         self.ax,
                         limitation_wrist_circle[0],
@@ -121,15 +125,14 @@ class SymbolicIK:
                 show_point(self.ax, self.torso_pose, "y")
                 show_sphere(self.ax, self.wrist_position, self.forearm_size, "r")
                 show_sphere(self.ax, self.shoulder_position, self.upper_arm_size, "b")
-                if intersection_circle is not None:
-                    show_circle(
-                        self.ax,
-                        intersection_circle[0],
-                        intersection_circle[1],
-                        intersection_circle[2],
-                        np.array([[0, 2 * np.pi]]),
-                        "g",
-                    )
+                show_circle(
+                    self.ax,
+                    intersection_circle[0],
+                    intersection_circle[1],
+                    intersection_circle[2],
+                    np.array([[0, 2 * np.pi]]),
+                    "g",
+                )
                 show_circle(
                     self.ax,
                     limitation_wrist_circle[0],
@@ -195,7 +198,9 @@ class SymbolicIK:
         )
         P_intersection_center = np.array([(d**2 - self.forearm_size**2 + self.upper_arm_size**2) / (2 * d), 0, 0])
         P_shoulder_center = M_torso_intersection.apply(P_intersection_center)
-        P_torso_center = np.array([P_shoulder_center[0], P_shoulder_center[1] - 0.2, P_shoulder_center[2]])
+        P_torso_center = np.array(
+            [P_shoulder_center[0], P_shoulder_center[1] + self.shoulder_position[1], P_shoulder_center[2]]
+        )
         V_intersection_normal = np.array([1.0, 0.0, 0.0])
         V_torso_normal = M_torso_intersection.apply(V_intersection_normal)
         return P_torso_center, radius, V_torso_normal
@@ -210,6 +215,7 @@ class SymbolicIK:
                 self.wrist_position[2] - goal_pose[0][2],
             ]
         )
+
         radius = np.sin(np.radians(self.wrist_limit)) * self.forearm_size
         vector = normal_vector / np.linalg.norm(normal_vector) * np.sqrt(self.forearm_size**2 - radius**2)
         center = self.wrist_position + vector
@@ -248,6 +254,7 @@ class SymbolicIK:
         V_torso_normal2 = np.array(intersection_circle[2])
 
         R_torso_intersection = rotation_matrix_from_vectors(np.array([1, 0, 0]), V_torso_normal2)
+        # print(R_torso_intersection)
         T_torso_intersection = make_homogenous_matrix_from_rotation_matrix(p2, R_torso_intersection)
 
         R_intersection_torso = R_torso_intersection.T
@@ -438,6 +445,9 @@ class SymbolicIK:
         return P_torso_point
 
     def get_joints(self, theta: float) -> npt.NDArray[np.float64]:
+        # make elbow symetrical
+        if self.arm == "l_arm":
+            theta = np.pi - theta
         elbow_position = self.get_coordinate_cercle(self.intersection_circle, theta)
         goal_orientation = self.goal_pose[1]
 

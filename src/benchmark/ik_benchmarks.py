@@ -18,7 +18,6 @@ def test_is_reachable(ik: SymbolicIK) -> None:
         ik.is_reachable(goal_pose)
     end_time = time.time()
     print("is_reachable : ", end_time - start_time)
-    pass
 
 
 def test_get_joints(ik: SymbolicIK) -> None:

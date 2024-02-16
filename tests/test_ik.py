@@ -40,7 +40,7 @@ def test_class() -> None:
 
     assert len(joints) == 7
 
-    goal_position = [0.0, -0.2, -0.71]
+    goal_position = [0.0, -0.2, -0.65]
     goal_orientation = [0.0, 0.0, 0.0]
     goal_pose = [goal_position, goal_orientation]
 
@@ -63,7 +63,7 @@ def test_full() -> None:
 
     urdf_path = Path("src/config_files")
     for file in urdf_path.glob("**/*.urdf"):
-        if file.stem == "reachy2":
+        if file.stem == "reachy2_ik":
             urdf_path = file.resolve()
             break
 

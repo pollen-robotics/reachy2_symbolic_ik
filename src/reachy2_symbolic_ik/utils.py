@@ -23,10 +23,15 @@ def rotation_matrix_from_vectors(vect1: npt.NDArray[np.float64], vect2: npt.NDAr
     :param vect2: A 3d "destination" vector
     :return mat: A transform matrix (3x3) which when applied to vect1, aligns it with vect2.
     """
-    if np.all(np.isclose(vect1, vect2)):
-        return np.eye(3)
+
     a, b = (vect1 / np.linalg.norm(vect1)).reshape(3), (vect2 / np.linalg.norm(vect2)).reshape(3)
     v = np.cross(a, b)
+    if np.all(np.isclose(a, b)):
+        return np.eye(3)
+    if np.all(a == -b):
+        matrix = np.array([[-1, 0, 0], [0, -1, 0], [0, 0, -1]])
+        return matrix
+
     c = np.dot(a, b)
     s = np.linalg.norm(v)
     kmat = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
