@@ -54,14 +54,46 @@ def make_line(
                 angle = angle_diff(result[1][0], result[1][1]) / 2 + result[1][1]
 
             # print(angle)
-            joints = result[2](angle)
-            go_to_position(placo_ik, joints, wait=0.0)
+            joints, elbow_position = result[2](angle)
+            go_to_position(placo_ik, joints, wait=0.0, arm=symbolic_ik.arm)
         else:
             print("Pose not reachable")
 
 
+def make_square(symbolic_ik: SymbolicIK, placo_ik: IKReachyQP) -> None:
+    if symbolic_ik is None:
+        raise ValueError("symbolic_ik is None")
+    orientation = np.array([0.0, -np.pi / 2, 0.0])
+    start_positions = []
+    end_positions = []
+    if symbolic_ik.arm == "r_arm":
+        print("r_arm")
+        start_positions.append(np.array([0.4, -0.5, -0.3]))
+        end_positions.append(np.array([0.4, -0.5, -0.0]))
+        start_positions.append(np.array([0.4, -0.5, -0.0]))
+        end_positions.append(np.array([0.4, -0.3, -0.0]))
+        start_positions.append(np.array([0.4, -0.3, -0.0]))
+        end_positions.append(np.array([0.4, -0.3, -0.3]))
+        start_positions.append(np.array([0.4, -0.3, -0.3]))
+        end_positions.append(np.array([0.4, -0.5, -0.3]))
+    else:
+        print("l_arm")
+        start_positions.append(np.array([0.4, 0.5, -0.3]))
+        end_positions.append(np.array([0.4, 0.5, -0.0]))
+        start_positions.append(np.array([0.4, 0.5, -0.0]))
+        end_positions.append(np.array([0.4, 0.3, -0.0]))
+        start_positions.append(np.array([0.4, 0.3, -0.0]))
+        end_positions.append(np.array([0.4, 0.3, -0.3]))
+        start_positions.append(np.array([0.4, 0.3, -0.3]))
+        end_positions.append(np.array([0.4, 0.5, -0.3]))
+    while True:
+        for i in range(len(start_positions)):
+            make_line(symbolic_ik, placo_ik, start_positions[i], end_positions[i], orientation, orientation, nb_points=30)
+
+
 def main_test() -> None:
-    symbolic_ik = SymbolicIK()
+    # symbolic_ik_r = SymbolicIK()
+    symbolic_ik_l = SymbolicIK(arm="l_arm")
     urdf_path = Path("src/config_files")
     for file in urdf_path.glob("**/*.urdf"):
         if file.stem == "reachy2_ik":
@@ -83,55 +115,15 @@ def main_test() -> None:
     # goal_orientation = np.array([-20, -60, 10])
     # goal_orientation = np.deg2rad(goal_orientation)
     # goal_pose = [goal_position, goal_orientation]
-    # make_movement_test(symbolib_ik, placo_ik, goal_pose)
-    while True:
-        # start_position = np.array([0.3, -0.4, -0.3])
-        # end_position = np.array([0.3, -0.4, -0.0])
-        # start_orientation = np.array([0.0, -np.pi / 2, 0.0])
-        # end_orientation = np.array([0.0, -np.pi / 2, 0.0])
-        # make_line(symbolic_ik, placo_ik, start_position, end_position, start_orientation, end_orientation, nb_points=30)
-        # start_position = np.array([0.3, -0.4, 0.0])
-        # end_position = np.array([0.3, -0.1, 0.0])
-        # start_orientation = np.array([0.0, -np.pi / 2, 0.0])
-        # end_orientation = np.array([0.0, -np.pi / 2, 0.0])
-        # make_line(symbolic_ik, placo_ik, start_position, end_position, start_orientation, end_orientation, nb_points=30)
-        # start_position = np.array([0.3, -0.1, 0.0])
-        # end_position = np.array([0.3, -0.1, -0.3])
-        # start_orientation = np.array([0.0, -np.pi / 2, 0.0])
-        # end_orientation = np.array([0.0, -np.pi / 2, 0.0])
-        # make_line(symbolic_ik, placo_ik, start_position, end_position, start_orientation, end_orientation, nb_points=30)
-        # start_position = np.array([0.3, -0.1, -0.3])
-        # end_position = np.array([0.3, -0.4, -0.3])
-        # start_orientation = np.array([0.0, -np.pi / 2, 0.0])
-        # end_orientation = np.array([0.0, -np.pi / 2, 0.0])
-        # make_line(symbolic_ik, placo_ik, start_position, end_position, start_orientation, end_orientation, nb_points=30)
+    # make_movement_test(symbolic_ik_r, placo_ik, goal_pose)
 
-        start_position = np.array([0.3, -0.4, -0.3])
-        end_position = np.array([0.3, -0.4, -0.0])
-        start_orientation = np.array([0.0, -np.pi / 2, 0.0])
-        end_orientation = np.array([0.0, -np.pi / 2, 0.0])
-        make_line(symbolic_ik, placo_ik, start_position, end_position, start_orientation, end_orientation, nb_points=30)
-        start_position = np.array([0.3, -0.4, 0.0])
-        end_position = np.array([0.3, -0.3, 0.0])
-        start_orientation = np.array([0.0, -np.pi / 2, 0.0])
-        end_orientation = np.array([0.0, -np.pi / 2, 0.0])
-        make_line(symbolic_ik, placo_ik, start_position, end_position, start_orientation, end_orientation, nb_points=30)
-        start_position = np.array([0.3, -0.3, 0.0])
-        end_position = np.array([0.3, -0.3, -0.3])
-        start_orientation = np.array([0.0, -np.pi / 2, 0.0])
-        end_orientation = np.array([0.0, -np.pi / 2, 0.0])
-        make_line(symbolic_ik, placo_ik, start_position, end_position, start_orientation, end_orientation, nb_points=30)
-        start_position = np.array([0.3, -0.3, -0.3])
-        end_position = np.array([0.3, -0.4, -0.3])
-        start_orientation = np.array([0.0, -np.pi / 2, 0.0])
-        end_orientation = np.array([0.0, -np.pi / 2, 0.0])
-        make_line(symbolic_ik, placo_ik, start_position, end_position, start_orientation, end_orientation, nb_points=30)
+    make_square(symbolic_ik_l, placo_ik)
 
     # start_position = np.array([0.4, 0.1, -0.4])
     # end_position = np.array([0.3, -0.2, -0.1])
     # start_orientation = np.array([0.35, -1.40, 0.17])
     # end_orientation = np.array([0.0, -0.0, 0.0])
-    # make_line(symbolic_ik, placo_ik, start_position, end_position, start_orientation, end_orientation, nb_points=300)
+    # make_line(symbolic_ik_r, placo_ik, start_position, end_position, start_orientation, end_orientation, nb_points=300)
 
 
 if __name__ == "__main__":

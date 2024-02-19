@@ -469,8 +469,8 @@ class SymbolicIK:
 
     def get_joints(self, theta: float) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         # make elbow symetrical
-        if self.arm == "l_arm":
-            theta = np.pi - theta
+        # if self.arm == "l_arm":
+        #     theta = np.pi - theta
         self.elbow_position = self.get_coordinate_cercle(self.intersection_circle, theta)
         goal_orientation = self.goal_pose[1]
 

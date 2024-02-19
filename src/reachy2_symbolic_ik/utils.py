@@ -1,5 +1,5 @@
 import math
-from typing import Any, Tuple
+from typing import Any, List, Tuple
 
 import numpy as np
 import numpy.typing as npt
@@ -41,6 +41,16 @@ def rotation_matrix_from_vector(vect: npt.NDArray[np.float64]) -> npt.NDArray[np
     kmat = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
     rotation_matrix = np.array(np.eye(3) + kmat + kmat.dot(kmat) * ((1 - c) / (s**2)))
     return rotation_matrix
+
+
+def get_theta_from_current_pose(
+    get_joints: Any, current_joints: List[float], joints_tolerance: List[float]
+) -> Tuple[bool, float]:
+    return True, 0.0
+
+
+def get_best_continuous_theta(previous_theta: float, intervalle: float, get_joints: Any) -> Tuple[bool, float]:
+    return True, 0.0
 
 
 def shoulder_limits(intervalle: npt.NDArray[np.float64], get_joints: Any, arm: str = "r_arm") -> Tuple[bool, float]:
