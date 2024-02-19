@@ -53,19 +53,53 @@ def shoulder_limits(intervalle: npt.NDArray[np.float64], get_joints: Any, arm: s
         joints0, elbow_position0 = get_joints(intervalle[0])
         joints1, elbow_position1 = get_joints(intervalle[1])
         if (elbow_position0[1] > -0.2) and (elbow_position1[1] > -0.2):
+            print("eeeehhh")
             return False, 0.0
         elif elbow_position0[1] * side > -0.2:
+            print("aahh")
             thetas = np.linspace(theta, intervalle[1], 100)
+            print([theta, intervalle[1]])
+            print(find_theta(thetas, get_joints, side))
             return find_theta(thetas, get_joints, side)
         elif elbow_position1[1] * side > -0.2:
+            print("oohhh")
             thetas = np.linspace(intervalle[0], theta, 100)
             return find_theta(thetas, get_joints, side)
+            print([theta, intervalle[0]])
         else:
-            if elbow_position0[2] * side < elbow_position1[2]:
+            print("uuhhh")
+            if elbow_position0[2] < elbow_position1[2]:
                 thetas = np.linspace(intervalle[0], theta, 100)
             else:
                 thetas = np.linspace(theta, intervalle[1], 100)
             return find_theta(thetas, get_joints, side)
+    return True, theta
+
+
+def shoulder_limits_memory(
+    theta0: float, intervalle: npt.NDArray[np.float64], get_joints: Any, arm: str = "r_arm"
+) -> Tuple[bool, float]:
+    joints, elbow_position = get_joints(theta0)
+    print(elbow_position)
+    # print(joints)
+    # print(joints[1])
+    side = 1
+    if arm == "l_arm":
+        side = -1
+
+    if elbow_position[1] * side > -0.2:
+        thetas = np.linspace(theta0, theta0 - 0.1, 5)
+        for theta in thetas:
+            joints, elbow_position = get_joints(theta)
+            if elbow_position[1] * side <= -0.2:
+                return True, theta
+        thetas = np.linspace(theta0, theta0 + 0.1, 5)
+        for theta in thetas:
+            joints, elbow_position = get_joints(theta)
+            if elbow_position[1] * side <= -0.2:
+                return True, theta
+        return False, theta0
+
     return True, theta
 
 
