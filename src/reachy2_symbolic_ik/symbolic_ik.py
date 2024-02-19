@@ -7,6 +7,7 @@ import numpy.typing as npt
 from scipy.spatial.transform import Rotation as R
 
 from reachy2_symbolic_ik.utils import (
+    angle_diff,
     make_homogenous_matrix_from_rotation_matrix,
     rotation_matrix_from_vector,
     show_circle,
@@ -328,20 +329,23 @@ class SymbolicIK:
             angle1 = math.atan2(point1_in_sphere_frame[2], point1_in_sphere_frame[1])
             angle2 = math.atan2(point2_in_sphere_frame[2], point2_in_sphere_frame[1])
 
+            angle_test = angle_diff(angle1, angle2) / 2 + angle2
+
             # if angle1 < 0:
             #     angle1 = angle1 + 2 * np.pi
             # if angle2 < 0:
             #     angle2 = angle2 + 2 * np.pi
 
-            [angle1, angle2] = sorted([angle1, angle2])
+            # [angle1, angle2] = sorted([angle1, angle2])
             print(angle1, angle2)
+            print(f"angle_test: {angle_test}")
 
-            x = math.cos(angle1) + math.cos(angle2)
-            y = math.sin(angle1) + math.sin(angle2)
-            if x == 0 and y == 0:
-                angle_test = (angle1 + angle2) / 2
-                print("attention !!!")
-            angle_test = math.atan2(y, x)
+            # x = math.cos(angle1) + math.cos(angle2)
+            # y = math.sin(angle1) + math.sin(angle2)
+            # if x == 0 and y == 0:
+            #     angle_test = (angle1 + angle2) / 2
+            #     print("attention !!!")
+            # angle_test = math.atan2(y, x)
 
             # finding which side of the circle is valid by testing the middle point of the arc
             test_point = np.array([0, math.cos(angle_test) * radius2, math.sin(angle_test) * radius2, 1])
@@ -364,8 +368,12 @@ class SymbolicIK:
             print(test_point_in_wrist_frame[0] > 0)
             if test_point_in_wrist_frame[0] > 0:
                 intervalle = np.array([angle1, angle2])
+                # if angle_test < 0:
+                #     intervalle = np.array([angle2, angle1])
+                # else :
+                #     intervalle = np.array([angle1, angle2])
             else:
-                intervalle = np.array([angle2, np.pi * 2 + angle1])
+                intervalle = np.array([angle2, angle1])
         return intervalle
 
     def intersection_point(

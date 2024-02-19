@@ -1,3 +1,4 @@
+import math
 from typing import Any
 
 import numpy as np
@@ -44,6 +45,13 @@ def rotation_matrix_from_vector(vect: npt.NDArray[np.float64]) -> npt.NDArray[np
 
 def show_point(ax: Any, point: npt.NDArray[np.float64], color: str) -> None:
     ax.plot(point[0], point[1], point[2], "o", color=color)
+
+
+def angle_diff(a: float, b: float) -> float:
+    """Returns the smallest distance between 2 angles"""
+    d = a - b
+    d = ((d + math.pi) % (2 * math.pi)) - math.pi
+    return d
 
 
 def show_circle(

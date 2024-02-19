@@ -5,6 +5,7 @@ import numpy.typing as npt
 from reachy_placo.ik_reachy_placo import IKReachyQP
 
 from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
+from reachy2_symbolic_ik.utils import angle_diff
 from reachy2_symbolic_ik.utils_placo import go_to_position
 
 
@@ -41,7 +42,13 @@ def make_line(
         result = symbolic_ik.is_reachable(goal_pose)
         if result[0]:
             print(result[1])
-            angle = np.linspace(result[1][0], result[1][1], 3)[1]
+            # angle = np.linspace(result[1][0], result[1][1], 3)[1]
+            angle = angle_diff(result[1][0], result[1][1]) / 2 + result[1][1]
+            # if result[1][0] < result[1][1]:
+            #     angle = angle_diff(result[1][0], result[1][1]) / 2 + result[1][1] + np.pi
+            # else:
+            #     angle = angle_diff(result[1][0], result[1][1]) / 2 + result[1][1]
+
             print(angle)
             joints = result[2](angle)
             go_to_position(placo_ik, joints, wait=0.0)
@@ -74,22 +81,43 @@ def main_test() -> None:
     # goal_pose = [goal_position, goal_orientation]
     # make_movement_test(symbolib_ik, placo_ik, goal_pose)
     while True:
+        # start_position = np.array([0.3, -0.4, -0.3])
+        # end_position = np.array([0.3, -0.4, -0.0])
+        # start_orientation = np.array([0.0, -np.pi / 2, 0.0])
+        # end_orientation = np.array([0.0, -np.pi / 2, 0.0])
+        # make_line(symbolic_ik, placo_ik, start_position, end_position, start_orientation, end_orientation, nb_points=30)
+        # start_position = np.array([0.3, -0.4, 0.0])
+        # end_position = np.array([0.3, -0.1, 0.0])
+        # start_orientation = np.array([0.0, -np.pi / 2, 0.0])
+        # end_orientation = np.array([0.0, -np.pi / 2, 0.0])
+        # make_line(symbolic_ik, placo_ik, start_position, end_position, start_orientation, end_orientation, nb_points=30)
+        # start_position = np.array([0.3, -0.1, 0.0])
+        # end_position = np.array([0.3, -0.1, -0.3])
+        # start_orientation = np.array([0.0, -np.pi / 2, 0.0])
+        # end_orientation = np.array([0.0, -np.pi / 2, 0.0])
+        # make_line(symbolic_ik, placo_ik, start_position, end_position, start_orientation, end_orientation, nb_points=30)
+        # start_position = np.array([0.3, -0.1, -0.3])
+        # end_position = np.array([0.3, -0.4, -0.3])
+        # start_orientation = np.array([0.0, -np.pi / 2, 0.0])
+        # end_orientation = np.array([0.0, -np.pi / 2, 0.0])
+        # make_line(symbolic_ik, placo_ik, start_position, end_position, start_orientation, end_orientation, nb_points=30)
+
         start_position = np.array([0.3, -0.4, -0.3])
-        end_position = np.array([0.3, -0.4, 0.0])
+        end_position = np.array([0.3, -0.4, -0.0])
         start_orientation = np.array([0.0, -np.pi / 2, 0.0])
         end_orientation = np.array([0.0, -np.pi / 2, 0.0])
         make_line(symbolic_ik, placo_ik, start_position, end_position, start_orientation, end_orientation, nb_points=30)
         start_position = np.array([0.3, -0.4, 0.0])
-        end_position = np.array([0.3, -0.1, 0.0])
+        end_position = np.array([0.3, -0.3, 0.0])
         start_orientation = np.array([0.0, -np.pi / 2, 0.0])
         end_orientation = np.array([0.0, -np.pi / 2, 0.0])
         make_line(symbolic_ik, placo_ik, start_position, end_position, start_orientation, end_orientation, nb_points=30)
-        start_position = np.array([0.3, -0.1, 0.0])
-        end_position = np.array([0.3, -0.1, -0.3])
+        start_position = np.array([0.3, -0.3, 0.0])
+        end_position = np.array([0.3, -0.3, -0.3])
         start_orientation = np.array([0.0, -np.pi / 2, 0.0])
         end_orientation = np.array([0.0, -np.pi / 2, 0.0])
         make_line(symbolic_ik, placo_ik, start_position, end_position, start_orientation, end_orientation, nb_points=30)
-        start_position = np.array([0.3, -0.1, -0.3])
+        start_position = np.array([0.3, -0.3, -0.3])
         end_position = np.array([0.3, -0.4, -0.3])
         start_orientation = np.array([0.0, -np.pi / 2, 0.0])
         end_orientation = np.array([0.0, -np.pi / 2, 0.0])
