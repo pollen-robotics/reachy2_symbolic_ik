@@ -119,11 +119,11 @@ def joints_space_test(symbolic_ik: SymbolicIK, placo_ik: IKReachyQP, verbose: bo
             if result[0]:
                 print(green + "Symbolic reachable" + reset_color)
                 is_reachable, theta = shoulder_limits(result[1], result[2])
-                if is_reachable:
-                    joints, elbow_position = result[2](theta)
-                    go_to_position(placo_ik, joints, wait=0.5)
-                else:
-                    print(red + "Pose not reachable because of shoulder limits" + reset_color)
+                # if is_reachable:
+                #     joints, elbow_position = result[2](theta)
+                #     go_to_position(placo_ik, joints, wait=0.5)
+                # else:
+                #     print(red + "Pose not reachable because of shoulder limits" + reset_color)
             else:
                 print(red + "Symbolic not reachable" + reset_color)
             time.sleep(0.2)
