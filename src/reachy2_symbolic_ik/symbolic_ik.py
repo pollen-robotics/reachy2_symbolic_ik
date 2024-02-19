@@ -270,7 +270,7 @@ class SymbolicIK:
             if (P_intersection_center1[0] > 0 and V_intersection_normal1[0] < 0) or (
                 P_intersection_center1[0] < 0 and V_intersection_normal1[0] > 0
             ):
-                return np.array([0, 2 * np.pi])
+                return np.array([-np.pi, np.pi])
             else:
                 return np.array([])
         else:
@@ -280,7 +280,7 @@ class SymbolicIK:
                 if (P_intersection_center1[0] > 0 and V_intersection_normal1[0] < 0) or (
                     P_intersection_center1[0] < 0 and V_intersection_normal1[0] > 0
                 ):
-                    return np.array([0, 2 * np.pi])
+                    return np.array([-np.pi, np.pi])
                 else:
                     return np.array([])
             points = self.intersection_circle_line_3d_vd(p1, radius1, v, q)
@@ -288,7 +288,7 @@ class SymbolicIK:
                 if (P_intersection_center1[0] > 0 and V_intersection_normal1[0] < 0) or (
                     P_intersection_center1[0] < 0 and V_intersection_normal1[0] > 0
                 ):
-                    return np.array([0, 2 * np.pi])
+                    return np.array([-np.pi, np.pi])
                 else:
                     return np.array([])
             else:
@@ -337,8 +337,8 @@ class SymbolicIK:
             #     angle2 = angle2 + 2 * np.pi
 
             # [angle1, angle2] = sorted([angle1, angle2])
-            print(angle1, angle2)
-            print(f"angle_test: {angle_test}")
+            # print(angle1, angle2)
+            # print(f"angle_test: {angle_test}")
 
             # x = math.cos(angle1) + math.cos(angle2)
             # y = math.sin(angle1) + math.sin(angle2)
@@ -352,7 +352,7 @@ class SymbolicIK:
 
             # transforming the test point to the torso frame
             test_point = np.dot(Tmat_intersection, test_point)
-            print(test_point)
+            # print(test_point)
             if SHOW_GRAPH:
                 self.ax.plot(
                     test_point[0] + self.wrist_position[0],
@@ -365,7 +365,7 @@ class SymbolicIK:
             test_point_in_wrist_frame = np.dot(Tmat_limitation_t, test_point)
 
             # testing if the point is above the limitation circle
-            print(test_point_in_wrist_frame[0] > 0)
+            # print(test_point_in_wrist_frame[0] > 0)
             if test_point_in_wrist_frame[0] > 0:
                 intervalle = np.array([angle1, angle2])
                 # if angle_test < 0:
@@ -373,6 +373,7 @@ class SymbolicIK:
                 # else :
                 #     intervalle = np.array([angle1, angle2])
             else:
+                print("OMGGG ANGLES WERE INVERTED $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
                 intervalle = np.array([angle2, angle1])
         return intervalle
 

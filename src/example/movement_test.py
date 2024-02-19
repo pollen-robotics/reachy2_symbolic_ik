@@ -41,15 +41,17 @@ def make_line(
         goal_pose = [[x[i], y[i], z[i]], [roll[i], pitch[i], yaw[i]]]
         result = symbolic_ik.is_reachable(goal_pose)
         if result[0]:
-            print(result[1])
+            # print(result[1])
             # angle = np.linspace(result[1][0], result[1][1], 3)[1]
             angle = angle_diff(result[1][0], result[1][1]) / 2 + result[1][1]
-            # if result[1][0] < result[1][1]:
-            #     angle = angle_diff(result[1][0], result[1][1]) / 2 + result[1][1] + np.pi
-            # else:
-            #     angle = angle_diff(result[1][0], result[1][1]) / 2 + result[1][1]
+            # print(angle_diff(result[1][0], result[1][1]) > 0)
+            if angle_diff(result[1][0], result[1][1]) > 0:
+                print("OMG ANGLE DIFF > 0 ")
+                angle = angle_diff(result[1][0], result[1][1]) / 2 + result[1][1] + np.pi
+            else:
+                angle = angle_diff(result[1][0], result[1][1]) / 2 + result[1][1]
 
-            print(angle)
+            # print(angle)
             joints = result[2](angle)
             go_to_position(placo_ik, joints, wait=0.0)
         else:
