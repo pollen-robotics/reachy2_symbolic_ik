@@ -6,7 +6,7 @@ import numpy.typing as npt
 from reachy_placo.ik_reachy_placo import IKReachyQP
 
 from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
-from reachy2_symbolic_ik.utils import angle_diff, shoulder_limits
+from reachy2_symbolic_ik.utils import angle_diff
 from reachy2_symbolic_ik.utils_placo import go_to_position
 
 
