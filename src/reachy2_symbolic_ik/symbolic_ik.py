@@ -8,7 +8,7 @@ from scipy.spatial.transform import Rotation as R
 
 from reachy2_symbolic_ik.utils import (
     make_homogenous_matrix_from_rotation_matrix,
-    rotation_matrix_from_vectors,
+    rotation_matrix_from_vector,
     show_circle,
     show_point,
     show_sphere,
@@ -41,6 +41,7 @@ class SymbolicIK:
             self.shoulder_position = np.array([0.0, 0.2, 0.0])
             self.shoulder_orientation_offset = [-x for x in shoulder_orientation_offset]
 
+    def is_reachable(self, goal_pose: npt.NDArray[np.float64]) -> Tuple[bool, npt.NDArray[np.float64], Optional[Any]]:
         if SHOW_GRAPH:
             fig = plt.figure()
             self.ax = fig.add_subplot(111, projection="3d")
@@ -50,8 +51,6 @@ class SymbolicIK:
             self.ax.set_xlabel("X")
             self.ax.set_ylabel("Y")
             self.ax.set_zlabel("Z")
-
-    def is_reachable(self, goal_pose: npt.NDArray[np.float64]) -> Tuple[bool, npt.NDArray[np.float64], Optional[Any]]:
         self.goal_pose = goal_pose
         self.wrist_position = self.get_wrist_position(goal_pose)
         limitation_wrist_circle = self.get_limitation_wrist_circle(goal_pose)
@@ -242,14 +241,14 @@ class SymbolicIK:
         V_torso_normal1 = np.array(limitation_wrist_circle[2])
         V_torso_normal2 = np.array(intersection_circle[2])
 
-        R_torso_intersection = rotation_matrix_from_vectors(np.array([1, 0, 0]), V_torso_normal2)
+        R_torso_intersection = rotation_matrix_from_vector(V_torso_normal2)
         T_torso_intersection = make_homogenous_matrix_from_rotation_matrix(p2, R_torso_intersection)
 
         R_intersection_torso = R_torso_intersection.T
         P_intersection_torso = np.dot(-R_intersection_torso, p2)
         T_intersection_torso = make_homogenous_matrix_from_rotation_matrix(P_intersection_torso, R_intersection_torso)
 
-        R_torso_limitation = rotation_matrix_from_vectors(np.array([1, 0, 0]), V_torso_normal1)
+        R_torso_limitation = rotation_matrix_from_vector(V_torso_normal1)
         R_limitation_torso = R_torso_limitation.T
         P_limitation_torso = np.dot(-R_limitation_torso, p1)
         T_limitation_torso = make_homogenous_matrix_from_rotation_matrix(P_limitation_torso, R_limitation_torso)
@@ -325,18 +324,31 @@ class SymbolicIK:
             )
 
             point2_in_sphere_frame = np.dot(Tmat_intersection_t, point2)
+            # these angles are the limits of the valid arc circle
             angle1 = math.atan2(point1_in_sphere_frame[2], point1_in_sphere_frame[1])
             angle2 = math.atan2(point2_in_sphere_frame[2], point2_in_sphere_frame[1])
 
-            if angle1 < 0:
-                angle1 = angle1 + 2 * np.pi
-            if angle2 < 0:
-                angle2 = angle2 + 2 * np.pi
+            # if angle1 < 0:
+            #     angle1 = angle1 + 2 * np.pi
+            # if angle2 < 0:
+            #     angle2 = angle2 + 2 * np.pi
 
             [angle1, angle2] = sorted([angle1, angle2])
-            angle_test = (angle1 + angle2) / 2
+            print(angle1, angle2)
+
+            x = math.cos(angle1) + math.cos(angle2)
+            y = math.sin(angle1) + math.sin(angle2)
+            if x == 0 and y == 0:
+                angle_test = (angle1 + angle2) / 2
+                print("attention !!!")
+            angle_test = math.atan2(y, x)
+
+            # finding which side of the circle is valid by testing the middle point of the arc
             test_point = np.array([0, math.cos(angle_test) * radius2, math.sin(angle_test) * radius2, 1])
+
+            # transforming the test point to the torso frame
             test_point = np.dot(Tmat_intersection, test_point)
+            print(test_point)
             if SHOW_GRAPH:
                 self.ax.plot(
                     test_point[0] + self.wrist_position[0],
@@ -345,8 +357,11 @@ class SymbolicIK:
                     "ro",
                 )
 
+            # transforming the test point to the limitation frame
             test_point_in_wrist_frame = np.dot(Tmat_limitation_t, test_point)
 
+            # testing if the point is above the limitation circle
+            print(test_point_in_wrist_frame[0] > 0)
             if test_point_in_wrist_frame[0] > 0:
                 intervalle = np.array([angle1, angle2])
             else:
@@ -423,7 +438,7 @@ class SymbolicIK:
     def get_coordinate_cercle(
         self, intersection_circle: Tuple[npt.NDArray[np.float64], float, npt.NDArray[np.float64]], theta: float
     ) -> npt.NDArray[np.float64]:
-        R_torso_intersection = rotation_matrix_from_vectors(np.array([1, 0, 0]), np.array(intersection_circle[2]))
+        R_torso_intersection = rotation_matrix_from_vector(np.array(intersection_circle[2]))
         T_torso_intersection = make_homogenous_matrix_from_rotation_matrix(intersection_circle[0], R_torso_intersection)
         x = 0
         y = intersection_circle[1] * np.cos(theta)
