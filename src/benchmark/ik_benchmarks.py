@@ -5,7 +5,7 @@ import numpy as np
 from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
 from reachy2_symbolic_ik.utils import (
     make_homogenous_matrix_from_rotation_matrix,
-    rotation_matrix_from_vectors,
+    rotation_matrix_from_vector,
 )
 
 
@@ -84,7 +84,7 @@ def test_are_cricles_linked(ik: SymbolicIK) -> None:
     print("are_circles_linked : ", end_time - start_time)
 
 
-def test_rotation_matrix_from_vectors() -> None:
+def test_rotation_matrix_from_vector() -> None:
     goal_position = [0.3, -0.1, 0.1]
     goal_orientation = [np.radians(20), np.radians(-50), np.radians(20)]
     goal_pose = np.array([goal_position, goal_orientation])
@@ -92,9 +92,9 @@ def test_rotation_matrix_from_vectors() -> None:
     limitation_wrist_circle = ik.get_limitation_wrist_circle(goal_pose)
     start_time = time.time()
     for i in range(10000):
-        rotation_matrix_from_vectors(np.array([1, 0, 0]), limitation_wrist_circle[2])
+        rotation_matrix_from_vector(limitation_wrist_circle[2])
     end_time = time.time()
-    print("rotation_matrix_from_vectors : ", end_time - start_time)
+    print("rotation_matrix_from_vector : ", end_time - start_time)
 
 
 def test_points_of_nearest_point(ik: SymbolicIK) -> None:
@@ -149,7 +149,7 @@ if __name__ == "__main__":
     test_get_limitation_wrist_circle(ik)
     test_get_intersection_circle(ik)
     test_are_cricles_linked(ik)
-    test_rotation_matrix_from_vectors()
+    test_rotation_matrix_from_vector()
     test_points_of_nearest_point(ik)
     test_intersection_circle_line_3d(ik)
     test_make_homogenous_matrix_from_rotation_matrix()

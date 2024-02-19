@@ -1,3 +1,4 @@
+import math
 from typing import Any, Tuple
 
 import numpy as np
@@ -17,22 +18,25 @@ def make_homogenous_matrix_from_rotation_matrix(
     )
 
 
-def rotation_matrix_from_vectors(vect1: npt.NDArray[np.float64], vect2: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
-    """Find the rotation matrix that aligns vect1 to vect2
+def rotation_matrix_from_vector(vect: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+    """Find the rotation matrix that aligns vect1 to vect
     :param vect1: A 3d "source" vector
-    :param vect2: A 3d "destination" vector
-    :return mat: A transform matrix (3x3) which when applied to vect1, aligns it with vect2.
+    :param vect: A 3d "destination" vector
+    :return mat: A transform matrix (3x3) which when applied to vect1, aligns it with vect.
     """
+    vect1 = np.array([1, 0, 0])
+    vect2 = (vect / np.linalg.norm(vect)).reshape(3)
 
-    a, b = (vect1 / np.linalg.norm(vect1)).reshape(3), (vect2 / np.linalg.norm(vect2)).reshape(3)
-    v = np.cross(a, b)
-    if np.all(np.isclose(a, b)):
+    # handling cross product colinear
+    if np.all(np.isclose(vect1, vect2)):
         return np.eye(3)
-    if np.all(a == -b):
-        matrix = np.array([[-1, 0, 0], [0, -1, 0], [0, 0, -1]])
-        return matrix
 
-    c = np.dot(a, b)
+    # handling cross product colinear
+    if np.all(np.isclose(vect1, -vect2)):
+        return np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]])
+
+    v = np.cross(vect1, vect2)
+    c = np.dot(vect1, vect2)
     s = np.linalg.norm(v)
     kmat = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
     rotation_matrix = np.array(np.eye(3) + kmat + kmat.dot(kmat) * ((1 - c) / (s**2)))
@@ -115,6 +119,13 @@ def show_point(ax: Any, point: npt.NDArray[np.float64], color: str) -> None:
     ax.plot(point[0], point[1], point[2], "o", color=color)
 
 
+def angle_diff(a: float, b: float) -> float:
+    """Returns the smallest distance between 2 angles"""
+    d = a - b
+    d = ((d + math.pi) % (2 * math.pi)) - math.pi
+    return d
+
+
 def show_circle(
     ax: Any,
     center: npt.NDArray[np.float64],
@@ -132,7 +143,7 @@ def show_circle(
     y = radius * np.cos(theta)
     z = radius * np.sin(theta)
     x = np.zeros(len(theta))
-    Rmat = rotation_matrix_from_vectors(np.array([1.0, 0.0, 0.0]), np.array(normal_vector))
+    Rmat = rotation_matrix_from_vector(np.array(normal_vector))
     Tmat = make_homogenous_matrix_from_rotation_matrix(center, Rmat)
 
     x2 = np.zeros(len(theta))

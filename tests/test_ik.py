@@ -32,8 +32,8 @@ def test_class() -> None:
     result = symbolic_ik.is_reachable(goal_pose)
 
     assert result[0]
-    assert result[1][0] >= 0
-    assert result[1][1] <= 4 * np.pi
+    assert result[1][0] >= -np.pi
+    assert result[1][1] <= np.pi
     assert result[2] is not None
 
     joints, elbow_position = result[2](result[1][0])
@@ -47,7 +47,7 @@ def test_class() -> None:
     result = symbolic_ik.is_reachable(goal_pose)
 
     assert result[0]
-    assert np.all(result[1] == [0, np.pi * 2])
+    assert np.all(result[1] == [-np.pi, np.pi])
     assert result[2] is not None
 
     joints, elbow_position = result[2](0)
