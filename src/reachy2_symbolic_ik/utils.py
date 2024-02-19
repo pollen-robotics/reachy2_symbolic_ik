@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Tuple
 
 import numpy as np
 import numpy.typing as npt
@@ -37,6 +37,44 @@ def rotation_matrix_from_vectors(vect1: npt.NDArray[np.float64], vect2: npt.NDAr
     kmat = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
     rotation_matrix = np.array(np.eye(3) + kmat + kmat.dot(kmat) * ((1 - c) / (s**2)))
     return rotation_matrix
+
+
+def shoulder_limits(intervalle: npt.NDArray[np.float64], get_joints: Any, arm: str = "r_arm") -> Tuple[bool, float]:
+    theta = float(np.linspace(intervalle[0], intervalle[1], 3)[1])
+    joints, elbow_position = get_joints(theta)
+    # print(elbow_position)
+    # print(joints)
+    # print(joints[1])
+    side = 1
+    if arm == "l_arm":
+        side = -1
+    # print(elbow_position[1] * side)
+    if elbow_position[1] * side > -0.2:
+        joints0, elbow_position0 = get_joints(intervalle[0])
+        joints1, elbow_position1 = get_joints(intervalle[1])
+        if (elbow_position0[1] > -0.2) and (elbow_position1[1] > -0.2):
+            return False, 0.0
+        elif elbow_position0[1] * side > -0.2:
+            thetas = np.linspace(theta, intervalle[1], 100)
+            return find_theta(thetas, get_joints, side)
+        elif elbow_position1[1] * side > -0.2:
+            thetas = np.linspace(intervalle[0], theta, 100)
+            return find_theta(thetas, get_joints, side)
+        else:
+            if elbow_position0[2] * side < elbow_position1[2]:
+                thetas = np.linspace(intervalle[0], theta, 100)
+            else:
+                thetas = np.linspace(theta, intervalle[1], 100)
+            return find_theta(thetas, get_joints, side)
+    return True, theta
+
+
+def find_theta(thetas: npt.NDArray[np.float64], get_joints: Any, side: int) -> Tuple[bool, float]:
+    for theta in thetas:
+        joints, elbow_position = get_joints(theta)
+        if elbow_position[1] * side <= -0.2:
+            return True, theta
+    return False, 0.0
 
 
 def show_point(ax: Any, point: npt.NDArray[np.float64], color: str) -> None:

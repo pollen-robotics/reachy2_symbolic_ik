@@ -444,15 +444,15 @@ class SymbolicIK:
         P_torso_point = np.array(np.dot(T_torso_intersection, P_intersection_point))
         return P_torso_point
 
-    def get_joints(self, theta: float) -> npt.NDArray[np.float64]:
+    def get_joints(self, theta: float) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         # make elbow symetrical
         if self.arm == "l_arm":
             theta = np.pi - theta
-        elbow_position = self.get_coordinate_cercle(self.intersection_circle, theta)
+        self.elbow_position = self.get_coordinate_cercle(self.intersection_circle, theta)
         goal_orientation = self.goal_pose[1]
 
         P_torso_shoulder = [self.shoulder_position[0], self.shoulder_position[1], self.shoulder_position[2], 1]
-        P_torso_elbow = [elbow_position[0], elbow_position[1], elbow_position[2], 1]
+        P_torso_elbow = [self.elbow_position[0], self.elbow_position[1], self.elbow_position[2], 1]
         P_torso_wrist = [self.wrist_position[0], self.wrist_position[1], self.wrist_position[2], 1]
         P_torso_goalPosition = [self.goal_pose[0][0], self.goal_pose[0][1], self.goal_pose[0][2], 1]
 
@@ -541,4 +541,4 @@ class SymbolicIK:
         gamma_wrist = -math.atan2(P_tip_point[1], P_tip_point[2])
 
         joints = np.array([alpha_shoulder, beta_shoulder, alpha_elbow, beta_elbow, beta_wrist, alpha_wrist, gamma_wrist])
-        return joints
+        return joints, self.elbow_position

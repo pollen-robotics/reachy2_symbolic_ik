@@ -8,6 +8,7 @@ from reachy_placo.ik_reachy_placo import IKReachyQP
 from scipy.spatial.transform import Rotation as R
 
 from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
+from reachy2_symbolic_ik.utils import shoulder_limits
 from reachy2_symbolic_ik.utils_placo import go_to_position
 
 
@@ -117,6 +118,12 @@ def joints_space_test(symbolic_ik: SymbolicIK, placo_ik: IKReachyQP, verbose: bo
                 print(red + "Placo not reachable" + reset_color)
             if result[0]:
                 print(green + "Symbolic reachable" + reset_color)
+                is_reachable, theta = shoulder_limits(result[1], result[2])
+                if is_reachable:
+                    joints, elbow_position = result[2](theta)
+                    go_to_position(placo_ik, joints, wait=0.5)
+                else:
+                    print(red + "Pose not reachable because of shoulder limits" + reset_color)
             else:
                 print(red + "Symbolic not reachable" + reset_color)
             time.sleep(0.2)
@@ -201,8 +208,8 @@ def main_test() -> None:
     placo_ik.create_tasks()
 
     # time_test(symbolib_ik, placo_ik)
-    joints_space_test(symbolib_ik, placo_ik, verbose=False, number_of_point=1000)
-    # joints_space_test(symbolib_ik, placo_ik, verbose=True)
+    # joints_space_test(symbolib_ik, placo_ik, verbose=False, number_of_point=1000)
+    joints_space_test(symbolib_ik, placo_ik, verbose=True)
     # task_space_test(symbolib_ik, placo_ik)
 
     # goal_position = [[0.11657383, -0.31879514, -0.18552353], [-2.06584127, -0.50205104, 0.56725307]]

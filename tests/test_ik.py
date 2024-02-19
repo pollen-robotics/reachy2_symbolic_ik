@@ -36,7 +36,7 @@ def test_class() -> None:
     assert result[1][1] <= 4 * np.pi
     assert result[2] is not None
 
-    joints = result[2](result[1][0])
+    joints, elbow_position = result[2](result[1][0])
 
     assert len(joints) == 7
 
@@ -50,7 +50,7 @@ def test_class() -> None:
     assert np.all(result[1] == [0, np.pi * 2])
     assert result[2] is not None
 
-    joints = result[2](0)
+    joints, elbow_position = result[2](0)
 
     assert len(joints) == 7
 
@@ -84,7 +84,7 @@ def test_full() -> None:
     goal_pose = [goal_position, goal_orientation]
 
     result = symbolic_ik.is_reachable(goal_pose)
-    joints = result[2](0)
+    joints, elbow_position = result[2](0)
 
     names = [
         "r_shoulder_pitch",
