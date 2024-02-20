@@ -74,39 +74,41 @@ def get_theta_from_current_pose(
 def get_best_continuous_theta(
     previous_theta: float, intervalle: npt.NDArray[np.float64], get_joints: Any, d_theta_max: float, arm: str
 ) -> Tuple[bool, float]:
+    side = 1
+    if arm == "l_arm":
+        side = -1
+
     if angle_diff(intervalle[0], intervalle[1]) > 0:
         print("OMG ANGLE DIFF > 0 ")
         theta_middle = angle_diff(intervalle[0], intervalle[1]) / 2 + intervalle[1] + np.pi
     else:
         theta_middle = angle_diff(intervalle[0], intervalle[1]) / 2 + intervalle[1]
+    print(f"theta milieu {theta_middle}")
 
+    print(f"angle diff {angle_diff(theta_middle, previous_theta)}")
     if abs(angle_diff(theta_middle, previous_theta)) < d_theta_max:
         theta = theta_middle
-    else:
-        theta = (
-            previous_theta
-            + d_theta_max * (angle_diff(theta_middle, previous_theta) / np.abs(angle_diff(theta_middle, previous_theta))) * 0.5
-        )
 
-    joints, elbow_position = get_joints(theta)
-    side = 1
-    if arm == "l_arm":
-        side = -1
-    if elbow_position[1] * side > -0.2:
-        return True, theta
+        joints, elbow_position = get_joints(theta)
 
-    else:
-        thetas = np.linspace(previous_theta, previous_theta - d_theta_max, 5)
-        for theta in thetas:
-            joints, elbow_position = get_joints(theta)
-            if elbow_position[1] * side <= -0.2:
-                return True, theta
-        thetas = np.linspace(previous_theta, previous_theta + d_theta_max, 5)
-        for theta in thetas:
-            joints, elbow_position = get_joints(theta)
-            if elbow_position[1] * side <= -0.2:
-                return True, theta
-        return False, previous_theta
+        if is_elbow_ok(elbow_position, side):
+            print("theta milieu")
+            return True, theta
+
+    sign = angle_diff(theta_middle, previous_theta) / np.abs(angle_diff(theta_middle, previous_theta))
+
+    for theta_side in [previous_theta + sign * d_theta_max, previous_theta - sign * d_theta_max]:
+        joints, elbow_position = get_joints(theta_side)
+        if is_elbow_ok(elbow_position, side):
+            print("theta side")
+            return True, theta_side
+
+    print("theta hors limites")
+    return False, previous_theta + sign * d_theta_max
+
+
+def is_elbow_ok(elbow_position: npt.NDArray[np.float64], side: int) -> bool:
+    return bool(elbow_position[1] * side < -0.2)
 
 
 def shoulder_limits(intervalle: npt.NDArray[np.float64], get_joints: Any, arm: str = "r_arm") -> Tuple[bool, float]:

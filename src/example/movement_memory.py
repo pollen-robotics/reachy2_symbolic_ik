@@ -5,11 +5,7 @@ import numpy.typing as npt
 from reachy_placo.ik_reachy_placo import IKReachyQP
 
 from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
-from reachy2_symbolic_ik.utils import (
-    angle_diff,
-    get_best_continuous_theta,
-    get_theta_from_current_pose,
-)
+from reachy2_symbolic_ik.utils import get_best_continuous_theta
 from reachy2_symbolic_ik.utils_placo import go_to_position
 
 
@@ -30,34 +26,25 @@ def make_line(
     roll = np.linspace(start_orientation[0], end_orientation[0], nb_points)
     pitch = np.linspace(start_orientation[1], end_orientation[1], nb_points)
     yaw = np.linspace(start_orientation[2], end_orientation[2], nb_points)
+    previous_theta = np.pi
 
-    is_reachable, intervalle, get_joints = symbolic_ik.is_reachable(current_pose)
-    if is_reachable:
-        is_reachable, theta0 = get_theta_from_current_pose(
-            get_joints, intervalle, current_joints, [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], symbolic_ik.arm
-        )
-        if not (is_reachable):
-            if angle_diff(intervalle[0], intervalle[1]) > 0:
-                print("OMG ANGLE DIFF > 0 ")
-                theta0 = angle_diff(intervalle[0], intervalle[1]) / 2 + intervalle[1] + np.pi
-            else:
-                theta0 = angle_diff(intervalle[0], intervalle[1]) / 2 + intervalle[1]
-    else:
-        if angle_diff(intervalle[0], intervalle[1]) > 0:
-            print("OMG ANGLE DIFF > 0 ")
-            theta0 = angle_diff(intervalle[0], intervalle[1]) / 2 + intervalle[1] + np.pi
+    for i in range(nb_points * 2):
+        if i < nb_points:
+            i = 0
         else:
-            theta0 = angle_diff(intervalle[0], intervalle[1]) / 2 + intervalle[1]
-
-    for i in range(nb_points):
+            i = i - nb_points
         goal_pose = [[x[i], y[i], z[i]], [roll[i], pitch[i], yaw[i]]]
-        result = symbolic_ik.is_reachable(goal_pose)
-        is_reachable, theta = get_best_continuous_theta(theta0, intervalle, get_joints, 0.1, symbolic_ik.arm)
+        is_reachable, interval, get_joints = symbolic_ik.is_reachable(goal_pose)
         if is_reachable:
-            joints, elbow_position = result[2](theta)
-            go_to_position(placo_ik, joints, wait=0.0, arm=symbolic_ik.arm)
+            is_reachable, theta = get_best_continuous_theta(previous_theta, interval, get_joints, 0.02, symbolic_ik.arm)
+            print(theta)
+            previous_theta = theta
         else:
-            print("Pose not reachable")
+            print("code ik no limit")
+        joints, elbow_position = get_joints(theta)
+        go_to_position(placo_ik, joints, wait=0.0, arm=symbolic_ik.arm)
+        # else:
+        #     print("Pose not reachable")
 
 
 def make_square(
@@ -156,24 +143,24 @@ def main_test() -> None:
     result = symbolic_ik_r.is_reachable(current_pose)
     if result[0]:
         joints, elbow_position = result[2](result[1][0])
-        make_square(symbolic_ik_r, placo_ik, joints, current_pose)
+        # make_square(symbolic_ik_r, placo_ik, joints, current_pose)
 
-    #     while True:
-    #         start_position = np.array([0.4, -0.5, -0.3])
-    #         end_position = np.array([0.4, -0.5, -0.0])
-    #         start_orientation = np.array([0.0, -np.pi / 2, 0.0])
-    #         end_orientation = np.array([0.0, -np.pi / 2, 0.0])
-    #         make_line(
-    #             symbolic_ik_r,
-    #             placo_ik,
-    #             start_position,
-    #             end_position,
-    #             start_orientation,
-    #             end_orientation,
-    #             joints,
-    #             current_pose,
-    #             nb_points=50,
-    #         )
+        while True:
+            start_position = np.array([0.4, -0.5, -0.3])
+            end_position = np.array([0.4, -0.5, -0.0])
+            start_orientation = np.array([0.0, -np.pi / 2, 0.0])
+            end_orientation = np.array([0.0, -np.pi / 2, 0.0])
+            make_line(
+                symbolic_ik_r,
+                placo_ik,
+                start_position,
+                end_position,
+                start_orientation,
+                end_orientation,
+                joints,
+                current_pose,
+                nb_points=50,
+            )
     else:
         print("Pose not reachable")
 
