@@ -44,7 +44,11 @@ def rotation_matrix_from_vector(vect: npt.NDArray[np.float64]) -> npt.NDArray[np
 
 
 def get_theta_from_current_pose(
-    get_joints: Any, intervalle: npt.NDArray[np.float64], current_joints: List[float], joints_tolerance: List[float], arm: str
+    get_joints: Any,
+    intervalle: npt.NDArray[np.float64],
+    current_joints: List[float],
+    joints_tolerance: List[float],
+    nb_points: int,
 ) -> Tuple[bool, float]:
     thetas = np.linspace(intervalle[0], intervalle[1], 360)
     # side = 1
