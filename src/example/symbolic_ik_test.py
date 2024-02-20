@@ -76,10 +76,11 @@ def main_test() -> None:
 
     result_l = symbolib_ik_l.is_reachable(goal_pose)
     if result_l[0]:
-        # print(result_l[1])
+        print(result_l[1])
         # tetha = np.linspace(result_l[1][0], result_l[1][1], 3)[1]
         # go_to_position(placo_ik, result_l[2](tetha), wait=3, arm="l_arm")
         is_reachable, theta = shoulder_limits(result_l[1], result_l[2], arm="l_arm")
+        print(theta)
         if is_reachable:
             joints, elbow_position = result_l[2](theta)
             go_to_position(placo_ik, joints, wait=3, arm="l_arm")
@@ -100,6 +101,7 @@ def main_test() -> None:
         print("pose reachable")
         print(result_r[1])
         is_reachable, theta = shoulder_limits(result_r[1], result_r[2])
+        print(theta)
         if is_reachable:
             joints, elbow_position = result_r[2](theta)
             go_to_position(placo_ik, joints, wait=3)

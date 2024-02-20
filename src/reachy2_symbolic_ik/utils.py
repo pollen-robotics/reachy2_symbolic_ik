@@ -44,13 +44,65 @@ def rotation_matrix_from_vector(vect: npt.NDArray[np.float64]) -> npt.NDArray[np
 
 
 def get_theta_from_current_pose(
-    get_joints: Any, current_joints: List[float], joints_tolerance: List[float]
+    get_joints: Any, intervalle: npt.NDArray[np.float64], current_joints: List[float], joints_tolerance: List[float], arm: str
 ) -> Tuple[bool, float]:
-    return True, 0.0
+    thetas = np.linspace(intervalle[0], intervalle[1], 360)
+    # side = 1
+    # if arm == "l_arm":
+    #     side = -1
+    d_min = 1000.0
+    theta_min = 0.0
+    joints_min = []
+    for theta in thetas:
+        joints, elbow_position = get_joints(theta)
+        d = float(np.linalg.norm(np.array(joints) - np.array(current_joints)))
+        if d < d_min:
+            print(d)
+            d_min = d
+            theta_min = theta
+            joints_min = joints
+    for joint in joints_min:
+        if abs(joint - current_joints[0]) > joints_tolerance[0]:
+            return False, theta_min
+    return True, theta_min
 
 
-def get_best_continuous_theta(previous_theta: float, intervalle: float, get_joints: Any) -> Tuple[bool, float]:
-    return True, 0.0
+def get_best_continuous_theta(
+    previous_theta: float, intervalle: npt.NDArray[np.float64], get_joints: Any, d_theta_max: float, arm: str
+) -> Tuple[bool, float]:
+    if angle_diff(intervalle[0], intervalle[1]) > 0:
+        print("OMG ANGLE DIFF > 0 ")
+        theta_middle = angle_diff(intervalle[0], intervalle[1]) / 2 + intervalle[1] + np.pi
+    else:
+        theta_middle = angle_diff(intervalle[0], intervalle[1]) / 2 + intervalle[1]
+
+    if abs(angle_diff(theta_middle, previous_theta)) < d_theta_max:
+        theta = theta_middle
+    else:
+        theta = (
+            previous_theta
+            + d_theta_max * (angle_diff(theta_middle, previous_theta) / np.abs(angle_diff(theta_middle, previous_theta))) * 0.5
+        )
+
+    joints, elbow_position = get_joints(theta)
+    side = 1
+    if arm == "l_arm":
+        side = -1
+    if elbow_position[1] * side > -0.2:
+        return True, theta
+
+    else:
+        thetas = np.linspace(previous_theta, previous_theta - d_theta_max, 5)
+        for theta in thetas:
+            joints, elbow_position = get_joints(theta)
+            if elbow_position[1] * side <= -0.2:
+                return True, theta
+        thetas = np.linspace(previous_theta, previous_theta + d_theta_max, 5)
+        for theta in thetas:
+            joints, elbow_position = get_joints(theta)
+            if elbow_position[1] * side <= -0.2:
+                return True, theta
+        return False, previous_theta
 
 
 def shoulder_limits(intervalle: npt.NDArray[np.float64], get_joints: Any, arm: str = "r_arm") -> Tuple[bool, float]:
