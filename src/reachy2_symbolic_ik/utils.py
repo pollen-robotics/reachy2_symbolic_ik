@@ -71,6 +71,28 @@ def get_theta_from_current_pose(
     return True, theta_min
 
 
+def tend_to_prefered_theta(
+    previous_theta: float,
+    intervalle: npt.NDArray[np.float64],
+    get_joints: Any,
+    d_theta_max: float,
+    arm: str,
+    goal_theta: float = np.pi * 5 / 4,
+) -> Tuple[bool, float]:
+    side = 1
+    if arm == "l_arm":
+        side = -1
+
+    if abs(angle_diff(previous_theta, goal_theta * side)) < d_theta_max:
+        print(f"diff ok {angle_diff(previous_theta, goal_theta * side)}")
+        return True, goal_theta * side
+
+    sign = angle_diff(previous_theta, goal_theta) / np.abs(angle_diff(previous_theta, goal_theta))
+
+    print("tend to go to goal theta")
+    return False, (previous_theta + sign * d_theta_max) * side
+
+
 def get_best_continuous_theta(
     previous_theta: float, intervalle: npt.NDArray[np.float64], get_joints: Any, d_theta_max: float, arm: str
 ) -> Tuple[bool, float]:

@@ -5,7 +5,7 @@ import numpy.typing as npt
 from reachy_placo.ik_reachy_placo import IKReachyQP
 
 from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
-from reachy2_symbolic_ik.utils import get_best_continuous_theta
+from reachy2_symbolic_ik.utils import get_best_continuous_theta, tend_to_prefered_theta
 from reachy2_symbolic_ik.utils_placo import go_to_position
 
 
@@ -40,13 +40,22 @@ def make_line(
         goal_pose = [[x[i], y[i], z[i]], [roll[i], pitch[i], yaw[i]]]
         is_reachable, interval, get_joints = symbolic_ik.is_reachable(goal_pose)
         if is_reachable:
-            is_reachable, theta = get_best_continuous_theta(previous_theta, interval, get_joints, 0.1, symbolic_ik.arm)
+            is_reachable, theta = get_best_continuous_theta(previous_theta, interval, get_joints, 0.01, symbolic_ik.arm)
             print(theta)
             previous_theta = theta
+
         else:
-            print("code ik no limit")
+            # prevciois_theta = np.pi
+            print("Pose not reachable")
+            is_reachable, interval, get_joints = symbolic_ik.is_reachable_no_limits(goal_pose)
+            if is_reachable:
+                is_reachable, theta = tend_to_prefered_theta(previous_theta, interval, get_joints, 0.01, symbolic_ik.arm)
+            else:
+                print("Pose not reachable________________")
+
         joints, elbow_position = get_joints(theta)
         go_to_position(placo_ik, joints, wait=0.0, arm=symbolic_ik.arm)
+
         # else:
         #     print("Pose not reachable")
     return float(theta)
@@ -67,10 +76,10 @@ def make_square(
         start_positions.append(np.array([0.4, -0.5, -0.3]))
         end_positions.append(np.array([0.4, -0.5, -0.0]))
         start_positions.append(np.array([0.4, -0.5, -0.0]))
-        end_positions.append(np.array([0.4, -0.3, -0.0]))
-        start_positions.append(np.array([0.4, -0.3, -0.0]))
-        end_positions.append(np.array([0.4, -0.3, -0.3]))
-        start_positions.append(np.array([0.4, -0.3, -0.3]))
+        end_positions.append(np.array([0.4, -0.0, -0.0]))
+        start_positions.append(np.array([0.4, -0.0, -0.0]))
+        end_positions.append(np.array([0.4, -0.0, -0.3]))
+        start_positions.append(np.array([0.4, -0.0, -0.3]))
         end_positions.append(np.array([0.4, -0.5, -0.3]))
     else:
         print("l_arm")
