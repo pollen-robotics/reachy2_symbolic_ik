@@ -1,3 +1,4 @@
+import time
 from pathlib import Path
 
 import numpy as np
@@ -16,6 +17,7 @@ def make_line(
     end_position: npt.NDArray[np.float64],
     start_orientation: npt.NDArray[np.float64],
     end_orientation: npt.NDArray[np.float64],
+    prefered_theta: float,
     previous_theta: float = np.pi,
     nb_points: int = 100,
     init: bool = False,
@@ -40,7 +42,14 @@ def make_line(
         goal_pose = [[x[i], y[i], z[i]], [roll[i], pitch[i], yaw[i]]]
         is_reachable, interval, get_joints = symbolic_ik.is_reachable(goal_pose)
         if is_reachable:
-            is_reachable, theta = get_best_continuous_theta(previous_theta, interval, get_joints, 0.01, symbolic_ik.arm)
+            is_reachable, theta = get_best_continuous_theta(
+                previous_theta,
+                interval,
+                get_joints,
+                0.05,
+                prefered_theta,
+                symbolic_ik.arm,
+            )
             print(theta)
             previous_theta = theta
 
@@ -49,7 +58,10 @@ def make_line(
             print("Pose not reachable")
             is_reachable, interval, get_joints = symbolic_ik.is_reachable_no_limits(goal_pose)
             if is_reachable:
-                is_reachable, theta = tend_to_prefered_theta(previous_theta, interval, get_joints, 0.01, symbolic_ik.arm)
+                is_reachable, theta = tend_to_prefered_theta(
+                    previous_theta, interval, get_joints, 0.05, symbolic_ik.arm, goal_theta=prefered_theta
+                )
+
             else:
                 print("Pose not reachable________________")
 
@@ -64,7 +76,7 @@ def make_line(
 def make_square(
     symbolic_ik: SymbolicIK,
     placo_ik: IKReachyQP,
-    previous_theta: float = np.pi,
+    prefered_theta: float = -5 * np.pi / 4,
 ) -> None:
     if symbolic_ik is None:
         raise ValueError("symbolic_ik is None")
@@ -73,14 +85,16 @@ def make_square(
     end_positions = []
     if symbolic_ik.arm == "r_arm":
         print("r_arm")
-        start_positions.append(np.array([0.4, -0.5, -0.3]))
-        end_positions.append(np.array([0.4, -0.5, -0.0]))
-        start_positions.append(np.array([0.4, -0.5, -0.0]))
-        end_positions.append(np.array([0.4, -0.0, -0.0]))
-        start_positions.append(np.array([0.4, -0.0, -0.0]))
-        end_positions.append(np.array([0.4, -0.0, -0.3]))
-        start_positions.append(np.array([0.4, -0.0, -0.3]))
-        end_positions.append(np.array([0.4, -0.5, -0.3]))
+        start_positions.append(np.array([0.3, -0.4, -0.3]))
+        end_positions.append(np.array([0.3, -0.4, -0.0]))
+        start_positions.append(np.array([0.3, -0.4, -0.0]))
+        end_positions.append(np.array([0.3, -0.1, -0.0]))
+        start_positions.append(np.array([0.3, -0.1, -0.0]))
+        end_positions.append(np.array([0.3, -0.1, -0.3]))
+        start_positions.append(np.array([0.3, -0.1, -0.3]))
+        end_positions.append(np.array([0.3, -0.4, -0.3]))
+        # start_positions.append(np.array([0.3, -0.1, -0.2]))
+        # end_positions.append(np.array([0.3, -0.1, -0.2]))
     else:
         print("l_arm")
         start_positions.append(np.array([0.4, 0.5, -0.3]))
@@ -92,7 +106,9 @@ def make_square(
         start_positions.append(np.array([0.4, 0.3, -0.3]))
         end_positions.append(np.array([0.4, 0.5, -0.3]))
 
-    init = True
+    time.sleep(3)
+    init = False
+    previous_theta = prefered_theta
     while True:
         for i in range(len(start_positions)):
             if i > 0:
@@ -105,8 +121,9 @@ def make_square(
                 end_positions[i],
                 orientation,
                 orientation,
-                previous_theta,
-                nb_points=50,
+                prefered_theta,
+                previous_theta=previous_theta,
+                nb_points=100,
                 init=init,
             )
 
@@ -144,8 +161,9 @@ def main_test() -> None:
     # start_orientation = np.array([0.35, -1.40, 0.17])
     # end_orientation = np.array([0.0, -0.0, 0.0])
     # make_line(symbolic_ik_r, placo_ik, start_position, end_position, start_orientation, end_orientation, nb_points=300)
+    prefered_theta = -5 * np.pi / 4
 
-    make_square(symbolic_ik_r, placo_ik)
+    make_square(symbolic_ik_r, placo_ik, prefered_theta=prefered_theta)
     # while True:
     #     start_position = np.array([0.4, -0.5, -0.3])
     #     end_position = np.array([0.4, -0.5, -0.0])
