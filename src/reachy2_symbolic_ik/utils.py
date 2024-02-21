@@ -129,6 +129,9 @@ def get_best_continuous_theta(
             print("theta milieu pas ok mais moi ok - bouge pas ")
             return True, previous_theta
         else:
+            if abs(angle_diff(prefered_theta, previous_theta)) < d_theta_max:
+                print("theta milieu pas ok et moi pas ok - proche de theta pref")
+                return False, prefered_theta
             sign = angle_diff(prefered_theta, previous_theta) / np.abs(angle_diff(prefered_theta, previous_theta))
             print("theta milieu pas ok et moi pas ok - bouge vers theta pref")
             return False, previous_theta + sign * d_theta_max

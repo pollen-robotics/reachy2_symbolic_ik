@@ -46,7 +46,7 @@ def make_line(
                 previous_theta,
                 interval,
                 get_joints,
-                0.01,
+                0.05,
                 prefered_theta,
                 symbolic_ik.arm,
             )
@@ -58,7 +58,7 @@ def make_line(
             is_reachable, interval, get_joints = symbolic_ik.is_reachable_no_limits(goal_pose)
             if is_reachable:
                 is_reachable, theta = tend_to_prefered_theta(
-                    previous_theta, interval, get_joints, 0.01, goal_theta=prefered_theta
+                    previous_theta, interval, get_joints, 0.05, goal_theta=prefered_theta
                 )
                 previous_theta = theta
             else:
@@ -108,7 +108,7 @@ def make_square(
     time.sleep(3)
     init = False
     previous_theta_r = prefered_theta
-    previous_theta_l = prefered_theta + np.pi / 2
+    previous_theta_l = np.pi - prefered_theta
     while True:
         for i in range(len(start_positions_r)):
             if i > 0:
@@ -123,7 +123,7 @@ def make_square(
                 orientation,
                 prefered_theta,
                 previous_theta=previous_theta_r,
-                nb_points=50,
+                nb_points=100,
                 init=init,
             )
             previous_theta_l = make_line(
@@ -133,9 +133,9 @@ def make_square(
                 end_positions_l[i],
                 orientation,
                 orientation,
-                prefered_theta + np.pi / 2,
+                np.pi - prefered_theta,
                 previous_theta=previous_theta_l,
-                nb_points=50,
+                nb_points=100,
                 init=init,
             )
 
