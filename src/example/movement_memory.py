@@ -54,23 +54,19 @@ def make_line(
             previous_theta = theta
 
         else:
-            # prevciois_theta = np.pi
             print("Pose not reachable")
             is_reachable, interval, get_joints = symbolic_ik.is_reachable_no_limits(goal_pose)
             if is_reachable:
                 is_reachable, theta = tend_to_prefered_theta(
-                    previous_theta, interval, get_joints, 0.01, symbolic_ik.arm, goal_theta=prefered_theta
+                    previous_theta, interval, get_joints, 0.01, goal_theta=prefered_theta
                 )
                 previous_theta = theta
-                # previous_theta = -5 * np.pi / 4
             else:
                 print("Pose not reachable________________")
 
         joints, elbow_position = get_joints(theta)
         go_to_position(placo_ik, joints, wait=0.0, arm=symbolic_ik.arm)
 
-        # else:
-        #     print("Pose not reachable")
     return float(theta)
 
 
