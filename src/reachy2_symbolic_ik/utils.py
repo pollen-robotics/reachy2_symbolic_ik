@@ -87,9 +87,9 @@ def tend_to_prefered_theta(
         print(f"diff ok {angle_diff(previous_theta, goal_theta * side)}")
         return True, goal_theta * side
 
-    sign = angle_diff(previous_theta, goal_theta) / np.abs(angle_diff(previous_theta, goal_theta))
+    sign = angle_diff(goal_theta, previous_theta) / np.abs(angle_diff(goal_theta, previous_theta))
 
-    print("tend to go to goal theta")
+    print(f"tend to go to goal theta {side} {previous_theta} -- {previous_theta + sign * d_theta_max}")
     return False, (previous_theta + sign * d_theta_max) * side
 
 

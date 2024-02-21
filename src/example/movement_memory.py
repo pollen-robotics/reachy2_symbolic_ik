@@ -46,7 +46,7 @@ def make_line(
                 previous_theta,
                 interval,
                 get_joints,
-                0.05,
+                0.1,
                 prefered_theta,
                 symbolic_ik.arm,
             )
@@ -59,9 +59,10 @@ def make_line(
             is_reachable, interval, get_joints = symbolic_ik.is_reachable_no_limits(goal_pose)
             if is_reachable:
                 is_reachable, theta = tend_to_prefered_theta(
-                    previous_theta, interval, get_joints, 0.05, symbolic_ik.arm, goal_theta=prefered_theta
+                    previous_theta, interval, get_joints, 0.1, symbolic_ik.arm, goal_theta=prefered_theta
                 )
-
+                previous_theta = theta
+                # previous_theta = -5 * np.pi / 4
             else:
                 print("Pose not reachable________________")
 
@@ -161,7 +162,7 @@ def main_test() -> None:
     # start_orientation = np.array([0.35, -1.40, 0.17])
     # end_orientation = np.array([0.0, -0.0, 0.0])
     # make_line(symbolic_ik_r, placo_ik, start_position, end_position, start_orientation, end_orientation, nb_points=300)
-    prefered_theta = -5 * np.pi / 4
+    prefered_theta = 5 * np.pi / 4
 
     make_square(symbolic_ik_r, placo_ik, prefered_theta=prefered_theta)
     # while True:
