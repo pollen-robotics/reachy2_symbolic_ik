@@ -46,7 +46,7 @@ def make_line(
                 previous_theta,
                 interval,
                 get_joints,
-                0.1,
+                0.01,
                 prefered_theta,
                 symbolic_ik.arm,
             )
@@ -59,7 +59,7 @@ def make_line(
             is_reachable, interval, get_joints = symbolic_ik.is_reachable_no_limits(goal_pose)
             if is_reachable:
                 is_reachable, theta = tend_to_prefered_theta(
-                    previous_theta, interval, get_joints, 0.1, symbolic_ik.arm, goal_theta=prefered_theta
+                    previous_theta, interval, get_joints, 0.01, symbolic_ik.arm, goal_theta=prefered_theta
                 )
                 previous_theta = theta
                 # previous_theta = -5 * np.pi / 4
@@ -75,63 +75,78 @@ def make_line(
 
 
 def make_square(
-    symbolic_ik: SymbolicIK,
+    symbolic_ik: list[SymbolicIK],
     placo_ik: IKReachyQP,
     prefered_theta: float = -5 * np.pi / 4,
 ) -> None:
     if symbolic_ik is None:
         raise ValueError("symbolic_ik is None")
     orientation = np.array([0.0, -np.pi / 2, 0.0])
-    start_positions = []
-    end_positions = []
-    if symbolic_ik.arm == "r_arm":
-        print("r_arm")
-        start_positions.append(np.array([0.3, -0.4, -0.3]))
-        end_positions.append(np.array([0.3, -0.4, -0.0]))
-        start_positions.append(np.array([0.3, -0.4, -0.0]))
-        end_positions.append(np.array([0.3, -0.1, -0.0]))
-        start_positions.append(np.array([0.3, -0.1, -0.0]))
-        end_positions.append(np.array([0.3, -0.1, -0.3]))
-        start_positions.append(np.array([0.3, -0.1, -0.3]))
-        end_positions.append(np.array([0.3, -0.4, -0.3]))
-        # start_positions.append(np.array([0.3, -0.1, -0.2]))
-        # end_positions.append(np.array([0.3, -0.1, -0.2]))
-    else:
-        print("l_arm")
-        start_positions.append(np.array([0.4, 0.5, -0.3]))
-        end_positions.append(np.array([0.4, 0.5, -0.0]))
-        start_positions.append(np.array([0.4, 0.5, -0.0]))
-        end_positions.append(np.array([0.4, 0.3, -0.0]))
-        start_positions.append(np.array([0.4, 0.3, -0.0]))
-        end_positions.append(np.array([0.4, 0.3, -0.3]))
-        start_positions.append(np.array([0.4, 0.3, -0.3]))
-        end_positions.append(np.array([0.4, 0.5, -0.3]))
+    start_positions_r = []
+    end_positions_r = []
+    start_positions_l = []
+    end_positions_l = []
+    # if symbolic_ik.arm == "r_arm":
+    print("r_arm")
+    start_positions_r.append(np.array([0.3, -0.4, -0.3]))
+    end_positions_r.append(np.array([0.3, -0.4, -0.0]))
+    start_positions_r.append(np.array([0.3, -0.4, -0.0]))
+    end_positions_r.append(np.array([0.3, -0.1, -0.0]))
+    start_positions_r.append(np.array([0.3, -0.1, -0.0]))
+    end_positions_r.append(np.array([0.3, -0.1, -0.3]))
+    start_positions_r.append(np.array([0.3, -0.1, -0.3]))
+    end_positions_r.append(np.array([0.3, -0.4, -0.3]))
+    # start_positions.append(np.array([0.3, -0.1, -0.2]))
+    # end_positions.append(np.array([0.3, -0.1, -0.2]))
+    # else:
+    print("l_arm")
+    start_positions_l.append(np.array([0.3, 0.4, -0.3]))
+    end_positions_l.append(np.array([0.3, 0.4, -0.0]))
+    start_positions_l.append(np.array([0.3, 0.4, -0.0]))
+    end_positions_l.append(np.array([0.3, 0.1, -0.0]))
+    start_positions_l.append(np.array([0.3, 0.1, -0.0]))
+    end_positions_l.append(np.array([0.3, 0.1, -0.3]))
+    start_positions_l.append(np.array([0.3, 0.1, -0.3]))
+    end_positions_l.append(np.array([0.3, 0.4, -0.3]))
 
     time.sleep(3)
     init = False
-    previous_theta = prefered_theta
+    previous_theta_r = prefered_theta
+    previous_theta_l = prefered_theta + np.pi / 2
     while True:
-        for i in range(len(start_positions)):
+        for i in range(len(start_positions_r)):
             if i > 0:
                 init = False
 
-            previous_theta = make_line(
-                symbolic_ik,
+            previous_theta_r = make_line(
+                symbolic_ik[0],
                 placo_ik,
-                start_positions[i],
-                end_positions[i],
+                start_positions_r[i],
+                end_positions_r[i],
                 orientation,
                 orientation,
                 prefered_theta,
-                previous_theta=previous_theta,
-                nb_points=100,
+                previous_theta=previous_theta_r,
+                nb_points=50,
+                init=init,
+            )
+            previous_theta_l = make_line(
+                symbolic_ik[1],
+                placo_ik,
+                start_positions_l[i],
+                end_positions_l[i],
+                orientation,
+                orientation,
+                prefered_theta + np.pi / 2,
+                previous_theta=previous_theta_l,
+                nb_points=50,
                 init=init,
             )
 
 
 def main_test() -> None:
     symbolic_ik_r = SymbolicIK()
-    # symbolic_ik_l = SymbolicIK(arm="l_arm")
+    symbolic_ik_l = SymbolicIK(arm="l_arm")
     urdf_path = Path("src/config_files")
     for file in urdf_path.glob("**/*.urdf"):
         if file.stem == "reachy2_ik":
@@ -164,7 +179,7 @@ def main_test() -> None:
     # make_line(symbolic_ik_r, placo_ik, start_position, end_position, start_orientation, end_orientation, nb_points=300)
     prefered_theta = 5 * np.pi / 4
 
-    make_square(symbolic_ik_r, placo_ik, prefered_theta=prefered_theta)
+    make_square([symbolic_ik_r, symbolic_ik_l], placo_ik, prefered_theta=prefered_theta)
     # while True:
     #     start_position = np.array([0.4, -0.5, -0.3])
     #     end_position = np.array([0.4, -0.5, -0.0])

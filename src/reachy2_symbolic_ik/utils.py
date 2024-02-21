@@ -83,14 +83,17 @@ def tend_to_prefered_theta(
     if arm == "l_arm":
         side = -1
 
-    if abs(angle_diff(previous_theta, goal_theta * side)) < d_theta_max:
+    if abs(angle_diff(goal_theta, previous_theta)) < d_theta_max:
         print(f"diff ok {angle_diff(previous_theta, goal_theta * side)}")
-        return True, goal_theta * side
+        return True, goal_theta
+
+    if angle_diff(goal_theta, previous_theta) == 0:
+        print("---------------------------tend to -------------------------")
 
     sign = angle_diff(goal_theta, previous_theta) / np.abs(angle_diff(goal_theta, previous_theta))
 
     print(f"tend to go to goal theta {side} {previous_theta} -- {previous_theta + sign * d_theta_max}")
-    return False, (previous_theta + sign * d_theta_max) * side
+    return False, previous_theta + sign * d_theta_max
 
 
 def get_best_continuous_theta(
@@ -121,7 +124,10 @@ def get_best_continuous_theta(
             print("theta milieu ok et proche")
             return True, theta_middle
         else:
+            if angle_diff(theta_middle, previous_theta) == 0:
+                print("--------------------------- get best theta -------------------------")
             sign = angle_diff(theta_middle, previous_theta) / np.abs(angle_diff(theta_middle, previous_theta))
+
             # if perf needed delete this and return False, (previous_theta + sign * d_theta_max)
             theta_side = previous_theta + sign * d_theta_max
             joints, elbow_position = get_joints(theta_side)
@@ -136,6 +142,8 @@ def get_best_continuous_theta(
             print("theta milieu pas ok mais moi ok - bouge pas ")
             return True, previous_theta
         else:
+            if angle_diff(prefered_theta, previous_theta) == 0:
+                print("--------------------------- get best theta 1 -------------------------")
             sign = angle_diff(prefered_theta, previous_theta) / np.abs(angle_diff(prefered_theta, previous_theta))
             print("theta milieu pas ok et moi pas ok - bouge vers theta pref")
             return False, previous_theta + sign * d_theta_max
