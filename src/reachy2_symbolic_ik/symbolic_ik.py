@@ -43,6 +43,21 @@ class SymbolicIK:
             self.shoulder_position = np.array([0.0, 0.2, 0.0])
             self.shoulder_orientation_offset = [-x for x in shoulder_orientation_offset]
 
+    def is_reachable_no_limits(self, goal_pose: npt.NDArray[np.float64]) -> Tuple[bool, npt.NDArray[np.float64], Optional[Any]]:
+        self.goal_pose = goal_pose
+        self.wrist_position = self.get_wrist_position(goal_pose)
+        d_shoulder_wrist = np.linalg.norm(self.wrist_position - self.shoulder_position)
+        if d_shoulder_wrist > self.upper_arm_size + self.forearm_size:
+            # todo check if the pose is the sphere of the arm
+            # todo check Trex arm
+            return False, np.array([]), None
+        intersection_circle = self.get_intersection_circle(goal_pose)
+        if intersection_circle is not None:
+            self.intersection_circle = intersection_circle
+            return True, np.array([-np.pi, np.pi]), self.get_joints
+        else:
+            return False, np.array([]), None
+
     def is_reachable(self, goal_pose: npt.NDArray[np.float64]) -> Tuple[bool, npt.NDArray[np.float64], Optional[Any]]:
         if SHOW_GRAPH:
             fig = plt.figure()
@@ -57,6 +72,8 @@ class SymbolicIK:
         self.wrist_position = self.get_wrist_position(goal_pose)
         d_shoulder_wrist = np.linalg.norm(self.wrist_position - self.shoulder_position)
         if d_shoulder_wrist > self.upper_arm_size + self.forearm_size:
+            # todo check if the pose is the sphere of the arm
+            # todo check Trex arm
             return False, np.array([]), None
         alpha = (
             np.arcsin(d_shoulder_wrist / (2 * self.upper_arm_size))
@@ -66,8 +83,10 @@ class SymbolicIK:
         if alpha < np.radians(-self.elbow_limits) or alpha > np.radians(self.elbow_limits):
             return False, np.array([]), None
 
-        limitation_wrist_circle = self.get_limitation_wrist_circle(goal_pose)
         intersection_circle = self.get_intersection_circle(goal_pose)
+
+        limitation_wrist_circle = self.get_limitation_wrist_circle(goal_pose)
+
         if intersection_circle is not None:
             self.intersection_circle = intersection_circle
             intervalle = self.are_circles_linked(intersection_circle, limitation_wrist_circle)
