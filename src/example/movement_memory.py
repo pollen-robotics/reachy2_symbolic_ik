@@ -4,6 +4,7 @@ from pathlib import Path
 import numpy as np
 import numpy.typing as npt
 from reachy_placo.ik_reachy_placo import IKReachyQP
+from scipy.spatial.transform import Rotation as R
 
 from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
 from reachy2_symbolic_ik.utils import get_best_continuous_theta, tend_to_prefered_theta
@@ -68,6 +69,84 @@ def make_line(
         go_to_position(placo_ik, joints, wait=0.0, arm=symbolic_ik.arm)
 
     return float(theta)
+
+
+def random_movement(symbolic_ik: SymbolicIK, placo_ik: IKReachyQP, prefered_theta: float) -> None:
+    previous_position = np.array([0.4, -0.5, -0.3])
+    orientation = np.array([0.0, -np.pi / 2, 0.0])
+    previous_theta = prefered_theta
+    while True:
+        goal_x = np.random.uniform(0.2, 0.6)
+        goal_y = np.random.uniform(-0.6, 0)
+        goal_z = np.random.uniform(-0.4, 0.4)
+        goal_position = np.array([goal_x, goal_y, goal_z])
+        nb_points = np.linalg.norm(goal_position - previous_position) * 150
+        previous_theta = make_line(
+            symbolic_ik,
+            placo_ik,
+            previous_position,
+            goal_position,
+            orientation,
+            orientation,
+            prefered_theta,
+            previous_theta,
+            int(nb_points),
+        )
+        previous_position = goal_position
+
+
+def make_circle(
+    symbolic_ik: SymbolicIK,
+    placo_ik: IKReachyQP,
+    prefered_theta: float,
+    center: npt.NDArray[np.float64] = np.array([0.3, -0.4, -0.3]),
+    radius: float = 0.1,
+    top: bool = False,
+    moving_orientation: bool = False,
+) -> None:
+    if symbolic_ik is None:
+        raise ValueError("symbolic_ik is None")
+
+    if top:
+        orientations = [[0.0, -np.pi / 2, 0.0] for _ in range(100)]
+        X = center[0] + radius * np.cos(np.linspace(0, 2 * np.pi, 100))
+        Y = center[1] + radius * np.sin(np.linspace(0, 2 * np.pi, 100))
+        Z = center[2] * np.ones(100)
+    else:
+        Y = center[1] + radius * np.cos(np.linspace(0, 2 * np.pi, 100))
+        Z = center[2] + radius * np.sin(np.linspace(0, 2 * np.pi, 100))
+        X = center[0] * np.ones(100)
+        orientations = [[0.0, -np.pi / 2, 0.0] for _ in range(100)]
+        if moving_orientation:
+            orientations = []
+            init_rotation = R.from_euler("xyz", [0.0, -np.pi / 2, 0.0])
+            for i in range(100):
+                rotation = R.from_euler("xyz", [0.0, 0.0, 2 * np.pi / 100 * i])
+                final_rotation = init_rotation * rotation
+                orientations.append(final_rotation.as_euler("xyz"))
+
+    previous_theta = prefered_theta
+    while True:
+        for i in range(100):
+            goal_pose = [[X[i], Y[i], Z[i]], orientations[i]]
+            is_reachable, interval, get_joints = symbolic_ik.is_reachable(goal_pose)
+            if is_reachable:
+                is_reachable, theta = get_best_continuous_theta(
+                    previous_theta, interval, get_joints, 0.05, prefered_theta, symbolic_ik.arm
+                )
+            else:
+                print("Pose not reachable")
+                is_reachable, interval, get_joints = symbolic_ik.is_reachable_no_limits(goal_pose)
+                if is_reachable:
+                    is_reachable, theta = tend_to_prefered_theta(
+                        previous_theta, interval, get_joints, 0.05, goal_theta=prefered_theta
+                    )
+                else:
+                    print("Pose not reachable________________")
+
+            joints, elbow_position = get_joints(theta)
+            previous_theta = theta
+            go_to_position(placo_ik, joints, wait=0.0, arm=symbolic_ik.arm)
 
 
 def make_square(
@@ -142,7 +221,7 @@ def make_square(
 
 def main_test() -> None:
     symbolic_ik_r = SymbolicIK()
-    symbolic_ik_l = SymbolicIK(arm="l_arm")
+    # symbolic_ik_l = SymbolicIK(arm="l_arm")
     urdf_path = Path("src/config_files")
     for file in urdf_path.glob("**/*.urdf"):
         if file.stem == "reachy2_ik":
@@ -160,14 +239,6 @@ def main_test() -> None:
     placo_ik.setup(urdf_path=str(urdf_path))
     placo_ik.create_tasks()
 
-    # goal_position = [0.20, -0.2, -0.0]
-    # goal_orientation = np.array([-20, -60, 10])
-    # goal_orientation = np.deg2rad(goal_orientation)
-    # goal_pose = [goal_position, goal_orientation]
-    # make_movement_test(symbolic_ik_r, placo_ik, goal_pose)
-
-    # make_square(symbolic_ik_l, placo_ik)
-
     # start_position = np.array([0.4, 0.1, -0.4])
     # end_position = np.array([0.3, -0.2, -0.1])
     # start_orientation = np.array([0.35, -1.40, 0.17])
@@ -175,7 +246,30 @@ def main_test() -> None:
     # make_line(symbolic_ik_r, placo_ik, start_position, end_position, start_orientation, end_orientation, nb_points=300)
     prefered_theta = 5 * np.pi / 4
 
-    make_square([symbolic_ik_r, symbolic_ik_l], placo_ik, prefered_theta=prefered_theta)
+    # make_square([symbolic_ik_r, symbolic_ik_l], placo_ik, prefered_theta=prefered_theta)
+    # make_circle(symbolic_ik_r, placo_ik, prefered_theta=prefered_theta)
+    # make_circle(symbolic_ik_r, placo_ik, prefered_theta=prefered_theta, center=np.array([0.2, -0.2, -0.0]), radius=0.4)
+    # make_circle(
+    #     symbolic_ik_r,
+    #     placo_ik,
+    #     prefered_theta=prefered_theta,
+    #     center=np.array([0.2, -0.2, -0.0]),
+    #     radius=0.4,
+    #     moving_orientation=True,
+    # )
+
+    # make_circle(
+    #     symbolic_ik_r, placo_ik, prefered_theta=prefered_theta, center=np.array([0.3, -0.2, -0.4]), radius=0.1, top=True
+    # )
+    # make_circle(
+    #     symbolic_ik_r, placo_ik, prefered_theta=prefered_theta, center=np.array([0.3, -0.2, -0.4]), radius=0.1, top=True
+    # )
+    # make_circle(
+    #     symbolic_ik_r, placo_ik, prefered_theta=prefered_theta, center=np.array([0.3, -0.4, -0.2]), radius=0.1, top=True
+    # )
+
+    random_movement(symbolic_ik_r, placo_ik, prefered_theta=prefered_theta)
+
     # while True:
     #     start_position = np.array([0.4, -0.5, -0.3])
     #     end_position = np.array([0.4, -0.5, -0.0])
