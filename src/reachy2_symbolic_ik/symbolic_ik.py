@@ -27,6 +27,7 @@ class SymbolicIK:
         gripper_size: np.float64 = np.float64(0.10),
         wrist_limit: int = 45,
         shoulder_orientation_offset: list[int] = [10, 0, 15],
+        shoulder_position: npt.NDArray[np.float64] = np.array([0.0, -0.2, 0.0]),
         elbow_limits: int = 130,
     ) -> None:
         self.arm = arm
@@ -37,10 +38,10 @@ class SymbolicIK:
         self.elbow_limits = elbow_limits
         self.torso_pose = np.array([0.0, 0.0, 0.0])
         if self.arm == "r_arm":
-            self.shoulder_position = np.array([0.0, -0.2, 0.0])
+            self.shoulder_position = shoulder_position
             self.shoulder_orientation_offset = shoulder_orientation_offset
         else:
-            self.shoulder_position = np.array([0.0, 0.2, 0.0])
+            self.shoulder_position = np.array([shoulder_position[0], -shoulder_position[1], shoulder_position[2]])
             self.shoulder_orientation_offset = [-x for x in shoulder_orientation_offset]
 
     def is_reachable_no_limits(self, goal_pose: npt.NDArray[np.float64]) -> Tuple[bool, npt.NDArray[np.float64], Optional[Any]]:
@@ -509,6 +510,8 @@ class SymbolicIK:
         alpha_shoulder = np.arcsin(-P_shoulder_elbow[2] / np.sqrt(P_shoulder_elbow[2] ** 2 + P_shoulder_elbow[0] ** 2))
         if P_shoulder_elbow[0] < 0:
             alpha_shoulder = np.pi - alpha_shoulder
+            if alpha_shoulder > np.pi:
+                alpha_shoulder = alpha_shoulder - 2 * np.pi
 
         M_shoulderPitch_shoulder = R.from_euler("xyz", [0.0, -alpha_shoulder, 0.0]).as_matrix()
         T_shoulderPitch_shoulder = make_homogenous_matrix_from_rotation_matrix(
@@ -533,6 +536,8 @@ class SymbolicIK:
 
         P_elbow_wrist = np.dot(T_elbow_torso, P_torso_wrist)
         alpha_elbow = -np.pi / 2 + math.atan2(P_elbow_wrist[2], -P_elbow_wrist[1])
+        if alpha_elbow < -np.pi:
+            alpha_elbow = alpha_elbow + 2 * np.pi
 
         M_elbowYaw_elbow = R.from_euler("xyz", np.array([alpha_elbow, 0.0, 0.0])).as_matrix()
         T_elbowYaw_elbow = make_homogenous_matrix_from_rotation_matrix(np.array([0.0, 0.0, 0.0]), M_elbowYaw_elbow)
@@ -543,6 +548,8 @@ class SymbolicIK:
         beta_elbow = -np.arcsin(P_elbowYaw_wrist[2] / np.sqrt(P_elbowYaw_wrist[0] ** 2 + P_elbowYaw_wrist[2] ** 2))
         if P_elbowYaw_wrist[0] < 0:
             beta_elbow = np.pi - beta_elbow
+            if beta_elbow > np.pi:
+                beta_elbow = beta_elbow - 2 * np.pi
 
         R_elbowPitch_elbowYaw = R.from_euler("xyz", [0.0, -beta_elbow, 0.0]).as_matrix()
         T_elbowPitch_elbowYaw = make_homogenous_matrix_from_rotation_matrix(np.array([0.0, 0.0, 0.0]), R_elbowPitch_elbowYaw)
@@ -554,6 +561,8 @@ class SymbolicIK:
         P_wrist_tip = np.dot(T_wrist_torso, P_torso_goalPosition)
 
         beta_wrist = np.pi - math.atan2(P_wrist_tip[1], -P_wrist_tip[0])
+        if beta_wrist > np.pi:
+            beta_wrist = beta_wrist - 2 * np.pi
 
         R_wristRoll_wrist = R.from_euler("xyz", [0.0, 0.0, -beta_wrist]).as_matrix()
         T_wristRoll_wrist = make_homogenous_matrix_from_rotation_matrix(np.array([0.0, 0.0, 0.0]), R_wristRoll_wrist)
