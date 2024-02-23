@@ -92,7 +92,7 @@ class SymbolicIK:
         #     # todo check Trex arm
         #     return False, np.array([]), None
 
-        # TODO these values very often are not in the limits, is it normal?
+        # TODO these values very often are not in the limits, is it normal? Is clipping a good idea?
         to_asin1 = np.clip(d_shoulder_wrist / (2 * self.upper_arm_size), -1, 1)
         to_asin2 = np.clip(d_shoulder_wrist / (2 * self.forearm_size), -1, 1)
         print(f"to_asin1: {to_asin1}")
