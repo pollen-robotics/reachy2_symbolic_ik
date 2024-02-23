@@ -4,8 +4,6 @@ from typing import Any, Optional, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
-from scipy.spatial.transform import Rotation as R
-
 from reachy2_symbolic_ik.utils import (
     angle_diff,
     make_homogenous_matrix_from_rotation_matrix,
@@ -14,6 +12,7 @@ from reachy2_symbolic_ik.utils import (
     show_point,
     show_sphere,
 )
+from scipy.spatial.transform import Rotation as R
 
 SHOW_GRAPH = False
 
@@ -538,7 +537,8 @@ class SymbolicIK:
         P_shoulder_torso = np.dot(-M_shoulder_torso, P_torso_shoulder[:3])
         T_shoulder_torso = make_homogenous_matrix_from_rotation_matrix(P_shoulder_torso, M_shoulder_torso)
         P_shoulder_elbow = np.dot(T_shoulder_torso, P_torso_elbow)
-        alpha_shoulder = np.arcsin(-P_shoulder_elbow[2] / np.sqrt(P_shoulder_elbow[2] ** 2 + P_shoulder_elbow[0] ** 2))
+        # alpha_shoulder = np.arcsin(-P_shoulder_elbow[2] / np.sqrt(P_shoulder_elbow[2] ** 2 + P_shoulder_elbow[0] ** 2))
+        alpha_shoulder = math.atan2(-P_shoulder_elbow[2] / P_shoulder_elbow[0] ** 2)
         if P_shoulder_elbow[0] < 0:
             alpha_shoulder = np.pi - alpha_shoulder
             if alpha_shoulder > np.pi:
@@ -575,6 +575,7 @@ class SymbolicIK:
         T_elbow_torso[0][3] -= self.upper_arm_size
 
         P_elbow_wrist = np.dot(T_elbow_torso, P_torso_wrist)
+        # good
         alpha_elbow = -np.pi / 2 + math.atan2(P_elbow_wrist[2], -P_elbow_wrist[1])
         if alpha_elbow < -np.pi:
             alpha_elbow = alpha_elbow + 2 * np.pi
@@ -585,8 +586,10 @@ class SymbolicIK:
 
         P_elbowYaw_wrist = np.dot(T_elbowYaw_torso, P_torso_wrist)
 
+        # criminal
         beta_elbow = -np.arcsin(P_elbowYaw_wrist[2] / np.sqrt(P_elbowYaw_wrist[0] ** 2 + P_elbowYaw_wrist[2] ** 2))
         if P_elbowYaw_wrist[0] < 0:
+            # criminal
             beta_elbow = np.pi - beta_elbow
             if beta_elbow > np.pi:
                 beta_elbow = beta_elbow - 2 * np.pi
