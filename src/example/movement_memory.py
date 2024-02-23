@@ -7,7 +7,11 @@ from reachy_placo.ik_reachy_placo import IKReachyQP
 from scipy.spatial.transform import Rotation as R
 
 from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
-from reachy2_symbolic_ik.utils import get_best_continuous_theta, tend_to_prefered_theta
+from reachy2_symbolic_ik.utils import (
+    get_best_continuous_theta,
+    get_valid_arm_joints,
+    tend_to_prefered_theta,
+)
 from reachy2_symbolic_ik.utils_placo import go_to_position
 
 
@@ -31,6 +35,7 @@ def make_line(
     yaw = np.linspace(start_orientation[2], end_orientation[2], nb_points)
     # previous_theta = theta0
 
+    is_reachable_no_limits = False
     for i in range(nb_points * 2):
         if init:
             if i < nb_points:
@@ -56,8 +61,8 @@ def make_line(
 
         else:
             print("Pose not reachable")
-            is_reachable, interval, get_joints = symbolic_ik.is_reachable_no_limits(goal_pose)
-            if is_reachable:
+            is_reachable_no_limits, interval, get_joints = symbolic_ik.is_reachable_no_limits(goal_pose)
+            if is_reachable_no_limits:
                 is_reachable, theta = tend_to_prefered_theta(
                     previous_theta, interval, get_joints, 0.05, goal_theta=prefered_theta
                 )
@@ -66,6 +71,9 @@ def make_line(
                 print("Pose not reachable________________")
 
         joints, elbow_position = get_joints(theta)
+        # if is_reachable_no_limits:
+        joints = get_valid_arm_joints(joints)
+
         go_to_position(placo_ik, joints, wait=0.0, arm=symbolic_ik.arm)
 
     return float(theta)
@@ -146,6 +154,7 @@ def make_circle(
                     print("Pose not reachable________________")
 
             joints, elbow_position = get_joints(theta)
+
             previous_theta = theta
             go_to_position(placo_ik, joints, wait=0.0, arm=symbolic_ik.arm)
 

@@ -3,6 +3,25 @@ from typing import Any, Tuple
 
 import numpy as np
 import numpy.typing as npt
+from scipy.spatial.transform import Rotation as R
+
+
+def get_valid_arm_joints(joints: list[float]) -> list[float]:
+    arm_joints = joints[4:7]
+    print(f"roll: {np.degrees(arm_joints[0])}, pitch: {np.degrees(arm_joints[1])}, yaw: {np.degrees(arm_joints[2])}")
+    rotation = R.from_euler("xyz", arm_joints, degrees=False)
+    arm_joints = rotation.as_euler("zyz", degrees=False)
+    print(f"roll: {np.degrees(arm_joints[0])}, pitch: {np.degrees(arm_joints[1])}, yaw: {np.degrees(arm_joints[2])}")
+
+    if arm_joints[1] > np.pi / 4:
+        arm_joints[1] = np.pi / 4
+    if arm_joints[1] < -np.pi / 4:
+        arm_joints[1] = -np.pi / 4
+
+    rotation = R.from_euler("zyz", arm_joints, degrees=False)
+    arm_joints = rotation.as_euler("xyz", degrees=False)
+    print(f"roll: {np.degrees(arm_joints[0])}, pitch: {np.degrees(arm_joints[1])}, yaw: {np.degrees(arm_joints[2])}")
+    return [joints[0], joints[1], joints[2], joints[3]] + list(arm_joints)
 
 
 def make_homogenous_matrix_from_rotation_matrix(
