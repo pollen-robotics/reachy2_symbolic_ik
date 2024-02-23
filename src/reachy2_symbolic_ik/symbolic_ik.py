@@ -39,6 +39,7 @@ class SymbolicIK:
         self.wrist_limit = wrist_limit
         self.elbow_limits = elbow_limits
         self.torso_pose = np.array([0.0, 0.0, 0.0])
+        self.max_arm_length = self.upper_arm_size + self.forearm_size + self.gripper_size
         if self.arm == "r_arm":
             self.shoulder_position = shoulder_position
             self.shoulder_orientation_offset = shoulder_orientation_offset
@@ -49,15 +50,15 @@ class SymbolicIK:
 
     def is_reachable_no_limits(self, goal_pose: npt.NDArray[np.float64]) -> Tuple[bool, npt.NDArray[np.float64], Optional[Any]]:
         d_shoulder_goal = np.linalg.norm(goal_pose[0] - self.shoulder_position)
-        max_arm_length = self.upper_arm_size + self.forearm_size + self.gripper_size
-        if d_shoulder_goal > max_arm_length:
-            goal_pose = self._reduce_goal_pose(goal_pose, max_arm_length)
+
+        if d_shoulder_goal > self.max_arm_length:
+            goal_pose = self._reduce_goal_pose(goal_pose, self.max_arm_length)
 
         self.goal_pose = goal_pose
         self.wrist_position = self.get_wrist_position(goal_pose)
         d_shoulder_wrist = np.linalg.norm(self.wrist_position - self.shoulder_position)
         if d_shoulder_wrist > self.upper_arm_size + self.forearm_size:
-            print("wrist out of range")
+            # print("wrist out of range")
             self.goal_pose = self.reduce_goal_pose_no_limits(
                 goal_pose, d_shoulder_wrist, self.upper_arm_size + self.forearm_size
             )
@@ -71,9 +72,8 @@ class SymbolicIK:
     def is_reachable(self, goal_pose: npt.NDArray[np.float64]) -> Tuple[bool, npt.NDArray[np.float64], Optional[Any]]:
         # Check if the goal pose is in the arm range
         d_shoulder_goal = np.linalg.norm(goal_pose[0] - self.shoulder_position)
-        max_arm_length = self.upper_arm_size + self.forearm_size + self.gripper_size
-        if d_shoulder_goal > max_arm_length:
-            goal_pose = self._reduce_goal_pose(goal_pose, max_arm_length)
+        if d_shoulder_goal > self.max_arm_length:
+            goal_pose = self._reduce_goal_pose(goal_pose, self.max_arm_length)
         if SHOW_GRAPH:
             fig = plt.figure()
             self.ax = fig.add_subplot(111, projection="3d")
@@ -91,11 +91,18 @@ class SymbolicIK:
         #     # todo check if the pose is the sphere of the arm
         #     # todo check Trex arm
         #     return False, np.array([]), None
-        alpha = (
-            np.arcsin(d_shoulder_wrist / (2 * self.upper_arm_size))
-            + np.arcsin(d_shoulder_wrist / (2 * self.forearm_size))
-            - np.pi
-        )
+
+        # TODO these values very often are not in the limits, is it normal?
+        to_asin1 = np.clip(d_shoulder_wrist / (2 * self.upper_arm_size), -1, 1)
+        to_asin2 = np.clip(d_shoulder_wrist / (2 * self.forearm_size), -1, 1)
+        print(f"to_asin1: {to_asin1}")
+        print(f"to_asin2: {to_asin2}")
+        # #limit the asin to -1, 1
+        # if to_asin1 > 1:
+        #     to_asin1 = 1
+        # if to_asin1 < -1:
+        #     to_asin1 = -1
+        alpha = np.arcsin(to_asin1) + np.arcsin(to_asin2) - np.pi
         if alpha < np.radians(-self.elbow_limits) or alpha > np.radians(self.elbow_limits):
             return False, np.array([]), None
 

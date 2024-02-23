@@ -8,10 +8,10 @@ from scipy.spatial.transform import Rotation as R
 
 def get_valid_arm_joints(joints: list[float]) -> list[float]:
     arm_joints = joints[4:7]
-    print(f"roll: {np.degrees(arm_joints[0])}, pitch: {np.degrees(arm_joints[1])}, yaw: {np.degrees(arm_joints[2])}")
+    # print(f"roll: {np.degrees(arm_joints[0])}, pitch: {np.degrees(arm_joints[1])}, yaw: {np.degrees(arm_joints[2])}")
     rotation = R.from_euler("xyz", arm_joints, degrees=False)
     arm_joints = rotation.as_euler("zyz", degrees=False)
-    print(f"roll: {np.degrees(arm_joints[0])}, pitch: {np.degrees(arm_joints[1])}, yaw: {np.degrees(arm_joints[2])}")
+    # print(f"roll: {np.degrees(arm_joints[0])}, pitch: {np.degrees(arm_joints[1])}, yaw: {np.degrees(arm_joints[2])}")
 
     if arm_joints[1] > np.pi / 4:
         arm_joints[1] = np.pi / 4
@@ -20,7 +20,7 @@ def get_valid_arm_joints(joints: list[float]) -> list[float]:
 
     rotation = R.from_euler("zyz", arm_joints, degrees=False)
     arm_joints = rotation.as_euler("xyz", degrees=False)
-    print(f"roll: {np.degrees(arm_joints[0])}, pitch: {np.degrees(arm_joints[1])}, yaw: {np.degrees(arm_joints[2])}")
+    # print(f"roll: {np.degrees(arm_joints[0])}, pitch: {np.degrees(arm_joints[1])}, yaw: {np.degrees(arm_joints[2])}")
     return [joints[0], joints[1], joints[2], joints[3]] + list(arm_joints)
 
 
@@ -117,19 +117,19 @@ def get_best_continuous_theta(
         side = -1
 
     if angle_diff(intervalle[0], intervalle[1]) > 0:
-        print("OMG ANGLE DIFF > 0 ")
+        # print("OMG ANGLE DIFF > 0 ")
         theta_middle = angle_diff(intervalle[0], intervalle[1]) / 2 + intervalle[1] + np.pi
     else:
         theta_middle = angle_diff(intervalle[0], intervalle[1]) / 2 + intervalle[1]
-    print(f"theta milieu {theta_middle}")
+    # print(f"theta milieu {theta_middle}")
 
-    print(f"angle diff {angle_diff(theta_middle, previous_theta)}")
+    # print(f"angle diff {angle_diff(theta_middle, previous_theta)}")
 
     joints, elbow_position = get_joints(theta_middle)
 
     if is_elbow_ok(elbow_position, side):
         if abs(angle_diff(theta_middle, previous_theta)) < d_theta_max:
-            print("theta milieu ok et proche")
+            # print("theta milieu ok et proche")
             return True, theta_middle
         else:
             sign = angle_diff(theta_middle, previous_theta) / np.abs(angle_diff(theta_middle, previous_theta))
@@ -138,21 +138,21 @@ def get_best_continuous_theta(
             theta_side = previous_theta + sign * d_theta_max
             joints, elbow_position = get_joints(theta_side)
             is_reachable = is_elbow_ok(elbow_position, side)
-            print(f"theta milieu ok mais loin - et moi je suis {is_reachable}")
+            # print(f"theta milieu ok mais loin - et moi je suis {is_reachable}")
             return is_reachable, theta_side
 
     else:
         joints, elbow_position = get_joints(previous_theta)
         is_reachable = is_elbow_ok(elbow_position, side)
         if is_reachable:
-            print("theta milieu pas ok mais moi ok - bouge pas ")
+            # print("theta milieu pas ok mais moi ok - bouge pas ")
             return True, previous_theta
         else:
             if abs(angle_diff(prefered_theta, previous_theta)) < d_theta_max:
-                print("theta milieu pas ok et moi pas ok - proche de theta pref")
+                # print("theta milieu pas ok et moi pas ok - proche de theta pref")
                 return False, prefered_theta
             sign = angle_diff(prefered_theta, previous_theta) / np.abs(angle_diff(prefered_theta, previous_theta))
-            print("theta milieu pas ok et moi pas ok - bouge vers theta pref")
+            # print("theta milieu pas ok et moi pas ok - bouge vers theta pref")
             return False, previous_theta + sign * d_theta_max
 
 
