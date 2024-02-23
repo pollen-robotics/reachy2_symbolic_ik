@@ -4,16 +4,16 @@ from typing import Any, Optional, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
-from scipy.spatial.transform import Rotation as R
-
 from reachy2_symbolic_ik.utils import (
     angle_diff,
+    get_valid_arm_joints,
     make_homogenous_matrix_from_rotation_matrix,
     rotation_matrix_from_vector,
     show_circle,
     show_point,
     show_sphere,
 )
+from scipy.spatial.transform import Rotation as R
 
 SHOW_GRAPH = False
 
@@ -658,4 +658,6 @@ class SymbolicIK:
         gamma_wrist = -math.atan2(P_tip_point[1], P_tip_point[2])
 
         joints = np.array([alpha_shoulder, beta_shoulder, alpha_elbow, beta_elbow, beta_wrist, alpha_wrist, gamma_wrist])
+
+        joints = get_valid_arm_joints(joints)
         return joints, self.elbow_position
