@@ -222,11 +222,15 @@ def make_square(
 
 def main_test() -> None:
     # symbolic_ik_r = SymbolicIK()
+    # symbolic_ik_l = SymbolicIK(arm="l_arm")
 
     symbolic_ik_r = SymbolicIK(
         shoulder_orientation_offset=np.array([0.0, 0.0, 15]), shoulder_position=np.array([-0.0479, -0.1913, 0.025])
     )
-    symbolic_ik_l = SymbolicIK(arm="l_arm")
+    symbolic_ik_l = SymbolicIK(
+        arm="l_arm", shoulder_orientation_offset=np.array([0.0, 0.0, 15]), shoulder_position=np.array([-0.0479, -0.1913, 0.025])
+    )
+
     urdf_path = Path("src/config_files")
     for file in urdf_path.glob("**/*.urdf"):
         if file.stem == "reachy2_ik":
@@ -251,7 +255,7 @@ def main_test() -> None:
     # make_line(symbolic_ik_r, placo_ik, start_position, end_position, start_orientation, end_orientation, nb_points=300)
     prefered_theta = 5 * np.pi / 4
 
-    make_square([symbolic_ik_r, symbolic_ik_l], placo_ik, prefered_theta=prefered_theta)
+    # make_square([symbolic_ik_r, symbolic_ik_l], placo_ik, prefered_theta=prefered_theta)
     # make_circle(symbolic_ik_r, placo_ik, prefered_theta=prefered_theta)
     # make_circle(symbolic_ik_r, placo_ik, prefered_theta=prefered_theta, center=np.array([0.2, -0.2, -0.0]), radius=0.4)
     # make_circle(
@@ -273,7 +277,7 @@ def main_test() -> None:
     #     symbolic_ik_r, placo_ik, prefered_theta=prefered_theta, center=np.array([0.3, -0.4, -0.2]), radius=0.1, top=True
     # )
 
-    # random_movement(symbolic_ik_r, placo_ik, prefered_theta=prefered_theta)
+    random_movement(symbolic_ik_r, placo_ik, prefered_theta=prefered_theta)
 
     # while True:
     #     start_position = np.array([0.4, -0.5, -0.3])
