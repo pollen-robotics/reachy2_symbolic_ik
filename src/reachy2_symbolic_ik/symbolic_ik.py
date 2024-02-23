@@ -19,6 +19,7 @@ SHOW_GRAPH = False
 
 
 class SymbolicIK:
+    # TODO get arm information from the urdf
     def __init__(
         self,
         arm: str = "r_arm",
@@ -26,6 +27,7 @@ class SymbolicIK:
         forearm_size: np.float64 = np.float64(0.28),
         gripper_size: np.float64 = np.float64(0.10),
         wrist_limit: int = 45,
+        # shoulder orientation and shoulder position are for the rigth arm
         shoulder_orientation_offset: list[int] = [10, 0, 15],
         shoulder_position: npt.NDArray[np.float64] = np.array([0.0, -0.2, 0.0]),
         elbow_limits: int = 130,
@@ -40,26 +42,70 @@ class SymbolicIK:
         if self.arm == "r_arm":
             self.shoulder_position = shoulder_position
             self.shoulder_orientation_offset = shoulder_orientation_offset
+
         else:
             self.shoulder_position = np.array([shoulder_position[0], -shoulder_position[1], shoulder_position[2]])
             self.shoulder_orientation_offset = [-x for x in shoulder_orientation_offset]
 
     def is_reachable_no_limits(self, goal_pose: npt.NDArray[np.float64]) -> Tuple[bool, npt.NDArray[np.float64], Optional[Any]]:
+        d_shoulder_goal = np.linalg.norm(goal_pose[0] - self.shoulder_position)
+        max_arm_length = self.upper_arm_size + self.forearm_size + self.gripper_size
+        if d_shoulder_goal > max_arm_length:
+            goal_pose = self._reduce_goal_pose(goal_pose, max_arm_length)
+
+        # fig = plt.figure()
+        # self.ax = fig.add_subplot(111, projection="3d")
+        # self.ax.axes.set_xlim3d(left=-0.4, right=0.4)
+        # self.ax.axes.set_ylim3d(bottom=-0.4, top=0.4)
+        # self.ax.axes.set_zlim3d(bottom=-0.4, top=0.4)
+        # self.ax.set_xlabel("X")
+        # self.ax.set_ylabel("Y")
+        # self.ax.set_zlabel("Z")
+
         self.goal_pose = goal_pose
         self.wrist_position = self.get_wrist_position(goal_pose)
         d_shoulder_wrist = np.linalg.norm(self.wrist_position - self.shoulder_position)
         if d_shoulder_wrist > self.upper_arm_size + self.forearm_size:
+            print("wrist out of range")
+            self.goal_pose = self.reduce_goal_pose_no_limits(
+                goal_pose, d_shoulder_wrist, self.upper_arm_size + self.forearm_size
+            )
+            print(goal_pose)
             # todo check if the pose is the sphere of the arm
             # todo check Trex arm
-            return False, np.array([]), None
+            # return False, np.array([]), None
         intersection_circle = self.get_intersection_circle(goal_pose)
         if intersection_circle is not None:
             self.intersection_circle = intersection_circle
             return True, np.array([-np.pi, np.pi]), self.get_joints
         else:
+            # show_point(self.ax, goal_pose[0], "g")
+            # show_point(self.ax, self.wrist_position, "r")
+            # show_point(self.ax, self.shoulder_position, "b")
+            # show_point(self.ax, self.torso_pose, "y")
+            # show_sphere(self.ax, self.wrist_position, self.forearm_size, "r")
+            # show_sphere(self.ax, self.shoulder_position, self.upper_arm_size, "b")
+            # if intersection_circle is not None:
+            #     show_circle(
+            #         self.ax,
+            #         intersection_circle[0],
+            #         intersection_circle[1],
+            #         intersection_circle[2],
+            #         np.array([[0, 2 * np.pi]]),
+            #         "g",
+            #     )
+            # plt.show()
             return False, np.array([]), None
 
     def is_reachable(self, goal_pose: npt.NDArray[np.float64]) -> Tuple[bool, npt.NDArray[np.float64], Optional[Any]]:
+        # Check if the goal pose is in the arm range
+        d_shoulder_goal = np.linalg.norm(goal_pose[0] - self.shoulder_position)
+        max_arm_length = self.upper_arm_size + self.forearm_size + self.gripper_size
+        print(goal_pose)
+        if d_shoulder_goal > max_arm_length:
+            goal_pose = self._reduce_goal_pose(goal_pose, max_arm_length)
+            print(goal_pose)
+
         if SHOW_GRAPH:
             fig = plt.figure()
             self.ax = fig.add_subplot(111, projection="3d")
@@ -71,11 +117,12 @@ class SymbolicIK:
             self.ax.set_zlabel("Z")
         self.goal_pose = goal_pose
         self.wrist_position = self.get_wrist_position(goal_pose)
+
         d_shoulder_wrist = np.linalg.norm(self.wrist_position - self.shoulder_position)
-        if d_shoulder_wrist > self.upper_arm_size + self.forearm_size:
-            # todo check if the pose is the sphere of the arm
-            # todo check Trex arm
-            return False, np.array([]), None
+        # if d_shoulder_wrist > self.upper_arm_size + self.forearm_size:
+        #     # todo check if the pose is the sphere of the arm
+        #     # todo check Trex arm
+        #     return False, np.array([]), None
         alpha = (
             np.arcsin(d_shoulder_wrist / (2 * self.upper_arm_size))
             + np.arcsin(d_shoulder_wrist / (2 * self.forearm_size))
@@ -191,6 +238,79 @@ class SymbolicIK:
             plt.show()
 
         return False, np.array([]), None
+
+    def _reduce_goal_pose(
+        self, pose: npt.NDArray[np.float64], max_arm_length: np.float64, verbose: bool = True
+    ) -> npt.NDArray[np.float64]:
+        # The goal pose is expressed in the torso frame, expressing it in the rshoulder frame:
+        # M_torso_shoulder = R.from_euler("xyz", np.radians(self.shoulder_orientation_offset))
+        # offset_rotation_matrix = R.from_euler("xyz", [0.0, np.pi / 2, 0.0])
+        # M_torso_shoulder = M_torso_shoulder * offset_rotation_matrix
+        # M_torso_shoulder = R.from_euler("xyz", [0.0, np.pi / 2, 0.0])
+
+        # M_torso_shoulder = M_torso_shoulder.as_matrix()
+        # M_shoulder_torso = M_torso_shoulder.T
+        # P_torso_shoulder = [self.shoulder_position[0], self.shoulder_position[1], self.shoulder_position[2], 1]
+        # T_torso_shoulder = make_homogenous_matrix_from_rotation_matrix(P_torso_shoulder[:3], M_torso_shoulder)
+        # P_shoulder_torso = np.dot(-M_shoulder_torso, P_torso_shoulder[:3])
+        # T_shoulder_torso = make_homogenous_matrix_from_rotation_matrix(P_shoulder_torso, M_shoulder_torso)
+
+        # T_torso_goal = make_homogenous_matrix_from_rotation_matrix(pose[0], R.from_euler("xyz", pose[1]).as_matrix())
+
+        # T_shoulderPitch_goal = np.dot(T_shoulder_torso, T_torso_goal)
+
+        # # if arm_name == "r_arm":
+        # #     T_shoulder_pitch_goal = self.T_r_shoulder_pitch_torso @ pose
+        # #     max_arm_length = self.max_r_arm_length
+        # # else:
+        # #     T_shoulder_pitch_goal = self.T_l_shoulder_pitch_torso @ pose
+        # #     max_arm_length = self.max_l_arm_length
+
+        # x = T_shoulderPitch_goal[0][3]
+        # y = T_shoulderPitch_goal[1][3]
+        # z = T_shoulderPitch_goal[2][3]
+        # dist = math.sqrt(x**2 + y**2 + z**2)
+        # # Workaround to avoid poses that are too far and cause instabilities during the QP solve. TODO do better.
+        # if dist <= max_arm_length:
+        #     # The goal is reasonnably within reach. This is NOT a guarantee that the pose is reachable.
+        #     return pose
+        # else:
+        #     # The goal position is beyong the reach of the arm, projecting it on the sphere of radius max_arm_lenght
+        #     if verbose:
+        #         print("Goal position too far in IK call, reducing the goal position")
+        #     T_shoulderPitch_goal[0][3] *= max_arm_length / dist
+        #     T_shoulderPitch_goal[1][3] *= max_arm_length / dist
+        #     T_shoulderPitch_goal[2][3] *= max_arm_length / dist
+
+        # reduced_pose = T_torso_shoulder @ T_shoulderPitch_goal
+
+        # return [reduced_pose[:3, 3], R.from_matrix(reduced_pose[:3, :3]).as_euler("xyz")]
+
+        goal_position = pose[0]
+        direction = goal_position - self.shoulder_position
+        direction = direction / np.linalg.norm(direction)
+        print(direction)
+        goal_position = self.shoulder_position + direction * max_arm_length
+        print(np.linalg.norm(goal_position - self.shoulder_position))
+        return np.array([goal_position, pose[1]])
+
+    def reduce_goal_pose_no_limits(
+        self, pose: npt.NDArray[np.float64], d_shoulder_wrist: np.float64, d_shoulder_wrist_max: np.float64
+    ) -> npt.NDArray[np.float64]:
+        print(d_shoulder_wrist, d_shoulder_wrist_max)
+        direction = self.wrist_position - self.shoulder_position
+        direction = direction / (np.linalg.norm(d_shoulder_wrist) + 0.00001)
+        print(direction)
+        new_wrist_position = self.shoulder_position + direction * d_shoulder_wrist_max
+        diff_wrist = new_wrist_position - self.wrist_position
+        goal_position = pose[0] + diff_wrist
+        print(np.linalg.norm(new_wrist_position - self.shoulder_position))
+        self.wrist_position = new_wrist_position
+        # M_torso_goalPosition = R.from_euler("xyz", pose[1]).as_matrix()
+        # T_torso_goalPosition = make_homogenous_matrix_from_rotation_matrix(new_wrist_position, M_torso_goalPosition)
+        # goal_position = np.array(np.dot(T_torso_goalPosition, np.array([0.0, 0.0, -self.gripper_size, 1.0])))
+
+        return np.array([goal_position, pose[1]])
 
     def get_intersection_circle(
         self, goal_pose: npt.NDArray[np.float64]
