@@ -47,7 +47,10 @@ def make_circle(
 
 
 def main_test() -> None:
-    symbolib_ik_r = SymbolicIK()
+    # symbolic_ik_r = SymbolicIK()
+    symbolic_ik_r = SymbolicIK(
+        shoulder_orientation_offset=np.array([0.0, 0.0, 15]), shoulder_position=np.array([-0.0479, -0.1913, 0.025])
+    )
     # symbolib_ik_l = SymbolicIK(arm="l_arm")
     urdf_path = Path("src/config_files")
     for file in urdf_path.glob("**/*.urdf"):
@@ -67,11 +70,11 @@ def main_test() -> None:
     placo_ik.setup(urdf_path=str(urdf_path))
     placo_ik.create_tasks()
 
-    goal_position = [0.9, -0.70, -0.20]
-    goal_orientation = [0, -np.pi / 2, 0]
+    goal_position = [0.10475819158237422, -0.10011326608169921, -0.6]
+    goal_orientation = [0, 0, 0]
     goal_pose = np.array([goal_position, goal_orientation])
 
-    result_r = symbolib_ik_r.is_reachable(goal_pose)
+    result_r = symbolic_ik_r.is_reachable(goal_pose)
     if result_r[0]:
         print("pose reachable")
         print(result_r[1])
@@ -88,7 +91,7 @@ def main_test() -> None:
         #     print("Pose not reachable because of shoulder limits")
 
     else:
-        result_r = symbolib_ik_r.is_reachable_no_limits(goal_pose)
+        result_r = symbolic_ik_r.is_reachable_no_limits(goal_pose)
         if result_r[0]:
             print("pose reachable")
             print(result_r[1])
@@ -106,7 +109,7 @@ def main_test() -> None:
         else:
             print("Pose really not reachable")
 
-    make_circle(symbolib_ik_r, placo_ik, 5 * np.pi / 4, np.array([0.3, -0.4, -0.3]), 0.4)
+    # make_circle(symbolic_ik_r, placo_ik, 5 * np.pi / 4, np.array([0.3, -0.4, -0.3]), 0.4)
 
 
 if __name__ == "__main__":

@@ -230,11 +230,8 @@ class SymbolicIK:
     def get_intersection_circle(
         self, goal_pose: npt.NDArray[np.float64]
     ) -> Optional[Tuple[npt.NDArray[np.float64], float, npt.NDArray[np.float64]]]:
-        P_shoulder_wrist = [
-            self.wrist_position[0],
-            self.wrist_position[1] - self.shoulder_position[1],
-            self.wrist_position[2],
-        ]
+        P_shoulder_wrist = self.wrist_position - self.shoulder_position
+
         d = np.sqrt(P_shoulder_wrist[0] ** 2 + P_shoulder_wrist[1] ** 2 + P_shoulder_wrist[2] ** 2)
         if d > self.upper_arm_size + self.forearm_size:
             return None
@@ -253,9 +250,8 @@ class SymbolicIK:
         )
         P_intersection_center = np.array([(d**2 - self.forearm_size**2 + self.upper_arm_size**2) / (2 * d), 0, 0])
         P_shoulder_center = M_torso_intersection.apply(P_intersection_center)
-        P_torso_center = np.array(
-            [P_shoulder_center[0], P_shoulder_center[1] + self.shoulder_position[1], P_shoulder_center[2]]
-        )
+        P_torso_center = P_shoulder_center + self.shoulder_position
+
         V_intersection_normal = np.array([1.0, 0.0, 0.0])
         V_torso_normal = M_torso_intersection.apply(V_intersection_normal)
         return P_torso_center, radius, V_torso_normal
@@ -546,6 +542,7 @@ class SymbolicIK:
         if P_shoulder_elbow[0] < 0:
             alpha_shoulder = np.pi - alpha_shoulder
             if alpha_shoulder > np.pi:
+                print("la______")
                 alpha_shoulder = alpha_shoulder - 2 * np.pi
 
         M_shoulderPitch_shoulder = R.from_euler("xyz", [0.0, -alpha_shoulder, 0.0]).as_matrix()
@@ -556,10 +553,13 @@ class SymbolicIK:
 
         T_shoulderPitch_elbow = np.dot(T_shoulderPitch_torso, P_torso_elbow)
         x_elbow = T_shoulderPitch_elbow[0]
+        print(x_elbow)
         to_arccos = x_elbow / self.upper_arm_size
-        if to_arccos > 1 :
+        if to_arccos > 1:
+            print(f"to_arccos: {to_arccos}")
             to_arccos = 1
         if to_arccos < -1:
+            print(f"to_arccos: {to_arccos}")
             to_arccos = -1
         beta_shoulder = np.arccos(to_arccos)
         if P_shoulder_elbow[1] < 0:
