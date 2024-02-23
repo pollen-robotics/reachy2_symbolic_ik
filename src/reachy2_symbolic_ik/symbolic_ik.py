@@ -556,7 +556,12 @@ class SymbolicIK:
 
         T_shoulderPitch_elbow = np.dot(T_shoulderPitch_torso, P_torso_elbow)
         x_elbow = T_shoulderPitch_elbow[0]
-        beta_shoulder = np.arccos(x_elbow / self.upper_arm_size)
+        to_arccos = x_elbow / self.upper_arm_size
+        if to_arccos > 1 :
+            to_arccos = 1
+        if to_arccos < -1:
+            to_arccos = -1
+        beta_shoulder = np.arccos(to_arccos)
         if P_shoulder_elbow[1] < 0:
             beta_shoulder = -beta_shoulder
 
