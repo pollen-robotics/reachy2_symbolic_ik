@@ -82,7 +82,7 @@ def main_test() -> None:
             l_mod = np.array([l_joints[0], -l_joints[1], -l_joints[2], l_joints[3], -l_joints[4], l_joints[5], -l_joints[6]])
             # calculate l2 distance between r_joints and l_mod
             l2_dist = np.linalg.norm(r_joints - l_mod)
-            if l2_dist < 0.01:
+            if l2_dist < 0.001:
                 # print("OK")
                 pass
             else:
