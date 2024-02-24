@@ -116,44 +116,53 @@ def get_best_continuous_theta(
     if arm == "l_arm":
         side = -1
 
-    if angle_diff(intervalle[0], intervalle[1]) > 0:
-        # print("OMG ANGLE DIFF > 0 ")
-        theta_middle = angle_diff(intervalle[0], intervalle[1]) / 2 + intervalle[1] + np.pi
+    state = f"{arm}"
+    state += "\n" + f"intervalle {intervalle}"
+    epsilon = 0.0001
+    if (abs(intervalle[0]) + abs(intervalle[1])) - 2 * np.pi < epsilon:
+        # The entire circle is possible, we'll aim for prefered_theta
+        state += "\n" + "All the circle is possible"
+        theta_middle = prefered_theta
     else:
-        theta_middle = angle_diff(intervalle[0], intervalle[1]) / 2 + intervalle[1]
-    # print(f"theta milieu {theta_middle}")
+        if angle_diff(intervalle[0], intervalle[1]) > 0:
+            state += "\n" + "OMG ANGLE DIFF > 0 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
+            theta_middle = angle_diff(intervalle[0], intervalle[1]) / 2 + intervalle[1] + np.pi
+        else:
+            theta_middle = angle_diff(intervalle[0], intervalle[1]) / 2 + intervalle[1]
 
-    # print(f"angle diff {angle_diff(theta_middle, previous_theta)}")
+    state += "\n" + f"theta milieu {theta_middle}"
+    state += "\n" + f"angle diff {angle_diff(theta_middle, previous_theta)}"
 
     joints, elbow_position = get_joints(theta_middle)
 
     if is_elbow_ok(elbow_position, side):
         if abs(angle_diff(theta_middle, previous_theta)) < d_theta_max:
-            # print("theta milieu ok et proche")
-            return True, theta_middle
+            state += "\n" + "theta milieu ok et proche"
+            return True, theta_middle, state
         else:
             sign = angle_diff(theta_middle, previous_theta) / np.abs(angle_diff(theta_middle, previous_theta))
+            state += "\n" + f"sign = {sign}"
 
             # if perf needed delete this and return False, (previous_theta + sign * d_theta_max)
             theta_side = previous_theta + sign * d_theta_max
             joints, elbow_position = get_joints(theta_side)
             is_reachable = is_elbow_ok(elbow_position, side)
-            # print(f"theta milieu ok mais loin - et moi je suis {is_reachable}")
-            return is_reachable, theta_side
+            state += "\n" + f"theta milieu ok mais loin - et moi je suis {is_reachable}"
+            return is_reachable, theta_side, state
 
     else:
         joints, elbow_position = get_joints(previous_theta)
         is_reachable = is_elbow_ok(elbow_position, side)
         if is_reachable:
-            # print("theta milieu pas ok mais moi ok - bouge pas ")
-            return True, previous_theta
+            state += "\n" + "theta milieu pas ok mais moi ok - bouge pas "
+            return True, previous_theta, state
         else:
             if abs(angle_diff(prefered_theta, previous_theta)) < d_theta_max:
-                # print("theta milieu pas ok et moi pas ok - proche de theta pref")
-                return False, prefered_theta
+                state += "\n" + "theta milieu pas ok et moi pas ok - proche de theta pref"
+                return False, prefered_theta, state
             sign = angle_diff(prefered_theta, previous_theta) / np.abs(angle_diff(prefered_theta, previous_theta))
-            # print("theta milieu pas ok et moi pas ok - bouge vers theta pref")
-            return False, previous_theta + sign * d_theta_max
+            state += "\n" + "theta milieu pas ok et moi pas ok - bouge vers theta pref"
+            return False, previous_theta + sign * d_theta_max, state
 
 
 def is_elbow_ok(elbow_position: npt.NDArray[np.float64], side: int) -> bool:
