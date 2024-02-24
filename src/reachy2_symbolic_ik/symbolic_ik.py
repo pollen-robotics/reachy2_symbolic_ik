@@ -600,7 +600,7 @@ class SymbolicIK:
         T_elbow_torso[0][3] -= self.upper_arm_size
 
         P_elbow_wrist = np.dot(T_elbow_torso, P_torso_wrist)
-        # good
+
         alpha_elbow = -np.pi / 2 + math.atan2(P_elbow_wrist[2], -P_elbow_wrist[1])
         if alpha_elbow < -np.pi:
             alpha_elbow = alpha_elbow + 2 * np.pi
@@ -655,6 +655,7 @@ class SymbolicIK:
         T_tip_torso[0][3] -= self.gripper_size
 
         M_torso_goal = R.from_euler("xyz", goal_orientation)
+        # TODO this magic number scares me. Could it be the gripper size?
         P_goal_point = [0.1, 0.0, 0.0, 1.0]
 
         T_torso_goal = make_homogenous_matrix_from_rotation_matrix(P_torso_goalPosition, M_torso_goal.as_matrix())
@@ -666,5 +667,5 @@ class SymbolicIK:
 
         joints = np.array([alpha_shoulder, beta_shoulder, alpha_elbow, beta_elbow, beta_wrist, alpha_wrist, gamma_wrist])
 
-        joints = get_valid_arm_joints(joints)
+        # joints = get_valid_arm_joints(joints)
         return joints, self.elbow_position
