@@ -87,7 +87,7 @@ class SymbolicIK:
         self.wrist_position = self.get_wrist_position(goal_pose)
 
         d_shoulder_wrist = np.linalg.norm(self.wrist_position - self.shoulder_position)
-        
+
         # Test if the wrist is in the arm range
         if d_shoulder_wrist > self.upper_arm_size + self.forearm_size:
             # todo check if the pose is the sphere of the arm
@@ -97,12 +97,12 @@ class SymbolicIK:
         # TODO these values very often are not in the limits, is it normal? Is clipping a good idea?
         # to_asin1 = np.clip(d_shoulder_wrist / (2 * self.upper_arm_size), -1, 1)
         # to_asin2 = np.clip(d_shoulder_wrist / (2 * self.forearm_size), -1, 1)
-        
+
         to_asin1 = d_shoulder_wrist / (2 * self.upper_arm_size)
         to_asin2 = d_shoulder_wrist / (2 * self.forearm_size)
         print(f"to_asin1: {to_asin1}")
         print(f"to_asin2: {to_asin2}")
-        
+
         alpha = np.arcsin(to_asin1) + np.arcsin(to_asin2) - np.pi
         if alpha < np.radians(-self.elbow_limits) or alpha > np.radians(self.elbow_limits):
             return False, np.array([]), None
@@ -443,7 +443,7 @@ class SymbolicIK:
                 # else :
                 #     intervalle = np.array([angle1, angle2])
             else:
-                print("OMGGG ANGLES WERE INVERTED $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+                print("OMGGG ANGLES WERE INVERTED ############################################")
                 intervalle = np.array([angle2, angle1])
         return intervalle
 
