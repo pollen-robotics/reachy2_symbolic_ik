@@ -132,18 +132,25 @@ def get_best_continuous_theta(
         side = -1
 
     state = f"{arm}"
-    state += "\n" + f"intervalle {intervalle}"
-    epsilon = 0.0001
-    if (abs(intervalle[0]) + abs(intervalle[1])) - 2 * np.pi < epsilon:
+    state += "\n" + f"intervalle: {intervalle}"
+    epsilon = 0.00001
+    if (abs(abs(intervalle[0]) + abs(intervalle[1]) - 2 * np.pi)) < epsilon:
         # The entire circle is possible, we'll aim for prefered_theta
-        state += "\n" + "All the circle is possible"
+        state += "\n" + f"All the circle is possible."
         theta_middle = prefered_theta
     else:
-        if angle_diff(intervalle[0], intervalle[1]) > 0:
-            state += "\n" + "OMG ANGLE DIFF > 0 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
-            theta_middle = angle_diff(intervalle[0], intervalle[1]) / 2 + intervalle[1] + np.pi
+        # To me this seems a better way to do this
+        if intervalle[0] > intervalle[1]:
+            state += "\n" + f"IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII"
+            theta_middle = (intervalle[0] + intervalle[1]) / 2 - np.pi
         else:
-            theta_middle = angle_diff(intervalle[0], intervalle[1]) / 2 + intervalle[1]
+            state += "\n" + f"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+            theta_middle = (intervalle[0] + intervalle[1]) / 2
+        # if angle_diff(intervalle[0], intervalle[1]) > 0:
+        #     state += "\n" + "OMG ANGLE DIFF > 0 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
+        #     theta_middle = angle_diff(intervalle[0], intervalle[1]) / 2 + intervalle[1] + np.pi
+        # else:
+        #     theta_middle = angle_diff(intervalle[0], intervalle[1]) / 2 + intervalle[1]
 
     state += "\n" + f"theta milieu {theta_middle}"
     state += "\n" + f"angle diff {angle_diff(theta_middle, previous_theta)}"
