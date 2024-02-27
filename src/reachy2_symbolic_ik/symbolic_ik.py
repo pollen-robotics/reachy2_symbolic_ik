@@ -399,7 +399,10 @@ class SymbolicIK:
             angle1 = math.atan2(point1_in_sphere_frame[2], point1_in_sphere_frame[1])
             angle2 = math.atan2(point2_in_sphere_frame[2], point2_in_sphere_frame[1])
 
-            angle_test = angle_diff(angle1, angle2) / 2 + angle2
+            [angle1, angle2] = sorted([angle1, angle2])
+            angle_test = (angle1 + angle2)/2
+
+            # angle_test = angle_diff(angle1, angle2) / 2 + angle2
 
             # if angle1 < 0:
             #     angle1 = angle1 + 2 * np.pi
@@ -438,12 +441,13 @@ class SymbolicIK:
             # print(test_point_in_wrist_frame[0] > 0)
             if test_point_in_wrist_frame[0] > 0:
                 intervalle = np.array([angle1, angle2])
+                # intervalle = np.array([angle1, angle2])
                 # if angle_test < 0:
                 #     intervalle = np.array([angle2, angle1])
                 # else :
                 #     intervalle = np.array([angle1, angle2])
             else:
-                print("OMGGG ANGLES WERE INVERTED $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+                # print("OMGGG ANGLES WERE INVERTED $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
                 intervalle = np.array([angle2, angle1])
         return intervalle
 
