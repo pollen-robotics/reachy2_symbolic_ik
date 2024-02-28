@@ -141,16 +141,9 @@ def get_best_continuous_theta(
     else:
         # To me this seems a better way to do this
         if intervalle[0] > intervalle[1]:
-            state += "\n" + "IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII"
             theta_middle = (intervalle[0] + intervalle[1]) / 2 - np.pi
         else:
-            state += "\n" + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
             theta_middle = (intervalle[0] + intervalle[1]) / 2
-        # if angle_diff(intervalle[0], intervalle[1]) > 0:
-        #     state += "\n" + "OMG ANGLE DIFF > 0 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
-        #     theta_middle = angle_diff(intervalle[0], intervalle[1]) / 2 + intervalle[1] + np.pi
-        # else:
-        #     theta_middle = angle_diff(intervalle[0], intervalle[1]) / 2 + intervalle[1]
 
     state += "\n" + f"theta milieu {theta_middle}"
     state += "\n" + f"angle diff {angle_diff(theta_middle, previous_theta)}"

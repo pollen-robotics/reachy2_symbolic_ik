@@ -403,22 +403,6 @@ class SymbolicIK:
 
             # angle_test = angle_diff(angle1, angle2) / 2 + angle2
 
-            # if angle1 < 0:
-            #     angle1 = angle1 + 2 * np.pi
-            # if angle2 < 0:
-            #     angle2 = angle2 + 2 * np.pi
-
-            # [angle1, angle2] = sorted([angle1, angle2])
-            # print(angle1, angle2)
-            # print(f"angle_test: {angle_test}")
-
-            # x = math.cos(angle1) + math.cos(angle2)
-            # y = math.sin(angle1) + math.sin(angle2)
-            # if x == 0 and y == 0:
-            #     angle_test = (angle1 + angle2) / 2
-            #     print("attention !!!")
-            # angle_test = math.atan2(y, x)
-
             # finding which side of the circle is valid by testing the middle point of the arc
             test_point = np.array([0, math.cos(angle_test) * radius2, math.sin(angle_test) * radius2, 1])
 
@@ -432,21 +416,11 @@ class SymbolicIK:
                     test_point[2] + self.wrist_position[2],
                     "ro",
                 )
-
-            # transforming the test point to the limitation frame
             test_point_in_wrist_frame = np.dot(Tmat_limitation_t, test_point)
 
-            # testing if the point is above the limitation circle
-            # print(test_point_in_wrist_frame[0] > 0)
             if test_point_in_wrist_frame[0] > 0:
                 intervalle = np.array([angle1, angle2])
-                # intervalle = np.array([angle1, angle2])
-                # if angle_test < 0:
-                #     intervalle = np.array([angle2, angle1])
-                # else :
-                #     intervalle = np.array([angle1, angle2])
             else:
-                print("OMGGG ANGLES WERE INVERTED ############################################")
                 intervalle = np.array([angle2, angle1])
         return intervalle
 
@@ -549,17 +523,7 @@ class SymbolicIK:
         P_shoulder_torso = np.dot(-M_shoulder_torso, P_torso_shoulder[:3])
         T_shoulder_torso = make_homogenous_matrix_from_rotation_matrix(P_shoulder_torso, M_shoulder_torso)
         P_shoulder_elbow = np.dot(T_shoulder_torso, P_torso_elbow)
-        # alpha_shoulder = np.arcsin(-P_shoulder_elbow[2] / np.sqrt(P_shoulder_elbow[2] ** 2 + P_shoulder_elbow[0] ** 2))
         alpha_shoulder = -math.atan2(P_shoulder_elbow[2], P_shoulder_elbow[0])
-
-        # if P_shoulder_elbow[0] < 0:
-        #     alpha_shoulder = np.pi - alpha_shoulder
-        #     if alpha_shoulder > np.pi:
-        #         print("la______")
-        #         alpha_shoulder = alpha_shoulder - 2 * np.pi
-        # print("-----------------")
-        # print(alpha_shoulder)
-        # print(math.atan2(P_shoulder_elbow[2], P_shoulder_elbow[0]))
 
         M_shoulderPitch_shoulder = R.from_euler("xyz", [0.0, -alpha_shoulder, 0.0]).as_matrix()
         T_shoulderPitch_shoulder = make_homogenous_matrix_from_rotation_matrix(
@@ -568,31 +532,8 @@ class SymbolicIK:
         T_shoulderPitch_torso = np.dot(T_shoulderPitch_shoulder, T_shoulder_torso)
 
         P_shoulderPitch_elbow = np.dot(T_shoulderPitch_torso, P_torso_elbow)
-        # x_elbow = P_shoulderPitch_elbow[0]
-        # print(x_elbow)
-        # to_arccos = x_elbow / self.upper_arm_size
-        # if to_arccos > 1:
-        #     print(f"to_arccos: {to_arccos}")
-        #     to_arccos = 1
-        # if to_arccos < -1:
-        #     print(f"to_arccos: {to_arccos}")
-        #     to_arccos = -1
-        # beta_shoulder = np.arccos(to_arccos)
 
         beta_shoulder = math.atan2(P_shoulderPitch_elbow[1], P_shoulderPitch_elbow[0])
-
-        # print(P_shoulder_elbow[1])
-        # print(P_shoulderPitch_elbow[1])
-
-        # if P_shoulder_elbow[1] < 0:
-        #     print("sjljheqjkghqkjerhgjreqghm")
-        #     # print(x_elbow)
-        #     beta_shoulder = -beta_shoulder
-        # # else:
-        # # print(x_elbow)
-        # print("_______________________________________")
-        # print(beta_shoulder)
-        # print(math.atan2(P_shoulderPitch_elbow[1], x_elbow))
 
         M_shoulderRoll_shoulderPitch = R.from_euler("xyz", [0.0, 0.0, -beta_shoulder]).as_matrix()
         T_shoulderRoll_shoulderPitch = make_homogenous_matrix_from_rotation_matrix(
@@ -616,16 +557,6 @@ class SymbolicIK:
         P_elbowYaw_wrist = np.dot(T_elbowYaw_torso, P_torso_wrist)
 
         beta_elbow = -math.atan2(P_elbowYaw_wrist[2], P_elbowYaw_wrist[0])
-        # beta_elbow = -np.arcsin(P_elbowYaw_wrist[2] / np.sqrt(P_elbowYaw_wrist[0] ** 2 + P_elbowYaw_wrist[2] ** 2))
-
-        # if P_elbowYaw_wrist[0] < 0:
-        #     # criminal
-        #     beta_elbow = np.pi - beta_elbow
-        #     if beta_elbow > np.pi:
-        #         beta_elbow = beta_elbow - 2 * np.pi
-        #     print("iciii______")
-        # print(f"beta_elbow: {beta_elbow}")
-        # print(-math.atan2(P_elbowYaw_wrist[2], P_elbowYaw_wrist[0]))
 
         R_elbowPitch_elbowYaw = R.from_euler("xyz", [0.0, -beta_elbow, 0.0]).as_matrix()
         T_elbowPitch_elbowYaw = make_homogenous_matrix_from_rotation_matrix(np.array([0.0, 0.0, 0.0]), R_elbowPitch_elbowYaw)
@@ -646,7 +577,6 @@ class SymbolicIK:
 
         P_wristRoll_tip = np.dot(T_wristRol_torso, P_torso_goalPosition)
 
-        # alpha_wrist = np.arcsin(P_wristRoll_tip[2] / np.sqrt(P_wristRoll_tip[0] ** 2 + P_wristRoll_tip[2] ** 2))
         alpha_wrist = math.atan2(P_wristRoll_tip[2], P_wristRoll_tip[0])
 
         R_wristPitch_wrist_Roll = R.from_euler("xyz", [0.0, alpha_wrist, 0.0]).as_matrix()
