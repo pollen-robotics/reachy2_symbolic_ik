@@ -126,7 +126,7 @@ def get_best_continuous_theta(
     d_theta_max: float,
     prefered_theta: float,
     arm: str,
-) -> Tuple[bool, float]:
+) -> Tuple[bool, float, str]:
     side = 1
     if arm == "l_arm":
         side = -1
@@ -136,15 +136,15 @@ def get_best_continuous_theta(
     epsilon = 0.00001
     if (abs(abs(intervalle[0]) + abs(intervalle[1]) - 2 * np.pi)) < epsilon:
         # The entire circle is possible, we'll aim for prefered_theta
-        state += "\n" + f"All the circle is possible."
+        state += "\n" + "All the circle is possible."
         theta_middle = prefered_theta
     else:
         # To me this seems a better way to do this
         if intervalle[0] > intervalle[1]:
-            state += "\n" + f"IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII"
+            state += "\n" + "IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII"
             theta_middle = (intervalle[0] + intervalle[1]) / 2 - np.pi
         else:
-            state += "\n" + f"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+            state += "\n" + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
             theta_middle = (intervalle[0] + intervalle[1]) / 2
         # if angle_diff(intervalle[0], intervalle[1]) > 0:
         #     state += "\n" + "OMG ANGLE DIFF > 0 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$"

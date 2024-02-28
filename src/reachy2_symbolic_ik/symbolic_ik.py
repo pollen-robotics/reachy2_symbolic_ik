@@ -4,16 +4,15 @@ from typing import Any, Optional, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
+from scipy.spatial.transform import Rotation as R
+
 from reachy2_symbolic_ik.utils import (
-    angle_diff,
-    get_valid_arm_joints,
     make_homogenous_matrix_from_rotation_matrix,
     rotation_matrix_from_vector,
     show_circle,
     show_point,
     show_sphere,
 )
-from scipy.spatial.transform import Rotation as R
 
 SHOW_GRAPH = False
 
@@ -161,30 +160,30 @@ class SymbolicIK:
                     plt.show()
                 return True, intervalle, self.get_joints
 
-            if SHOW_GRAPH:
-                show_point(self.ax, goal_pose[0], "g")
-                show_point(self.ax, self.wrist_position, "r")
-                show_point(self.ax, self.shoulder_position, "b")
-                show_point(self.ax, self.torso_pose, "y")
-                show_sphere(self.ax, self.wrist_position, self.forearm_size, "r")
-                show_sphere(self.ax, self.shoulder_position, self.upper_arm_size, "b")
-                show_circle(
-                    self.ax,
-                    intersection_circle[0],
-                    intersection_circle[1],
-                    intersection_circle[2],
-                    np.array([[0, 2 * np.pi]]),
-                    "g",
-                )
-                show_circle(
-                    self.ax,
-                    limitation_wrist_circle[0],
-                    limitation_wrist_circle[1],
-                    limitation_wrist_circle[2],
-                    np.array([[0, 2 * np.pi]]),
-                    "y",
-                )
-                plt.show()
+            # if SHOW_GRAPH:
+            #     show_point(self.ax, goal_pose[0], "g")
+            #     show_point(self.ax, self.wrist_position, "r")
+            #     show_point(self.ax, self.shoulder_position, "b")
+            #     show_point(self.ax, self.torso_pose, "y")
+            #     show_sphere(self.ax, self.wrist_position, self.forearm_size, "r")
+            #     show_sphere(self.ax, self.shoulder_position, self.upper_arm_size, "b")
+            #     show_circle(
+            #         self.ax,
+            #         intersection_circle[0],
+            #         intersection_circle[1],
+            #         intersection_circle[2],
+            #         np.array([[0, 2 * np.pi]]),
+            #         "g",
+            #     )
+            #     show_circle(
+            #         self.ax,
+            #         limitation_wrist_circle[0],
+            #         limitation_wrist_circle[1],
+            #         limitation_wrist_circle[2],
+            #         np.array([[0, 2 * np.pi]]),
+            #         "y",
+            #     )
+            #     plt.show()
             return False, np.array([]), None
 
         if SHOW_GRAPH:

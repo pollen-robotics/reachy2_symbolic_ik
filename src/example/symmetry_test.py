@@ -1,28 +1,29 @@
 import time
-from pathlib import Path
 
 import numpy as np
 import numpy.typing as npt
-from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
-from reachy2_symbolic_ik.utils import get_best_continuous_theta, get_valid_arm_joints, tend_to_prefered_theta
 from scipy.spatial.transform import Rotation
 
+from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
 
-def get_euler_from_homogeneous_matrix(homogeneous_matrix, degrees: bool = False):
+
+def get_euler_from_homogeneous_matrix(
+    homogeneous_matrix: npt.NDArray[np.float64], degrees: bool = False
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     position = homogeneous_matrix[:3, 3]
     rotation_matrix = homogeneous_matrix[:3, :3]
-    euler_angles = Rotation.from_matrix(rotation_matrix).as_euler("xyz", degrees=degrees)
+    euler_angles = np.array(Rotation.from_matrix(rotation_matrix).as_euler("xyz", degrees=degrees))
     return position, euler_angles
 
 
-def build_pose_matrix(x: float, y: float, z: float):
+def build_pose_matrix(x: np.float64, y: np.float64, z: np.float64) -> npt.NDArray[np.float64]:
     # The effector is always at the same orientation in the world frame
     return np.array(
         [
-            [0, 0, -1, x],
-            [0, 1, 0, y],
-            [1, 0, 0, z],
-            [0, 0, 0, 1],
+            [0.0, 0.0, -1.0, x],
+            [0.0, 1.0, 0.0, y],
+            [1.0, 0.0, 0.0, z],
+            [0.0, 0.0, 0.0, 1.0],
         ]
     )
 
@@ -64,11 +65,11 @@ def main_test() -> None:
         )
         roll, pitch, yaw = np.random.uniform(angle_range[0], angle_range[1], 3)
 
-        ### Use this for random angles + random positions
+        # Use this for random angles + random positions
         goal_pose = np.array([[x, y, z], [roll, pitch, yaw]])
         goal_pose_l = np.array([[x, -y, z], [-roll, pitch, -yaw]])
 
-        ### Use this for "straight" angles + random positions
+        # Use this for "straight" angles + random positions
         # goal_pose = np.array([[x, y, z], [0, -np.pi / 2, 0]])
         # goal_pose_l = np.array([[x, -y, z], [0, -np.pi / 2, 0]])
 
