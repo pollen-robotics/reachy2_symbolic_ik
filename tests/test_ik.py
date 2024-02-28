@@ -36,11 +36,11 @@ def test_class() -> None:
     assert result[1][1] <= np.pi
     assert result[2] is not None
 
-    joints = result[2](result[1][0])
+    joints, elbow_position = result[2](result[1][0])
 
     assert len(joints) == 7
 
-    goal_position = [0.0, -0.2, -0.71]
+    goal_position = [0.0, -0.2, -0.65]
     goal_orientation = [0.0, 0.0, 0.0]
     goal_pose = [goal_position, goal_orientation]
 
@@ -50,7 +50,7 @@ def test_class() -> None:
     assert np.all(result[1] == [-np.pi, np.pi])
     assert result[2] is not None
 
-    joints = result[2](0)
+    joints, elbow_position = result[2](0)
 
     assert len(joints) == 7
 
@@ -63,7 +63,7 @@ def test_full() -> None:
 
     urdf_path = Path("src/config_files")
     for file in urdf_path.glob("**/*.urdf"):
-        if file.stem == "reachy2_placo":
+        if file.stem == "reachy2_ik":
             urdf_path = file.resolve()
             break
 
@@ -84,7 +84,7 @@ def test_full() -> None:
     goal_pose = [goal_position, goal_orientation]
 
     result = symbolic_ik.is_reachable(goal_pose)
-    joints = result[2](0)
+    joints, elbow_position = result[2](0)
 
     names = [
         "r_shoulder_pitch",

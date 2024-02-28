@@ -1,8 +1,42 @@
 import math
-from typing import Any
+from typing import Any, Tuple
 
 import numpy as np
 import numpy.typing as npt
+from scipy.spatial.transform import Rotation as R
+
+
+def get_valid_arm_joints(joints: list[float]) -> list[float]:
+    arm_joints = joints[4:7]
+    # # print(f"roll: {np.degrees(arm_joints[0])}, pitch: {np.degrees(arm_joints[1])}, yaw: {np.degrees(arm_joints[2])}")
+    rotation = R.from_euler("xyz", arm_joints, degrees=False)
+    arm_joints = rotation.as_euler("ZYZ", degrees=False)
+    # print(f"roll: {np.degrees(arm_joints[0])}, pitch: {np.degrees(arm_joints[1])}, yaw: {np.degrees(arm_joints[2])}")
+
+    if angle_diff(arm_joints[1], 0) > np.pi / 4:
+        arm_joints[1] = np.pi / 4
+    if angle_diff(arm_joints[1], 0) < -np.pi / 4:
+        arm_joints[1] = -np.pi / 4
+
+    rotation = R.from_euler("ZYZ", arm_joints, degrees=False)
+    arm_joints = rotation.as_euler("xyz", degrees=False)
+
+    # Quand la main est en bas, le premier angle est bien un roll naturel.
+    # Bizarrement, le second angle est bien un pitch, mais dans le sens inverse.
+    # Enfin, le dernier angle est bien un yaw naturel, lui on n'a pas besoin de le contraindre.
+    # Implémentation bête et méchante de la limitation en forme de carrée (et pas en cercle comme ça devrait être).
+    # => Suprise, ça marche pad du tout.
+    # if angle_diff(arm_joints[0], 0) > np.pi / 4:
+    #     arm_joints[0] = np.pi / 4
+    # if angle_diff(arm_joints[0], 0) < -np.pi / 4:
+    #     arm_joints[0] = -np.pi / 4
+    # if angle_diff(arm_joints[1], 0) > np.pi / 4:
+    #     arm_joints[1] = np.pi / 4
+    # if angle_diff(arm_joints[1], 0) < -np.pi / 4:
+    #     arm_joints[1] = -np.pi / 4
+
+    # print(f"roll: {np.degrees(arm_joints[0])}, pitch: {np.degrees(arm_joints[1])}, yaw: {np.degrees(arm_joints[2])}")
+    return [joints[0], joints[1], joints[2], joints[3]] + list(arm_joints)
 
 
 def make_homogenous_matrix_from_rotation_matrix(
@@ -41,6 +75,113 @@ def rotation_matrix_from_vector(vect: npt.NDArray[np.float64]) -> npt.NDArray[np
     kmat = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
     rotation_matrix = np.array(np.eye(3) + kmat + kmat.dot(kmat) * ((1 - c) / (s**2)))
     return rotation_matrix
+
+
+# def get_theta_from_current_pose(
+#     get_joints: Any,
+#     intervalle: npt.NDArray[np.float64],
+#     current_joints: List[float],
+#     joints_tolerance: List[float],
+#     nb_points: int,
+# ) -> Tuple[bool, float]:
+#     thetas = np.linspace(intervalle[0], intervalle[1], 360)
+#     # side = 1
+#     # if arm == "l_arm":
+#     #     side = -1
+#     d_min = 1000.0
+#     theta_min = 0.0
+#     joints_min = []
+#     for theta in thetas:
+#         joints, elbow_position = get_joints(theta)
+#         d = float(np.linalg.norm(np.array(joints) - np.array(current_joints)))
+#         if d < d_min:
+#             print(d)
+#             d_min = d
+#             theta_min = theta
+#             joints_min = joints
+#     for joint in joints_min:
+#         if abs(joint - current_joints[0]) > joints_tolerance[0]:
+#             return False, theta_min
+#     return True, theta_min
+
+
+def tend_to_prefered_theta(
+    previous_theta: float,
+    intervalle: npt.NDArray[np.float64],
+    get_joints: Any,
+    d_theta_max: float,
+    goal_theta: float = -np.pi * 5 / 4,
+) -> Tuple[bool, float]:
+    if abs(angle_diff(goal_theta, previous_theta)) < d_theta_max:
+        return True, goal_theta
+
+    sign = angle_diff(goal_theta, previous_theta) / np.abs(angle_diff(goal_theta, previous_theta))
+    return False, previous_theta + sign * d_theta_max
+
+
+def get_best_continuous_theta(
+    previous_theta: float,
+    intervalle: npt.NDArray[np.float64],
+    get_joints: Any,
+    d_theta_max: float,
+    prefered_theta: float,
+    arm: str,
+) -> Tuple[bool, float, str]:
+    side = 1
+    if arm == "l_arm":
+        side = -1
+
+    state = f"{arm}"
+    state += "\n" + f"intervalle: {intervalle}"
+    epsilon = 0.00001
+    if (abs(abs(intervalle[0]) + abs(intervalle[1]) - 2 * np.pi)) < epsilon:
+        # The entire circle is possible, we'll aim for prefered_theta
+        state += "\n" + "All the circle is possible."
+        theta_middle = prefered_theta
+    else:
+        # To me this seems a better way to do this
+        if intervalle[0] > intervalle[1]:
+            theta_middle = (intervalle[0] + intervalle[1]) / 2 - np.pi
+        else:
+            theta_middle = (intervalle[0] + intervalle[1]) / 2
+
+    state += "\n" + f"theta milieu {theta_middle}"
+    state += "\n" + f"angle diff {angle_diff(theta_middle, previous_theta)}"
+
+    joints, elbow_position = get_joints(theta_middle)
+
+    if is_elbow_ok(elbow_position, side):
+        if abs(angle_diff(theta_middle, previous_theta)) < d_theta_max:
+            state += "\n" + "theta milieu ok et proche"
+            return True, theta_middle, state
+        else:
+            sign = angle_diff(theta_middle, previous_theta) / np.abs(angle_diff(theta_middle, previous_theta))
+            state += "\n" + f"sign = {sign}"
+
+            # if perf needed delete this and return False, (previous_theta + sign * d_theta_max)
+            theta_side = previous_theta + sign * d_theta_max
+            joints, elbow_position = get_joints(theta_side)
+            is_reachable = is_elbow_ok(elbow_position, side)
+            state += "\n" + f"theta milieu ok mais loin - et moi je suis {is_reachable}"
+            return is_reachable, theta_side, state
+
+    else:
+        joints, elbow_position = get_joints(previous_theta)
+        is_reachable = is_elbow_ok(elbow_position, side)
+        if is_reachable:
+            state += "\n" + "theta milieu pas ok mais moi ok - bouge pas "
+            return True, previous_theta, state
+        else:
+            if abs(angle_diff(prefered_theta, previous_theta)) < d_theta_max:
+                state += "\n" + "theta milieu pas ok et moi pas ok - proche de theta pref"
+                return False, prefered_theta, state
+            sign = angle_diff(prefered_theta, previous_theta) / np.abs(angle_diff(prefered_theta, previous_theta))
+            state += "\n" + "theta milieu pas ok et moi pas ok - bouge vers theta pref"
+            return False, previous_theta + sign * d_theta_max, state
+
+
+def is_elbow_ok(elbow_position: npt.NDArray[np.float64], side: int) -> bool:
+    return bool(elbow_position[1] * side < -0.2)
 
 
 def show_point(ax: Any, point: npt.NDArray[np.float64], color: str) -> None:

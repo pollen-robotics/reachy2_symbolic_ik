@@ -6,6 +6,7 @@ from reachy_placo.ik_reachy_placo import IKReachyQP
 from scipy.spatial.transform import Rotation as R
 
 from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
+from reachy2_symbolic_ik.utils import shoulder_limits
 from reachy2_symbolic_ik.utils_placo import go_to_position
 
 
@@ -64,7 +65,10 @@ def main_test() -> None:
     # print(placo_ik.robot.get_T_a_b("torso", "r_tip_joint"))
     # print(placo_ik.robot.get_T_a_b("torso", "r_wrist_roll"))
     # print(placo_ik.robot.get_T_a_b("torso", "r_elbow_yaw"))
-    # go_to_position(placo_ik, [0, -np.radians(-0), 0, 0, 0, 0, 0], wait=5)
+    # go_to_position(placo_ik, [0, 0, 0, 0, 0, 0, 0], arm="l_arm", wait=5)
+    # go_to_position(placo_ik, [0, np.radians(-90), 0, 0, 0, 0, 0], arm="r_arm", wait=5)
+    # go_to_position(placo_ik, [1.57, np.radians(30), 0, 0, 0, 0, 0], arm="r_arm", wait=5)
+    # go_to_position(placo_ik, [-1.57, 0.69, 0, 0, 0, 0, 0], arm="l_arm", wait=5)
 
     goal_position = [0.60, 0.2, -0.1]
     goal_orientation = [0, -np.radians(70), 0]
@@ -73,26 +77,39 @@ def main_test() -> None:
     result_l = symbolib_ik_l.is_reachable(goal_pose)
     if result_l[0]:
         print(result_l[1])
-        theta = np.linspace(result_l[1][0], result_l[1][1], 3)[1]
-        joints = result_l[2](theta)
-        go_to_position(placo_ik, joints, wait=3, arm="l_arm")
-        print(np.degrees(joints))
-        is_correct = are_joints_correct(placo_ik, joints, goal_pose, arm="l_arm")
-        print(is_correct)
+        # tetha = np.linspace(result_l[1][0], result_l[1][1], 3)[1]
+        # go_to_position(placo_ik, result_l[2](tetha), wait=3, arm="l_arm")
+        is_reachable, theta = shoulder_limits(result_l[1], result_l[2], arm="l_arm")
+        print(theta)
+        if is_reachable:
+            joints, elbow_position = result_l[2](theta)
+            go_to_position(placo_ik, joints, wait=3, arm="l_arm")
+            print(np.degrees(joints))
+            is_correct = are_joints_correct(placo_ik, joints, goal_pose, arm="l_arm")
+            print(is_correct)
+        else:
+            print("Pose not reachable because of shoulder limits")
     else:
         print("Pose not reachable")
 
     goal_position = [0.60, -0.20, -0.1]
     goal_orientation = [0, -np.radians(70), 0]
     goal_pose = np.array([goal_position, goal_orientation])
+
     result_r = symbolib_ik_r.is_reachable(goal_pose)
     if result_r[0]:
+        print("pose reachable")
         print(result_r[1])
-        theta = np.linspace(result_r[1][0], result_r[1][1], 3)[1]
-        joints = result_r[2](theta)
-        go_to_position(placo_ik, joints, wait=3)
-        is_correct = are_joints_correct(placo_ik, joints, goal_pose)
-        print(is_correct)
+        is_reachable, theta = shoulder_limits(result_r[1], result_r[2])
+        print(theta)
+        if is_reachable:
+            joints, elbow_position = result_r[2](theta)
+            go_to_position(placo_ik, joints, wait=3)
+            is_correct = are_joints_correct(placo_ik, joints, goal_pose)
+            print(is_correct)
+        else:
+            print("Pose not reachable because of shoulder limits")
+
     else:
         print("Pose not reachable")
 
