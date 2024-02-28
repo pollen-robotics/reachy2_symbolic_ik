@@ -7,7 +7,6 @@ import numpy.typing as npt
 from scipy.spatial.transform import Rotation as R
 
 from reachy2_symbolic_ik.utils import (
-    angle_diff,
     make_homogenous_matrix_from_rotation_matrix,
     rotation_matrix_from_vector,
     show_circle,
@@ -19,6 +18,7 @@ SHOW_GRAPH = False
 
 
 class SymbolicIK:
+    # TODO get arm information from the urdf
     def __init__(
         self,
         arm: str = "r_arm",
@@ -26,6 +26,7 @@ class SymbolicIK:
         forearm_size: np.float64 = np.float64(0.28),
         gripper_size: np.float64 = np.float64(0.10),
         wrist_limit: int = 45,
+        # shoulder orientation and shoulder position are for the rigth arm
         shoulder_orientation_offset: list[int] = [10, 0, 15],
         shoulder_position: npt.NDArray[np.float64] = np.array([0.0, -0.2, 0.0]),
         elbow_limits: int = 130,
@@ -37,21 +38,29 @@ class SymbolicIK:
         self.wrist_limit = wrist_limit
         self.elbow_limits = elbow_limits
         self.torso_pose = np.array([0.0, 0.0, 0.0])
+        self.max_arm_length = self.upper_arm_size + self.forearm_size + self.gripper_size
         if self.arm == "r_arm":
             self.shoulder_position = shoulder_position
             self.shoulder_orientation_offset = shoulder_orientation_offset
+
         else:
             self.shoulder_position = np.array([shoulder_position[0], -shoulder_position[1], shoulder_position[2]])
             self.shoulder_orientation_offset = [-x for x in shoulder_orientation_offset]
 
     def is_reachable_no_limits(self, goal_pose: npt.NDArray[np.float64]) -> Tuple[bool, npt.NDArray[np.float64], Optional[Any]]:
+        d_shoulder_goal = np.linalg.norm(goal_pose[0] - self.shoulder_position)
+
+        if d_shoulder_goal > self.max_arm_length:
+            goal_pose = self._reduce_goal_pose(goal_pose, self.max_arm_length)
+
         self.goal_pose = goal_pose
         self.wrist_position = self.get_wrist_position(goal_pose)
         d_shoulder_wrist = np.linalg.norm(self.wrist_position - self.shoulder_position)
         if d_shoulder_wrist > self.upper_arm_size + self.forearm_size:
-            # todo check if the pose is the sphere of the arm
-            # todo check Trex arm
-            return False, np.array([]), None
+            # print("wrist out of range")
+            self.goal_pose = self.reduce_goal_pose_no_limits(
+                goal_pose, d_shoulder_wrist, self.upper_arm_size + self.forearm_size
+            )
         intersection_circle = self.get_intersection_circle(goal_pose)
         if intersection_circle is not None:
             self.intersection_circle = intersection_circle
@@ -60,6 +69,10 @@ class SymbolicIK:
             return False, np.array([]), None
 
     def is_reachable(self, goal_pose: npt.NDArray[np.float64]) -> Tuple[bool, npt.NDArray[np.float64], Optional[Any]]:
+        # Check if the goal pose is in the arm range
+        d_shoulder_goal = np.linalg.norm(goal_pose[0] - self.shoulder_position)
+        if d_shoulder_goal > self.max_arm_length:
+            goal_pose = self._reduce_goal_pose(goal_pose, self.max_arm_length)
         if SHOW_GRAPH:
             fig = plt.figure()
             self.ax = fig.add_subplot(111, projection="3d")
@@ -71,16 +84,25 @@ class SymbolicIK:
             self.ax.set_zlabel("Z")
         self.goal_pose = goal_pose
         self.wrist_position = self.get_wrist_position(goal_pose)
+
         d_shoulder_wrist = np.linalg.norm(self.wrist_position - self.shoulder_position)
+
+        # Test if the wrist is in the arm range
         if d_shoulder_wrist > self.upper_arm_size + self.forearm_size:
             # todo check if the pose is the sphere of the arm
             # todo check Trex arm
             return False, np.array([]), None
-        alpha = (
-            np.arcsin(d_shoulder_wrist / (2 * self.upper_arm_size))
-            + np.arcsin(d_shoulder_wrist / (2 * self.forearm_size))
-            - np.pi
-        )
+
+        # TODO these values very often are not in the limits, is it normal? Is clipping a good idea?
+        # to_asin1 = np.clip(d_shoulder_wrist / (2 * self.upper_arm_size), -1, 1)
+        # to_asin2 = np.clip(d_shoulder_wrist / (2 * self.forearm_size), -1, 1)
+
+        to_asin1 = d_shoulder_wrist / (2 * self.upper_arm_size)
+        to_asin2 = d_shoulder_wrist / (2 * self.forearm_size)
+        print(f"to_asin1: {to_asin1}")
+        print(f"to_asin2: {to_asin2}")
+
+        alpha = np.arcsin(to_asin1) + np.arcsin(to_asin2) - np.pi
         if alpha < np.radians(-self.elbow_limits) or alpha > np.radians(self.elbow_limits):
             return False, np.array([]), None
 
@@ -138,30 +160,30 @@ class SymbolicIK:
                     plt.show()
                 return True, intervalle, self.get_joints
 
-            if SHOW_GRAPH:
-                show_point(self.ax, goal_pose[0], "g")
-                show_point(self.ax, self.wrist_position, "r")
-                show_point(self.ax, self.shoulder_position, "b")
-                show_point(self.ax, self.torso_pose, "y")
-                show_sphere(self.ax, self.wrist_position, self.forearm_size, "r")
-                show_sphere(self.ax, self.shoulder_position, self.upper_arm_size, "b")
-                show_circle(
-                    self.ax,
-                    intersection_circle[0],
-                    intersection_circle[1],
-                    intersection_circle[2],
-                    np.array([[0, 2 * np.pi]]),
-                    "g",
-                )
-                show_circle(
-                    self.ax,
-                    limitation_wrist_circle[0],
-                    limitation_wrist_circle[1],
-                    limitation_wrist_circle[2],
-                    np.array([[0, 2 * np.pi]]),
-                    "y",
-                )
-                plt.show()
+            # if SHOW_GRAPH:
+            #     show_point(self.ax, goal_pose[0], "g")
+            #     show_point(self.ax, self.wrist_position, "r")
+            #     show_point(self.ax, self.shoulder_position, "b")
+            #     show_point(self.ax, self.torso_pose, "y")
+            #     show_sphere(self.ax, self.wrist_position, self.forearm_size, "r")
+            #     show_sphere(self.ax, self.shoulder_position, self.upper_arm_size, "b")
+            #     show_circle(
+            #         self.ax,
+            #         intersection_circle[0],
+            #         intersection_circle[1],
+            #         intersection_circle[2],
+            #         np.array([[0, 2 * np.pi]]),
+            #         "g",
+            #     )
+            #     show_circle(
+            #         self.ax,
+            #         limitation_wrist_circle[0],
+            #         limitation_wrist_circle[1],
+            #         limitation_wrist_circle[2],
+            #         np.array([[0, 2 * np.pi]]),
+            #         "y",
+            #     )
+            #     plt.show()
             return False, np.array([]), None
 
         if SHOW_GRAPH:
@@ -192,14 +214,31 @@ class SymbolicIK:
 
         return False, np.array([]), None
 
+    def _reduce_goal_pose(
+        self, pose: npt.NDArray[np.float64], max_arm_length: np.float64, verbose: bool = True
+    ) -> npt.NDArray[np.float64]:
+        goal_position = pose[0]
+        direction = goal_position - self.shoulder_position
+        direction = direction / np.linalg.norm(direction)
+        goal_position = self.shoulder_position + direction * max_arm_length
+        return np.array([goal_position, pose[1]])
+
+    def reduce_goal_pose_no_limits(
+        self, pose: npt.NDArray[np.float64], d_shoulder_wrist: np.float64, d_shoulder_wrist_max: np.float64
+    ) -> npt.NDArray[np.float64]:
+        direction = self.wrist_position - self.shoulder_position
+        direction = direction / (np.linalg.norm(d_shoulder_wrist) + 0.00001)
+        new_wrist_position = self.shoulder_position + direction * d_shoulder_wrist_max
+        diff_wrist = new_wrist_position - self.wrist_position
+        goal_position = pose[0] + diff_wrist
+        self.wrist_position = new_wrist_position
+        return np.array([goal_position, pose[1]])
+
     def get_intersection_circle(
         self, goal_pose: npt.NDArray[np.float64]
     ) -> Optional[Tuple[npt.NDArray[np.float64], float, npt.NDArray[np.float64]]]:
-        P_shoulder_wrist = [
-            self.wrist_position[0],
-            self.wrist_position[1] - self.shoulder_position[1],
-            self.wrist_position[2],
-        ]
+        P_shoulder_wrist = self.wrist_position - self.shoulder_position
+
         d = np.sqrt(P_shoulder_wrist[0] ** 2 + P_shoulder_wrist[1] ** 2 + P_shoulder_wrist[2] ** 2)
         if d > self.upper_arm_size + self.forearm_size:
             return None
@@ -218,9 +257,8 @@ class SymbolicIK:
         )
         P_intersection_center = np.array([(d**2 - self.forearm_size**2 + self.upper_arm_size**2) / (2 * d), 0, 0])
         P_shoulder_center = M_torso_intersection.apply(P_intersection_center)
-        P_torso_center = np.array(
-            [P_shoulder_center[0], P_shoulder_center[1] + self.shoulder_position[1], P_shoulder_center[2]]
-        )
+        P_torso_center = P_shoulder_center + self.shoulder_position
+
         V_intersection_normal = np.array([1.0, 0.0, 0.0])
         V_torso_normal = M_torso_intersection.apply(V_intersection_normal)
         return P_torso_center, radius, V_torso_normal
@@ -360,23 +398,10 @@ class SymbolicIK:
             angle1 = math.atan2(point1_in_sphere_frame[2], point1_in_sphere_frame[1])
             angle2 = math.atan2(point2_in_sphere_frame[2], point2_in_sphere_frame[1])
 
-            angle_test = angle_diff(angle1, angle2) / 2 + angle2
+            [angle1, angle2] = sorted([angle1, angle2])
+            angle_test = (angle1 + angle2) / 2
 
-            # if angle1 < 0:
-            #     angle1 = angle1 + 2 * np.pi
-            # if angle2 < 0:
-            #     angle2 = angle2 + 2 * np.pi
-
-            # [angle1, angle2] = sorted([angle1, angle2])
-            # print(angle1, angle2)
-            # print(f"angle_test: {angle_test}")
-
-            # x = math.cos(angle1) + math.cos(angle2)
-            # y = math.sin(angle1) + math.sin(angle2)
-            # if x == 0 and y == 0:
-            #     angle_test = (angle1 + angle2) / 2
-            #     print("attention !!!")
-            # angle_test = math.atan2(y, x)
+            # angle_test = angle_diff(angle1, angle2) / 2 + angle2
 
             # finding which side of the circle is valid by testing the middle point of the arc
             test_point = np.array([0, math.cos(angle_test) * radius2, math.sin(angle_test) * radius2, 1])
@@ -391,20 +416,11 @@ class SymbolicIK:
                     test_point[2] + self.wrist_position[2],
                     "ro",
                 )
-
-            # transforming the test point to the limitation frame
             test_point_in_wrist_frame = np.dot(Tmat_limitation_t, test_point)
 
-            # testing if the point is above the limitation circle
-            # print(test_point_in_wrist_frame[0] > 0)
             if test_point_in_wrist_frame[0] > 0:
                 intervalle = np.array([angle1, angle2])
-                # if angle_test < 0:
-                #     intervalle = np.array([angle2, angle1])
-                # else :
-                #     intervalle = np.array([angle1, angle2])
             else:
-                print("OMGGG ANGLES WERE INVERTED $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
                 intervalle = np.array([angle2, angle1])
         return intervalle
 
@@ -507,11 +523,7 @@ class SymbolicIK:
         P_shoulder_torso = np.dot(-M_shoulder_torso, P_torso_shoulder[:3])
         T_shoulder_torso = make_homogenous_matrix_from_rotation_matrix(P_shoulder_torso, M_shoulder_torso)
         P_shoulder_elbow = np.dot(T_shoulder_torso, P_torso_elbow)
-        alpha_shoulder = np.arcsin(-P_shoulder_elbow[2] / np.sqrt(P_shoulder_elbow[2] ** 2 + P_shoulder_elbow[0] ** 2))
-        if P_shoulder_elbow[0] < 0:
-            alpha_shoulder = np.pi - alpha_shoulder
-            if alpha_shoulder > np.pi:
-                alpha_shoulder = alpha_shoulder - 2 * np.pi
+        alpha_shoulder = -math.atan2(P_shoulder_elbow[2], P_shoulder_elbow[0])
 
         M_shoulderPitch_shoulder = R.from_euler("xyz", [0.0, -alpha_shoulder, 0.0]).as_matrix()
         T_shoulderPitch_shoulder = make_homogenous_matrix_from_rotation_matrix(
@@ -519,11 +531,9 @@ class SymbolicIK:
         )
         T_shoulderPitch_torso = np.dot(T_shoulderPitch_shoulder, T_shoulder_torso)
 
-        T_shoulderPitch_elbow = np.dot(T_shoulderPitch_torso, P_torso_elbow)
-        x_elbow = T_shoulderPitch_elbow[0]
-        beta_shoulder = np.arccos(x_elbow / self.upper_arm_size)
-        if P_shoulder_elbow[1] < 0:
-            beta_shoulder = -beta_shoulder
+        P_shoulderPitch_elbow = np.dot(T_shoulderPitch_torso, P_torso_elbow)
+
+        beta_shoulder = math.atan2(P_shoulderPitch_elbow[1], P_shoulderPitch_elbow[0])
 
         M_shoulderRoll_shoulderPitch = R.from_euler("xyz", [0.0, 0.0, -beta_shoulder]).as_matrix()
         T_shoulderRoll_shoulderPitch = make_homogenous_matrix_from_rotation_matrix(
@@ -535,6 +545,7 @@ class SymbolicIK:
         T_elbow_torso[0][3] -= self.upper_arm_size
 
         P_elbow_wrist = np.dot(T_elbow_torso, P_torso_wrist)
+
         alpha_elbow = -np.pi / 2 + math.atan2(P_elbow_wrist[2], -P_elbow_wrist[1])
         if alpha_elbow < -np.pi:
             alpha_elbow = alpha_elbow + 2 * np.pi
@@ -545,11 +556,7 @@ class SymbolicIK:
 
         P_elbowYaw_wrist = np.dot(T_elbowYaw_torso, P_torso_wrist)
 
-        beta_elbow = -np.arcsin(P_elbowYaw_wrist[2] / np.sqrt(P_elbowYaw_wrist[0] ** 2 + P_elbowYaw_wrist[2] ** 2))
-        if P_elbowYaw_wrist[0] < 0:
-            beta_elbow = np.pi - beta_elbow
-            if beta_elbow > np.pi:
-                beta_elbow = beta_elbow - 2 * np.pi
+        beta_elbow = -math.atan2(P_elbowYaw_wrist[2], P_elbowYaw_wrist[0])
 
         R_elbowPitch_elbowYaw = R.from_euler("xyz", [0.0, -beta_elbow, 0.0]).as_matrix()
         T_elbowPitch_elbowYaw = make_homogenous_matrix_from_rotation_matrix(np.array([0.0, 0.0, 0.0]), R_elbowPitch_elbowYaw)
@@ -570,7 +577,7 @@ class SymbolicIK:
 
         P_wristRoll_tip = np.dot(T_wristRol_torso, P_torso_goalPosition)
 
-        alpha_wrist = np.arcsin(P_wristRoll_tip[2] / np.sqrt(P_wristRoll_tip[0] ** 2 + P_wristRoll_tip[2] ** 2))
+        alpha_wrist = math.atan2(P_wristRoll_tip[2], P_wristRoll_tip[0])
 
         R_wristPitch_wrist_Roll = R.from_euler("xyz", [0.0, alpha_wrist, 0.0]).as_matrix()
         T_wristPitch_wrist_Roll = make_homogenous_matrix_from_rotation_matrix(
@@ -582,6 +589,7 @@ class SymbolicIK:
         T_tip_torso[0][3] -= self.gripper_size
 
         M_torso_goal = R.from_euler("xyz", goal_orientation)
+        # TODO this magic number scares me. Could it be the gripper size?
         P_goal_point = [0.1, 0.0, 0.0, 1.0]
 
         T_torso_goal = make_homogenous_matrix_from_rotation_matrix(P_torso_goalPosition, M_torso_goal.as_matrix())
@@ -592,4 +600,6 @@ class SymbolicIK:
         gamma_wrist = -math.atan2(P_tip_point[1], P_tip_point[2])
 
         joints = np.array([alpha_shoulder, beta_shoulder, alpha_elbow, beta_elbow, beta_wrist, alpha_wrist, gamma_wrist])
+
+        # joints = get_valid_arm_joints(joints)
         return joints, self.elbow_position
