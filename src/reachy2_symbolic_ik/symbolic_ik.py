@@ -29,7 +29,7 @@ class SymbolicIK:
         # shoulder orientation and shoulder position are for the rigth arm
         shoulder_orientation_offset: list[int] = [10, 0, 15],
         shoulder_position: npt.NDArray[np.float64] = np.array([0.0, -0.2, 0.0]),
-        #TODO make sure it works with all 3 orientations
+        # TODO make sure it works with all 3 orientations
         elbow_orientation_offset: list[int] = [0, 0, -15],
         elbow_limits: int = 130,
     ) -> None:
@@ -554,7 +554,6 @@ class SymbolicIK:
 
         # T_elbow_torso = np.dot(T_elbow_offset, T_elbow_torso)
 
-
         P_elbow_wrist = np.dot(T_elbow_torso, P_torso_wrist)
 
         alpha_elbow = -np.pi / 2 + math.atan2(P_elbow_wrist[2], -P_elbow_wrist[1])
@@ -562,8 +561,6 @@ class SymbolicIK:
             alpha_elbow = alpha_elbow + 2 * np.pi
 
         # alpha_elbow += self.elbow_orientation_offset[2]
-
-        
 
         M_elbowYaw_elbow = R.from_euler("xyz", np.array([alpha_elbow, 0.0, 0.0])).as_matrix()
         T_elbowYaw_elbow = make_homogenous_matrix_from_rotation_matrix(np.array([0.0, 0.0, 0.0]), M_elbowYaw_elbow)
@@ -614,12 +611,8 @@ class SymbolicIK:
 
         gamma_wrist = -math.atan2(P_tip_point[1], P_tip_point[2])
 
-        alpha_elbow-=np.radians(self.elbow_orientation_offset[2])
-
-
+        alpha_elbow -= np.radians(self.elbow_orientation_offset[2])
 
         joints = np.array([alpha_shoulder, beta_shoulder, alpha_elbow, beta_elbow, beta_wrist, alpha_wrist, gamma_wrist])
-
-        
         # joints = get_valid_arm_joints(joints)
         return joints, self.elbow_position
