@@ -32,6 +32,7 @@ class SymbolicIK:
         # TODO make sure it works with all 3 orientations
         elbow_orientation_offset: list[int] = [0, 0, -15],
         elbow_limits: int = 130,
+        projection_margin: float = 0.00001,
     ) -> None:
         self.arm = arm
         self.upper_arm_size = upper_arm_size
@@ -41,6 +42,7 @@ class SymbolicIK:
         self.elbow_limits = elbow_limits
         self.torso_pose = np.array([0.0, 0.0, 0.0])
         self.max_arm_length = self.upper_arm_size + self.forearm_size + self.gripper_size
+        self.projection_margin = projection_margin
         if self.arm == "r_arm":
             self.shoulder_position = shoulder_position
             self.shoulder_orientation_offset = shoulder_orientation_offset
@@ -223,7 +225,7 @@ class SymbolicIK:
     ) -> npt.NDArray[np.float64]:
         goal_position = pose[0]
         direction = goal_position - self.shoulder_position
-        direction = direction / np.linalg.norm(direction)
+        direction = direction / np.linalg.norm(direction) + self.projection_margin
         goal_position = self.shoulder_position + direction * max_arm_length
         return np.array([goal_position, pose[1]])
 
@@ -231,7 +233,7 @@ class SymbolicIK:
         self, pose: npt.NDArray[np.float64], d_shoulder_wrist: np.float64, d_shoulder_wrist_max: np.float64
     ) -> npt.NDArray[np.float64]:
         direction = self.wrist_position - self.shoulder_position
-        direction = direction / (np.linalg.norm(d_shoulder_wrist) + 0.00001)
+        direction = direction / (np.linalg.norm(d_shoulder_wrist) + self.projection_margin)
         new_wrist_position = self.shoulder_position + direction * d_shoulder_wrist_max
         diff_wrist = new_wrist_position - self.wrist_position
         goal_position = pose[0] + diff_wrist
