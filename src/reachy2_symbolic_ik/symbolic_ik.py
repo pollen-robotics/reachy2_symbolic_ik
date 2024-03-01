@@ -29,7 +29,10 @@ class SymbolicIK:
         # shoulder orientation and shoulder position are for the rigth arm
         shoulder_orientation_offset: list[int] = [10, 0, 15],
         shoulder_position: npt.NDArray[np.float64] = np.array([0.0, -0.2, 0.0]),
+        # TODO make sure it works with all 3 orientations
+        elbow_orientation_offset: list[int] = [0, 0, -15],
         elbow_limits: int = 130,
+        projection_margin: float = 0.0001,
     ) -> None:
         self.arm = arm
         self.upper_arm_size = upper_arm_size
@@ -39,13 +42,18 @@ class SymbolicIK:
         self.elbow_limits = elbow_limits
         self.torso_pose = np.array([0.0, 0.0, 0.0])
         self.max_arm_length = self.upper_arm_size + self.forearm_size + self.gripper_size
+        self.projection_margin = projection_margin
+        self.normal_vector_margin = 0.0000001
+
         if self.arm == "r_arm":
             self.shoulder_position = shoulder_position
             self.shoulder_orientation_offset = shoulder_orientation_offset
+            self.elbow_orientation_offset = elbow_orientation_offset
 
         else:
             self.shoulder_position = np.array([shoulder_position[0], -shoulder_position[1], shoulder_position[2]])
             self.shoulder_orientation_offset = [-x for x in shoulder_orientation_offset]
+            self.elbow_orientation_offset = [-x for x in elbow_orientation_offset]
 
     def is_reachable_no_limits(self, goal_pose: npt.NDArray[np.float64]) -> Tuple[bool, npt.NDArray[np.float64], Optional[Any]]:
         d_shoulder_goal = np.linalg.norm(goal_pose[0] - self.shoulder_position)
@@ -223,7 +231,7 @@ class SymbolicIK:
     ) -> npt.NDArray[np.float64]:
         goal_position = pose[0]
         direction = goal_position - self.shoulder_position
-        direction = direction / np.linalg.norm(direction)
+        direction = direction / np.linalg.norm(direction) + self.projection_margin
         goal_position = self.shoulder_position + direction * max_arm_length
         return np.array([goal_position, pose[1]])
 
@@ -231,7 +239,7 @@ class SymbolicIK:
         self, pose: npt.NDArray[np.float64], d_shoulder_wrist: np.float64, d_shoulder_wrist_max: np.float64
     ) -> npt.NDArray[np.float64]:
         direction = self.wrist_position - self.shoulder_position
-        direction = direction / (np.linalg.norm(d_shoulder_wrist) + 0.00001)
+        direction = direction / (np.linalg.norm(d_shoulder_wrist) + self.projection_margin)
         new_wrist_position = self.shoulder_position + direction * d_shoulder_wrist_max
         diff_wrist = new_wrist_position - self.wrist_position
         goal_position = pose[0] + diff_wrist
@@ -338,8 +346,10 @@ class SymbolicIK:
         if np.any(V_torso_normal2 != 0):
             V_torso_normal2 = V_torso_normal2 / np.linalg.norm(V_torso_normal2)
 
-        if np.all(np.abs(V_torso_normal2 - V_torso_normal1) < 0.0000001) or np.all(
-            np.abs(V_torso_normal2 + V_torso_normal1) < 0.0000001
+        
+
+        if np.all(np.abs(V_torso_normal2 - V_torso_normal1) < self.normal_vector_margin) or np.all(
+            np.abs(V_torso_normal2 + V_torso_normal1) < self.normal_vector_margin
         ):
             print("concurrent or parallel")
             print(P_limitation_intersectionCenter[0])
@@ -545,10 +555,10 @@ class SymbolicIK:
         # With current arm configuration this has two impacts:
         # - the shoulder alone is in cinematic singularity -> loose controllability around this point -> in this case the upperarm might rotate quickly even if the elbow displacement is small -> not  this library's responsability
         # - the elbow and the shoulder are aligned -> there is an infinite number of solutions -> this is the library's responsability -> we chose the joints of the previous pose based on the user input in previous_joints
-        atol_meters = 0.001
+        
 
-        if np.isclose(P_shoulder_elbow[0],0, atol=atol_meters) and np.isclose(P_shoulder_elbow[2],0, atol=atol_meters):
-            raise ValueError("Shoulder singularity")
+        if P_shoulder_elbow[0] == 0 and P_shoulder_elbow[2] == 0:
+            # raise ValueError("Shoulder singularity")
             shoulder_pitch = previous_joints[0]
         else :
             shoulder_pitch = -math.atan2(P_shoulder_elbow[2], P_shoulder_elbow[0])
@@ -583,9 +593,8 @@ class SymbolicIK:
         # P_elbow_wrist = [0.28, 0.000001, 0]
         
         #Same as the shoulder singularity but between the wrist and the elbow
-        if np.isclose(P_elbow_wrist[1],0, atol=atol_meters) and np.isclose(P_elbow_wrist[2],0, atol=atol_meters):
-        # if P_elbow_wrist[1] == 0 and P_elbow_wrist[2] == 0:
-            raise ValueError("Elbow singularity")
+        if P_elbow_wrist[1] == 0 and P_elbow_wrist[2] == 0:
+            # raise ValueError("Elbow singularity")
             elbow_yaw = previous_joints[2]
         else:    
             elbow_yaw = -np.pi / 2 + math.atan2(P_elbow_wrist[2], -P_elbow_wrist[1])
@@ -644,10 +653,7 @@ class SymbolicIK:
         print(f"P_tip_point: {P_tip_point}")
         wrist_yaw = -math.atan2(P_tip_point[1], P_tip_point[2])
 
-        if self.arm == "l_arm":
-            elbow_yaw-=0.2617993877991494
-        else :
-            elbow_yaw+=0.2617993877991494
+        elbow_yaw -= np.radians(self.elbow_orientation_offset[2])
 
         joints = np.array([shoulder_pitch, shoulder_roll, elbow_yaw, elbow_pitch, wrist_roll, wrist_pitch, wrist_yaw])
 
