@@ -346,8 +346,6 @@ class SymbolicIK:
         if np.any(V_torso_normal2 != 0):
             V_torso_normal2 = V_torso_normal2 / np.linalg.norm(V_torso_normal2)
 
-        
-
         if np.all(np.abs(V_torso_normal2 - V_torso_normal1) < self.normal_vector_margin) or np.all(
             np.abs(V_torso_normal2 + V_torso_normal1) < self.normal_vector_margin
         ):
@@ -526,7 +524,9 @@ class SymbolicIK:
         P_torso_point = np.array(np.dot(T_torso_intersection, P_intersection_point))
         return P_torso_point
 
-    def get_joints(self, theta: float, previous_joints:list[float] = [0.,0.,0.,0.,0.,0.,0.]) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    def get_joints(
+        self, theta: float, previous_joints: list[float] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         # make elbow symetrical
         # if self.arm == "l_arm":
         #     theta = np.pi - theta
@@ -543,26 +543,24 @@ class SymbolicIK:
         M_torso_shoulder = M_torso_shoulder * offset_rotation_matrix
         M_torso_shoulder = M_torso_shoulder.as_matrix()
         M_shoulder_torso = M_torso_shoulder.T
-        print(f"P_torso_elbow: {P_torso_elbow}")
-        # P_torso_elbow = [0, -0.48, 0, 1]
         P_shoulder_torso = np.dot(-M_shoulder_torso, P_torso_shoulder[:3])
         T_shoulder_torso = make_homogenous_matrix_from_rotation_matrix(P_shoulder_torso, M_shoulder_torso)
         P_shoulder_elbow = np.dot(T_shoulder_torso, P_torso_elbow)
-        # print(f"P_shoulder_elbow: {P_shoulder_elbow}")
-        # P_shoulder_elbow = [0.0001, -0.28, 0]
 
         # Case where the elbow is aligned with the shoulder
         # With current arm configuration this has two impacts:
-        # - the shoulder alone is in cinematic singularity -> loose controllability around this point -> in this case the upperarm might rotate quickly even if the elbow displacement is small -> not  this library's responsability
-        # - the elbow and the shoulder are aligned -> there is an infinite number of solutions -> this is the library's responsability -> we chose the joints of the previous pose based on the user input in previous_joints
-        
+        # - the shoulder alone is in cinematic singularity -> loose controllability around this point
+        # -> in this case the upperarm might rotate quickly even if the elbow displacement is small
+        # -> not  this library's responsability
+        # - the elbow and the shoulder are aligned -> there is an infinite number of solutions
+        # -> this is the library's responsability
+        # -> we chose the joints of the previous pose based on the user input in previous_joints
 
         if P_shoulder_elbow[0] == 0 and P_shoulder_elbow[2] == 0:
             # raise ValueError("Shoulder singularity")
             shoulder_pitch = previous_joints[0]
-        else :
+        else:
             shoulder_pitch = -math.atan2(P_shoulder_elbow[2], P_shoulder_elbow[0])
-        print(f"shoulder_pitch: {shoulder_pitch}")
 
         M_shoulderPitch_shoulder = R.from_euler("xyz", [0.0, -shoulder_pitch, 0.0]).as_matrix()
         T_shoulderPitch_shoulder = make_homogenous_matrix_from_rotation_matrix(
@@ -571,8 +569,6 @@ class SymbolicIK:
         T_shoulderPitch_torso = np.dot(T_shoulderPitch_shoulder, T_shoulder_torso)
 
         P_shoulderPitch_elbow = np.dot(T_shoulderPitch_torso, P_torso_elbow)
-
-
 
         shoulder_roll = math.atan2(P_shoulderPitch_elbow[1], P_shoulderPitch_elbow[0])
 
@@ -584,23 +580,16 @@ class SymbolicIK:
 
         T_elbow_torso = T_shoulderRoll_torso
         T_elbow_torso[0][3] -= self.upper_arm_size
-
-        print(f"P_torso_wrist: {P_torso_wrist}")
-
         P_elbow_wrist = np.dot(T_elbow_torso, P_torso_wrist)
 
-        print(f"P_elbow_wrist: {P_elbow_wrist}")
-        # P_elbow_wrist = [0.28, 0.000001, 0]
-        
-        #Same as the shoulder singularity but between the wrist and the elbow
+        # Same as the shoulder singularity but between the wrist and the elbow
         if P_elbow_wrist[1] == 0 and P_elbow_wrist[2] == 0:
             # raise ValueError("Elbow singularity")
             elbow_yaw = previous_joints[2]
-        else:    
+        else:
             elbow_yaw = -np.pi / 2 + math.atan2(P_elbow_wrist[2], -P_elbow_wrist[1])
         # if elbow_yaw < -np.pi:
         #     elbow_yaw = elbow_yaw + 2 * np.pi
-        print(f"elbow_yaw: {elbow_yaw}")
 
         M_elbowYaw_elbow = R.from_euler("xyz", np.array([elbow_yaw, 0.0, 0.0])).as_matrix()
         T_elbowYaw_elbow = make_homogenous_matrix_from_rotation_matrix(np.array([0.0, 0.0, 0.0]), M_elbowYaw_elbow)
@@ -608,7 +597,8 @@ class SymbolicIK:
 
         P_elbowYaw_wrist = np.dot(T_elbowYaw_torso, P_torso_wrist)
 
-        # TODO cas qui arrive probablement en meme temps que la singulartié du coude -> dans ce cas on veut que elbowpitch = 0 -> à verifier
+        # TODO cas qui arrive probablement en meme temps que la singulartié du coude
+        # -> dans ce cas on veut que elbowpitch = 0 -> à verifier
         elbow_pitch = -math.atan2(P_elbowYaw_wrist[2], P_elbowYaw_wrist[0])
 
         R_elbowPitch_elbowYaw = R.from_euler("xyz", [0.0, -elbow_pitch, 0.0]).as_matrix()
@@ -650,7 +640,6 @@ class SymbolicIK:
 
         P_tip_point = np.dot(T_tip_torso, P_torso_point)
 
-        print(f"P_tip_point: {P_tip_point}")
         wrist_yaw = -math.atan2(P_tip_point[1], P_tip_point[2])
 
         elbow_yaw -= np.radians(self.elbow_orientation_offset[2])
