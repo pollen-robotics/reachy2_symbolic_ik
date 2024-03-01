@@ -46,15 +46,143 @@ def make_circle(
             go_to_position(placo_ik, joints, wait=0.0, arm=symbolic_ik.arm)
 
 
+def singularity_test(symbolic_ik: SymbolicIK, placo_ik: IKReachyQP) -> None:
+    position = np.array([0.0, -1000.0, 0.0])
+    orientation = np.array([-np.pi / 2, 0.0, 0.0])
+    goal_pose = np.array([position, orientation])
+    is_reachable, interval, get_joints = symbolic_ik.is_reachable(goal_pose)
+    if is_reachable:
+        print("Pose reachable")
+        print(interval)
+        print(get_joints(interval[0]))
+        print(get_joints(interval[1])[0])
+        print(get_joints(0)[0])
+        print(get_joints(2)[0])
+        print(get_joints(-1.5)[0])
+        go_to_position(placo_ik, get_joints(interval[0])[0], wait=3)
+        joints2 = get_joints(interval[1])[0]
+        print(joints2)
+        # joints2[0] = joints2[0] + np.pi / 3
+        # joints2[2] = joints2[2] - np.pi / 3
+
+        joint = np.linspace(interval[0], interval[1], 50)
+        while True:
+            for i in range(50):
+                joints2[0] = joint[i]
+                joints2[2] = -2 * joint[i] - np.pi
+                joints2[6] = -joint[i] - np.radians(-180)
+                print(joints2)
+                go_to_position(placo_ik, joints2, wait=0)
+    else:
+        print("Pose not reachable")
+        is_reachable, interval, get_joints = symbolic_ik.is_reachable_no_limits(goal_pose)
+        if is_reachable:
+            print("Pose reachable")
+            print(interval)
+            print(get_joints(interval[0])[0])
+            print(get_joints(interval[1])[0])
+            print(get_joints(0)[0])
+            print(get_joints(2)[0])
+            print(get_joints(-1.5)[0])
+
+            go_to_position(placo_ik, get_joints(interval[0])[0], wait=3)
+            joints2 = get_joints(interval[1])[0]
+            joints2[0] = joints2[0] + np.pi / 3
+            joints2[2] = joints2[2] + np.pi / 3
+            go_to_position(placo_ik, joints2, wait=8)
+
+        else:
+            print("Pose really not reachable")
+
+
+def test_upperarm_singularity(symbolic_ik: SymbolicIK, placo_ik: IKReachyQP) -> None:
+    goal_pose = [[0.38, -0.47, 0], [0, -np.pi / 2, 0]]
+    is_reachable, interval, get_joints = symbolic_ik.is_reachable(goal_pose)
+    if is_reachable:
+        print("Pose reachable")
+        print(interval)
+        joints, elbow_position = get_joints(interval[0])
+        theta0 = np.linspace(interval[0], np.pi, 50)
+        theta1 = np.linspace(-np.pi, interval[1], 50)
+        go_to_position(placo_ik, joints, wait=3)
+
+        while True:
+            for i in range(50):
+                joints, elbow_position = get_joints(theta0[i])
+                go_to_position(placo_ik, joints, wait=0)
+            for i in range(50):
+                joints, elbow_position = get_joints(theta1[i])
+                go_to_position(placo_ik, joints, wait=0)
+
+    else:
+        print("Pose not reachable")
+        is_reachable, interval, get_joints = symbolic_ik.is_reachable_no_limits(goal_pose)
+        if is_reachable:
+            print("Pose reachable")
+            print(interval)
+            joints, elbow_position = get_joints(interval[0])
+            go_to_position(placo_ik, joints, wait=3)
+        else:
+            print("Pose really not reachable")
+
+
+def test_arm_limits(symbolic_ik: SymbolicIK, placo_ik: IKReachyQP) -> None:
+    goal_position = [00.05, -0.83, 0]
+    goal_orientation = [-1.5, 0, 0]
+    goal_pose = np.array([goal_position, goal_orientation])
+    result = symbolic_ik.is_reachable(goal_pose)
+    if result[0]:
+        print("pose reachable")
+        print(result[1])
+        joints, elbow_position = result[2](result[1][0])
+        go_to_position(placo_ik, joints, wait=3)
+    else:
+        print("Pose not reachable")
+        result = symbolic_ik.is_reachable_no_limits(goal_pose)
+        if result[0]:
+            print("pose reachable")
+            print(result[1])
+            joints, elbow_position = result[2](result[1][0])
+            go_to_position(placo_ik, joints, wait=3)
+        else:
+            print("Pose really not reachable")
+
+    goal_position = [0.1, -0.74, 0]
+    goal_orientation = [0, -1.57, -0.2]
+    goal_pose = np.array([goal_position, goal_orientation])
+    result = symbolic_ik.is_reachable(goal_pose)
+    if result[0]:
+        print("pose reachable")
+        print(result[1])
+        joints, elbow_position = result[2](result[1][0])
+        go_to_position(placo_ik, joints, wait=3)
+    else:
+        print("Pose not reachable")
+        result = symbolic_ik.is_reachable_no_limits(goal_pose)
+        if result[0]:
+            print("pose reachable")
+            print(result[1])
+            joints, elbow_position = result[2](result[1][0])
+            go_to_position(placo_ik, joints, wait=3)
+        else:
+            print("Pose really not reachable")
+
+
 def main_test() -> None:
     # symbolic_ik_r = SymbolicIK()
     symbolic_ik_r = SymbolicIK(
-        shoulder_orientation_offset=np.array([0.0, 0.0, 15]), shoulder_position=np.array([-0.0479, -0.1913, 0.025])
+        # shoulder_orientation_offset=np.array([0.0, 0.0, 15]), shoulder_position=np.array([-0.0479, -0.1913, 0.025])
+        shoulder_orientation_offset=np.array([0.0, 0.0, 0]),
+        shoulder_position=np.array([0.0, -0.2, 0.0]),
     )
     # symbolib_ik_l = SymbolicIK(arm="l_arm")
+
+    urdf_name = "reachy2_no_offset"
+    # urdf_name = "reachy2_ik"
+
     urdf_path = Path("src/config_files")
     for file in urdf_path.glob("**/*.urdf"):
-        if file.stem == "reachy2_ik":
+        if file.stem == urdf_name:
             urdf_path = file.resolve()
             break
     placo_ik = IKReachyQP(
@@ -70,46 +198,50 @@ def main_test() -> None:
     placo_ik.setup(urdf_path=str(urdf_path))
     placo_ik.create_tasks()
 
-    goal_position = [0.10475819158237422, -0.10011326608169921, -0.6]
-    goal_orientation = [0, 0, 0]
-    goal_pose = np.array([goal_position, goal_orientation])
+    test_arm_limits(symbolic_ik_r, placo_ik)
+    # singularity_test(symbolic_ik_r, placo_ik)
+    # test_upperarm_singularity(symbolic_ik_r, placo_ik)
 
-    result_r = symbolic_ik_r.is_reachable(goal_pose)
-    if result_r[0]:
-        print("pose reachable")
-        print(result_r[1])
-        joints, elbow_position = result_r[2](result_r[1][0])
-        go_to_position(placo_ik, joints, wait=3)
-        # is_reachable, theta = shoulder_limits(result_r[1], result_r[2])
-        # print(theta)
-        # if is_reachable:
-        #     joints, elbow_position = result_r[2](result_r[1][0])
-        #     go_to_position(placo_ik, joints, wait=3)
-        #     is_correct = are_joints_correct(placo_ik, joints, goal_pose)
-        #     print(is_correct)
-        # else:
-        #     print("Pose not reachable because of shoulder limits")
+    # goal_position = [0.10475819158237422, -0.10011326608169921, -0.6]
+    # goal_orientation = [0, 0, 0]
+    # goal_pose = np.array([goal_position, goal_orientation])
 
-    else:
-        result_r = symbolic_ik_r.is_reachable_no_limits(goal_pose)
-        if result_r[0]:
-            print("pose reachable")
-            print(result_r[1])
-            joints, elbow_position = result_r[2](result_r[1][0])
-            go_to_position(placo_ik, joints, wait=3)
-            # is_reachable, theta = shoulder_limits(result_r[1], result_r[2])
-            # print(theta)
-            # if is_reachable:
-            #     joints, elbow_position = result_r[2](result_r[1][0])
-            #     go_to_position(placo_ik, joints, wait=3)
-            #     is_correct = are_joints_correct(placo_ik, joints, goal_pose)
-            #     print(is_correct)
-            # else:
-            #     print("Pose not reachable because of shoulder limits")
-        else:
-            print("Pose really not reachable")
+    # result_r = symbolic_ik_r.is_reachable(goal_pose)
+    # if result_r[0]:
+    #     print("pose reachable")
+    #     print(result_r[1])
+    #     joints, elbow_position = result_r[2](result_r[1][0])
+    #     go_to_position(placo_ik, joints, wait=3)
+    #     # is_reachable, theta = shoulder_limits(result_r[1], result_r[2])
+    #     # print(theta)
+    #     # if is_reachable:
+    #     #     joints, elbow_position = result_r[2](result_r[1][0])
+    #     #     go_to_position(placo_ik, joints, wait=3)
+    #     #     is_correct = are_joints_correct(placo_ik, joints, goal_pose)
+    #     #     print(is_correct)
+    #     # else:
+    #     #     print("Pose not reachable because of shoulder limits")
 
-    # make_circle(symbolic_ik_r, placo_ik, 5 * np.pi / 4, np.array([0.3, -0.4, -0.3]), 0.4)
+    # else:
+    #     result_r = symbolic_ik_r.is_reachable_no_limits(goal_pose)
+    #     if result_r[0]:
+    #         print("pose reachable")
+    #         print(result_r[1])
+    #         joints, elbow_position = result_r[2](result_r[1][0])
+    #         go_to_position(placo_ik, joints, wait=3)
+    #         # is_reachable, theta = shoulder_limits(result_r[1], result_r[2])
+    #         # print(theta)
+    #         # if is_reachable:
+    #         #     joints, elbow_position = result_r[2](result_r[1][0])
+    #         #     go_to_position(placo_ik, joints, wait=3)
+    #         #     is_correct = are_joints_correct(placo_ik, joints, goal_pose)
+    #         #     print(is_correct)
+    #         # else:
+    #         #     print("Pose not reachable because of shoulder limits")
+    #     else:
+    #         print("Pose really not reachable")
+
+    # # make_circle(symbolic_ik_r, placo_ik, 5 * np.pi / 4, np.array([0.3, -0.4, -0.3]), 0.4)
 
 
 if __name__ == "__main__":

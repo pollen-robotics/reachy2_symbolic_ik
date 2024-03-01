@@ -48,7 +48,7 @@ def make_line(
         goal_pose = [[x[i], y[i], z[i]], [roll[i], pitch[i], yaw[i]]]
         is_reachable, interval, get_joints = symbolic_ik.is_reachable(goal_pose)
         if is_reachable:
-            is_reachable, theta = get_best_continuous_theta(
+            is_reachable, theta, state = get_best_continuous_theta(
                 previous_theta,
                 interval,
                 get_joints,
@@ -233,16 +233,22 @@ def main_test() -> None:
     # symbolic_ik_r = SymbolicIK()
     # symbolic_ik_l = SymbolicIK(arm="l_arm")
 
-    symbolic_ik_r = SymbolicIK(
-        shoulder_orientation_offset=np.array([0.0, 0.0, 15]), shoulder_position=np.array([-0.0479, -0.1913, 0.025])
-    )
-    symbolic_ik_l = SymbolicIK(
-        arm="l_arm", shoulder_orientation_offset=np.array([0.0, 0.0, 15]), shoulder_position=np.array([-0.0479, -0.1913, 0.025])
-    )
+    # symbolic_ik_r = SymbolicIK(
+    #     shoulder_orientation_offset=np.array([0.0, 0.0, 15]), shoulder_position=np.array([-0.0479, -0.1913, 0.025])
+    # )
+    # symbolic_ik_l = SymbolicIK(
+    #     arm="l_arm", shoulder_orientation_offset=np.array([0.0, 0.0, 15]),
+    #     shoulder_position=np.array([-0.0479, -0.1913, 0.025])
+    # )
+
+    symbolic_ik_r = SymbolicIK(shoulder_orientation_offset=np.array([0.0, 0.0, 0]))
+
+    # urdf_name = "reachy2_ik"
+    urdf_name = "reachy2_no_offset"
 
     urdf_path = Path("src/config_files")
     for file in urdf_path.glob("**/*.urdf"):
-        if file.stem == "reachy2_ik":
+        if file.stem == urdf_name:
             urdf_path = file.resolve()
             break
     placo_ik = IKReachyQP(
@@ -257,14 +263,39 @@ def main_test() -> None:
     placo_ik.setup(urdf_path=str(urdf_path))
     placo_ik.create_tasks()
 
-    # start_position = np.array([0.4, 0.1, -0.4])
-    # end_position = np.array([0.3, -0.2, -0.1])
-    # start_orientation = np.array([0.35, -1.40, 0.17])
-    # end_orientation = np.array([0.0, -0.0, 0.0])
-    # make_line(symbolic_ik_r, placo_ik, start_position, end_position, start_orientation, end_orientation, nb_points=300)
+    start_position = np.array([0.38, -0.48, -0.3])
+    end_position = np.array([0.38, -0.48, 0.3])
+    start_orientation = np.array([0.0, -np.pi / 2, 0.0])
+    end_orientation = np.array([0.0, -np.pi / 2, 0.0])
     prefered_theta = 5 * np.pi / 4
+    previous_theta = 0.0
+    while True:
+        previous_theta = make_line(
+            symbolic_ik_r,
+            placo_ik,
+            start_position,
+            end_position,
+            start_orientation,
+            end_orientation,
+            prefered_theta,
+            previous_theta,
+            nb_points=100,
+        )
 
-    make_square([symbolic_ik_r, symbolic_ik_l], placo_ik, prefered_theta=prefered_theta)
+        previous_theta = make_line(
+            symbolic_ik_r,
+            placo_ik,
+            end_position,
+            start_position,
+            start_orientation,
+            end_orientation,
+            prefered_theta,
+            previous_theta,
+            nb_points=100,
+        )
+
+    # make_square([symbolic_ik_r, symbolic_ik_l], placo_ik, prefered_theta=prefered_theta)
+
     # make_circle(symbolic_ik_r, placo_ik, prefered_theta=prefered_theta)
     # make_circle(symbolic_ik_r, placo_ik, prefered_theta=prefered_theta, center=np.array([0.2, -0.2, -0.0]), radius=0.4)
     # make_circle(
