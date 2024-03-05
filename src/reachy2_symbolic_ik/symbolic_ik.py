@@ -81,7 +81,7 @@ class SymbolicIK:
         d_shoulder_goal = np.linalg.norm(goal_pose[0] - self.shoulder_position)
         if d_shoulder_goal > self.max_arm_length:
             goal_pose = self._reduce_goal_pose(goal_pose, self.max_arm_length)
-            print(goal_pose)
+            # print(goal_pose)
         if SHOW_GRAPH:
             fig = plt.figure()
             self.ax = fig.add_subplot(111, projection="3d")
@@ -117,14 +117,14 @@ class SymbolicIK:
             return False, np.array([]), None
 
         intersection_circle = self.get_intersection_circle(goal_pose)
-        print(f"intersection_circle: {intersection_circle}")
+        # print(f"intersection_circle: {intersection_circle}")
 
         limitation_wrist_circle = self.get_limitation_wrist_circle(goal_pose)
 
         if intersection_circle is not None:
             self.intersection_circle = intersection_circle
             intervalle = self.are_circles_linked(intersection_circle, limitation_wrist_circle)
-            print(intervalle)
+            # print(intervalle)
             if len(intervalle) > 0:
                 if SHOW_GRAPH:
                     elbow_position = self.get_coordinate_cercle(intersection_circle, intervalle[0])
@@ -349,8 +349,8 @@ class SymbolicIK:
         if np.all(np.abs(V_torso_normal2 - V_torso_normal1) < self.normal_vector_margin) or np.all(
             np.abs(V_torso_normal2 + V_torso_normal1) < self.normal_vector_margin
         ):
-            print("concurrent or parallel")
-            print(P_limitation_intersectionCenter[0])
+            # print("concurrent or parallel")
+            # print(P_limitation_intersectionCenter[0])
             # if (P_intersection_center1[0] > 0 and V_intersection_normal1[0] < 0) or (
             #     P_intersection_center1[0] < 0 and V_intersection_normal1[0] > 0
             # ):
@@ -370,10 +370,10 @@ class SymbolicIK:
                 else:
                     return np.array([])
             points = self.intersection_circle_line_3d_vd(p1, radius1, v, q)
-            print(f"points: {points}")
+            # print(f"points: {points}")
             if points is None:
-                print(P_intersection_center1[0], V_intersection_normal1[0])
-                print(P_limitation_intersectionCenter[0])
+                # print(P_intersection_center1[0], V_intersection_normal1[0])
+                # print(P_limitation_intersectionCenter[0])
                 # if (P_intersection_center1[0] > 0 and V_intersection_normal1[0] < 0) or (
                 #     P_intersection_center1[0] < 0 and V_intersection_normal1[0] > 0
                 # ):
