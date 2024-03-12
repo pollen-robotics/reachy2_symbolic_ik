@@ -335,11 +335,11 @@ class SymbolicIK:
         P_limitation_torso = np.dot(-R_limitation_torso, p1)
         T_limitation_torso = make_homogenous_matrix_from_rotation_matrix(P_limitation_torso, R_limitation_torso)
 
-        P_torso_center1 = np.array([p1[0], p1[1], p1[2], 1])
+        # P_torso_center1 = np.array([p1[0], p1[1], p1[2], 1])
         P_torso_center2 = np.array([p2[0], p2[1], p2[2], 1])
         P_limitation_intersectionCenter = np.dot(T_limitation_torso, P_torso_center2)
-        P_intersection_center1 = np.dot(T_intersection_torso, P_torso_center1)
-        V_intersection_normal1 = np.dot(R_intersection_torso, V_torso_normal1)
+        # P_intersection_center1 = np.dot(T_intersection_torso, P_torso_center1)
+        # V_intersection_normal1 = np.dot(R_intersection_torso, V_torso_normal1)
 
         if np.any(V_torso_normal1 != 0):
             V_torso_normal1 = V_torso_normal1 / np.linalg.norm(V_torso_normal1)
