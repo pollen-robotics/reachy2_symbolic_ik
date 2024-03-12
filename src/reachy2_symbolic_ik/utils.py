@@ -104,7 +104,8 @@ def rotation_matrix_from_vector(vect: npt.NDArray[np.float64]) -> npt.NDArray[np
 #             return False, theta_min
 #     return True, theta_min
 
-def limit_theta_to_interval(theta: float, previous_theta: float, interval: npt.NDArray[np.float64]) -> float:
+
+def limit_theta_to_interval(theta: float, previous_theta: float, interval: list[float]) -> float:
     theta = theta % (2 * np.pi)
     if theta > np.pi:
         theta -= 2 * np.pi
@@ -118,15 +119,7 @@ def limit_theta_to_interval(theta: float, previous_theta: float, interval: npt.N
         return interval[1]
 
     return theta
-    # if theta < interval[0]:
-    #     if np.isclose(previous_theta, interval[1], atol=0.00001):
-    #         return interval[1]
-    #     return interval[0]
-    # if theta > interval[1]:
-    #     if np.isclose(previous_theta, interval[0], atol=0.00001):
-    #         return interval[0]
-    #     return interval[1]
-    
+
 
 def tend_to_prefered_theta(
     previous_theta: float,
