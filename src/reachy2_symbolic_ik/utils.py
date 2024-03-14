@@ -67,7 +67,8 @@ def rotation_matrix_from_vector(vect: npt.NDArray[np.float64]) -> npt.NDArray[np
 
     # handling cross product colinear
     if np.all(np.isclose(vect1, -vect2)):
-        return np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]])
+        return np.array(R.from_euler("xyz", [0.0, 0.0, np.pi]).as_matrix())
+        # return np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]])
 
     v = np.cross(vect1, vect2)
     c = np.dot(vect1, vect2)
@@ -113,12 +114,21 @@ def limit_theta_to_interval(theta: float, previous_theta: float, interval: list[
     if previous_theta > np.pi:
         previous_theta -= 2 * np.pi
 
-    if theta < interval[0] or theta > interval[1]:
-        if abs(angle_diff(interval[0], theta)) < abs(angle_diff(interval[1], theta)):
-            return interval[0]
-        return interval[1]
+    if is_valid_angle(theta, interval):
+        return theta
+    posDiff = angle_diff(theta, interval[1])
+    negDiff = angle_diff(theta, interval[0])
 
-    return theta
+    if abs(posDiff) < abs(negDiff):
+        return interval[1]
+    return interval[0]
+
+    # if theta < interval[0] or theta > interval[1]:
+    #     if abs(angle_diff(interval[0], theta)) < abs(angle_diff(interval[1], theta)):
+    #         return interval[0]
+    #     return interval[1]
+
+    # return theta
 
 
 def tend_to_prefered_theta(
@@ -200,15 +210,26 @@ def is_elbow_ok(elbow_position: npt.NDArray[np.float64], side: int) -> bool:
     return bool(elbow_position[1] * side < -0.2)
 
 
-def show_point(ax: Any, point: npt.NDArray[np.float64], color: str) -> None:
-    ax.plot(point[0], point[1], point[2], "o", color=color)
-
 
 def angle_diff(a: float, b: float) -> float:
     """Returns the smallest distance between 2 angles"""
     d = a - b
     d = ((d + math.pi) % (2 * math.pi)) - math.pi
     return d
+
+
+def is_valid_angle(angle: float, intervalle: npt.NDArray[np.float64]) -> bool:
+    if intervalle[0]%(2*np.pi) == intervalle[1]%(2*np.pi):
+        return True
+    if intervalle[0] < intervalle[1]:
+        return intervalle[0] <= angle <= intervalle[1]
+    return intervalle[0] <= angle or angle <= intervalle[1]
+
+
+
+
+def show_point(ax: Any, point: npt.NDArray[np.float64], color: str) -> None:
+    ax.plot(point[0], point[1], point[2], "o", color=color)
 
 
 def show_circle(
