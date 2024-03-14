@@ -210,7 +210,6 @@ def is_elbow_ok(elbow_position: npt.NDArray[np.float64], side: int) -> bool:
     return bool(elbow_position[1] * side < -0.2)
 
 
-
 def angle_diff(a: float, b: float) -> float:
     """Returns the smallest distance between 2 angles"""
     d = a - b
@@ -218,14 +217,12 @@ def angle_diff(a: float, b: float) -> float:
     return d
 
 
-def is_valid_angle(angle: float, intervalle: npt.NDArray[np.float64]) -> bool:
-    if intervalle[0]%(2*np.pi) == intervalle[1]%(2*np.pi):
+def is_valid_angle(angle: float, intervalle: list[float]) -> bool:
+    if intervalle[0] % (2 * np.pi) == intervalle[1] % (2 * np.pi):
         return True
     if intervalle[0] < intervalle[1]:
-        return intervalle[0] <= angle <= intervalle[1]
-    return intervalle[0] <= angle or angle <= intervalle[1]
-
-
+        return (intervalle[0] <= angle) and (angle <= intervalle[1])
+    return (intervalle[0] <= angle) or (angle <= intervalle[1])
 
 
 def show_point(ax: Any, point: npt.NDArray[np.float64], color: str) -> None:
