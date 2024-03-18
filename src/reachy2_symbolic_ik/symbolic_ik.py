@@ -32,7 +32,7 @@ class SymbolicIK:
         # TODO make sure it works with all 3 orientations
         elbow_orientation_offset: list[int] = [0, 0, -15],
         elbow_limits: int = 130,
-        backward_limit: float = 0.,
+        backward_limit: float = 0.0,
         projection_margin: float = 0.0001,
     ) -> None:
         self.arm = arm
@@ -99,9 +99,9 @@ class SymbolicIK:
         # d_shoulder_goal = np.linalg.norm(goal_pose[0] - self.shoulder_position)
         # if d_shoulder_goal > self.max_arm_length:
         #     goal_pose = self._reduce_goal_pose(goal_pose, self.max_arm_length)
-            # print(goal_pose)
+        # print(goal_pose)
         goal_pose = self.reduce_goal_pose(goal_pose)
-        
+
         if SHOW_GRAPH:
             fig = plt.figure()
             self.ax = fig.add_subplot(111, projection="3d")
