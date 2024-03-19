@@ -201,6 +201,7 @@ def get_best_continuous_theta(
 def is_elbow_ok(elbow_position: npt.NDArray[np.float64], side: int) -> bool:
     return bool(elbow_position[1] * side < -0.2)
 
+
 def is_valid_angle(angle: float, intervalle: list[float]) -> bool:
     if intervalle[0] % (2 * np.pi) == intervalle[1] % (2 * np.pi):
         return True
