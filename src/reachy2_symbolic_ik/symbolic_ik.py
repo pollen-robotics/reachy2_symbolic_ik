@@ -33,6 +33,7 @@ class SymbolicIK:
         elbow_orientation_offset: list[int] = [0, 0, -15],
         elbow_limits: int = 130,
         projection_margin: float = 0.0001,
+        backward_limit: float = 0.0,
     ) -> None:
         self.arm = arm
         self.upper_arm_size = upper_arm_size
@@ -44,6 +45,7 @@ class SymbolicIK:
         self.max_arm_length = self.upper_arm_size + self.forearm_size + self.gripper_size
         self.projection_margin = projection_margin
         self.normal_vector_margin = 0.0000001
+        self.backward_limit = backward_limit
 
         if self.arm == "r_arm":
             self.shoulder_position = shoulder_position
@@ -56,10 +58,11 @@ class SymbolicIK:
             self.elbow_orientation_offset = [-x for x in elbow_orientation_offset]
 
     def is_reachable_no_limits(self, goal_pose: npt.NDArray[np.float64]) -> Tuple[bool, npt.NDArray[np.float64], Optional[Any]]:
-        d_shoulder_goal = np.linalg.norm(goal_pose[0] - self.shoulder_position)
+        # d_shoulder_goal = np.linalg.norm(goal_pose[0] - self.shoulder_position)
 
-        if d_shoulder_goal > self.max_arm_length:
-            goal_pose = self._reduce_goal_pose(goal_pose, self.max_arm_length)
+        # if d_shoulder_goal > self.max_arm_length:
+        #     goal_pose = self._reduce_goal_pose(goal_pose, self.max_arm_length)
+        goal_pose = self.reduce_goal_pose(goal_pose)
 
         self.goal_pose = goal_pose
         self.wrist_position = self.get_wrist_position(goal_pose)
@@ -78,10 +81,10 @@ class SymbolicIK:
 
     def is_reachable(self, goal_pose: npt.NDArray[np.float64]) -> Tuple[bool, npt.NDArray[np.float64], Optional[Any]]:
         # Check if the goal pose is in the arm range
-        d_shoulder_goal = np.linalg.norm(goal_pose[0] - self.shoulder_position)
-        if d_shoulder_goal > self.max_arm_length:
-            goal_pose = self._reduce_goal_pose(goal_pose, self.max_arm_length)
-            # print(goal_pose)
+        # d_shoulder_goal = np.linalg.norm(goal_pose[0] - self.shoulder_position)
+        # if d_shoulder_goal > self.max_arm_length:
+        #     goal_pose = self._reduce_goal_pose(goal_pose, self.max_arm_length)
+        goal_pose = self.reduce_goal_pose(goal_pose)
         if SHOW_GRAPH:
             fig = plt.figure()
             self.ax = fig.add_subplot(111, projection="3d")
@@ -226,14 +229,18 @@ class SymbolicIK:
 
         return False, np.array([]), None
 
-    def _reduce_goal_pose(
-        self, pose: npt.NDArray[np.float64], max_arm_length: np.float64, verbose: bool = True
-    ) -> npt.NDArray[np.float64]:
-        goal_position = pose[0]
-        direction = goal_position - self.shoulder_position
-        direction = direction / np.linalg.norm(direction) + self.projection_margin
-        goal_position = self.shoulder_position + direction * max_arm_length
-        return np.array([goal_position, pose[1]])
+    def reduce_goal_pose(self, goal_pose: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+        goal_position = goal_pose[0]
+        d_shoulder_goal = np.linalg.norm(goal_pose[0] - self.shoulder_position)
+        if d_shoulder_goal > self.max_arm_length:
+            # goal_pose = self._reduce_goal_pose(goal_pose, self.max_arm_length)
+            goal_position = goal_pose[0]
+            direction = goal_position - self.shoulder_position
+            direction = direction / np.linalg.norm(direction) + self.projection_margin
+            goal_position = self.shoulder_position + direction * self.max_arm_length
+        if goal_position[0] < self.backward_limit:
+            goal_position[0] = self.backward_limit
+        return np.array([goal_position, goal_pose[1]])
 
     def reduce_goal_pose_no_limits(
         self, pose: npt.NDArray[np.float64], d_shoulder_wrist: np.float64, d_shoulder_wrist_max: np.float64
