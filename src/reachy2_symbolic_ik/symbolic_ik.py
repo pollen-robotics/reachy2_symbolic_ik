@@ -33,7 +33,7 @@ class SymbolicIK:
         elbow_orientation_offset: list[int] = [0, 0, -15],
         elbow_limits: int = 130,
         projection_margin: float = 0.0001,
-        backward_limit: float = 0.0,
+        backward_limit: float = 1e-10,
     ) -> None:
         self.arm = arm
         self.upper_arm_size = upper_arm_size
