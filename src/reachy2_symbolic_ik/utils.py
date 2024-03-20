@@ -113,12 +113,14 @@ def limit_theta_to_interval(theta: float, previous_theta: float, interval: list[
     if previous_theta > np.pi:
         previous_theta -= 2 * np.pi
 
-    if theta < interval[0] or theta > interval[1]:
-        if abs(angle_diff(interval[0], theta)) < abs(angle_diff(interval[1], theta)):
-            return interval[0]
-        return interval[1]
+    if is_valid_angle(theta, interval):
+        return theta
+    posDiff = angle_diff(theta, interval[1])
+    negDiff = angle_diff(theta, interval[0])
 
-    return theta
+    if abs(posDiff) < abs(negDiff):
+        return interval[1]
+    return interval[0]
 
 
 def tend_to_prefered_theta(
@@ -198,6 +200,14 @@ def get_best_continuous_theta(
 
 def is_elbow_ok(elbow_position: npt.NDArray[np.float64], side: int) -> bool:
     return bool(elbow_position[1] * side < -0.2)
+
+
+def is_valid_angle(angle: float, intervalle: list[float]) -> bool:
+    if intervalle[0] % (2 * np.pi) == intervalle[1] % (2 * np.pi):
+        return True
+    if intervalle[0] < intervalle[1]:
+        return (intervalle[0] <= angle) and (angle <= intervalle[1])
+    return (intervalle[0] <= angle) or (angle <= intervalle[1])
 
 
 def show_point(ax: Any, point: npt.NDArray[np.float64], color: str) -> None:
