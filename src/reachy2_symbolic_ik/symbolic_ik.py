@@ -32,7 +32,7 @@ class SymbolicIK:
         # TODO make sure it works with all 3 orientations
         elbow_orientation_offset: list[int] = [0, 0, -15],
         elbow_limits: int = 130,
-        projection_margin: float = 0.0001,
+        projection_margin: float = 1e-8,
         backward_limit: float = 1e-10,
     ) -> None:
         self.arm = arm
@@ -236,7 +236,7 @@ class SymbolicIK:
             # goal_pose = self._reduce_goal_pose(goal_pose, self.max_arm_length)
             goal_position = goal_pose[0]
             direction = goal_position - self.shoulder_position
-            direction = direction / np.linalg.norm(direction) + self.projection_margin
+            direction = direction / (np.linalg.norm(direction) + self.projection_margin)
             goal_position = self.shoulder_position + direction * self.max_arm_length
         if goal_position[0] < self.backward_limit:
             goal_position[0] = self.backward_limit
