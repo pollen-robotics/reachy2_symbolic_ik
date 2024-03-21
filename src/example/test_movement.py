@@ -1,9 +1,11 @@
 import time
+
 import numpy as np
 import numpy.typing as npt
 from reachy2_sdk import ReachySDK
-from reachy2_symbolic_ik.utils import make_homogenous_matrix_from_rotation_matrix
 from scipy.spatial.transform import Rotation as R
+
+from reachy2_symbolic_ik.utils import make_homogenous_matrix_from_rotation_matrix
 
 
 def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> None:
