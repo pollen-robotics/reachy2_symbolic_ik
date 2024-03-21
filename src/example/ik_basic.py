@@ -1,39 +1,50 @@
 import numpy as np
 
 from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
-from reachy2_symbolic_ik.utils import shoulder_limits
 
 
 def main_test() -> None:
+    # Create the symbolic IK for each arm
     symbolic_ik_r = SymbolicIK()
     symbolic_ik_l = SymbolicIK(arm="l_arm")
 
-    goal_position = [0.0, -0.2, -0.60]
-    goal_orientation = [0, 0, 0]
+    # Right hand
+    # Define the goal position and orientation
+    goal_position = [0.55, -0.3, -0.15]
+    goal_orientation = [0, -np.pi / 2, 0]
     goal_pose = np.array([goal_position, goal_orientation])
-    result_r = symbolic_ik_r.is_reachable(goal_pose)
 
-    if result_r[0]:
-        is_reachable, theta = shoulder_limits(result_r[1], result_r[2])
-        if is_reachable:
-            joints, elbow_position = result_r[2](theta)
-            print(joints)
-        else:
-            print("Pose not reachable because of shoulder limits")
+    # Check if the goal pose is reachable
+    is_reachable_r, interval_r, get_joints_r = symbolic_ik_r.is_reachable(goal_pose)
+
+    if is_reachable_r:
+        print("Pose reachable")
+        # get joints for one elbow position, define by the angle theta
+        theta = interval_r[0]
+        joints, elbow_position = get_joints_r(theta)
+        print(interval_r)
+        print(joints)
+
     else:
         print("Pose not reachable")
 
-    goal_position = [0.64, 0.2, -0.1]
-    goal_orientation = [0, np.radians(-80), 0]
+    # Left hand
+    # Define the goal position and orientation
+    goal_position = [0.55, 0.3, -0.15]
+    goal_orientation = [0, -np.pi / 2, 0]
     goal_pose = np.array([goal_position, goal_orientation])
-    result_l = symbolic_ik_l.is_reachable(goal_pose)
-    if result_l[0]:
-        is_reachable, theta = shoulder_limits(result_l[1], result_l[2], arm="l_arm")
-        if is_reachable:
-            joints, elbow_position = result_l[2](theta)
-            print(joints)
-        else:
-            print("Pose not reachable because of shoulder limits")
+
+    # Check if the goal pose is reachable
+    is_reachable_l, interval_l, get_joints_l = symbolic_ik_l.is_reachable(goal_pose)
+
+    if is_reachable_l:
+        print("Pose reachable")
+        # get joints for one elbow position, define by the angle theta
+        theta = interval_l[0]
+        joints, elbow_position = get_joints_l(theta)
+        print(interval_l)
+        print(joints)
+
     else:
         print("Pose not reachable")
 
