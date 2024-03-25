@@ -58,15 +58,23 @@ class SymbolicIK:
             self.elbow_orientation_offset = [-x for x in elbow_orientation_offset]
 
     def is_reachable_no_limits(self, goal_pose: npt.NDArray[np.float64]) -> Tuple[bool, npt.NDArray[np.float64], Optional[Any]]:
+        """Check if the goal pose is reachable without taking into account the limits of the wrist and the elbow
+        Should alway return True"""
+
+        # Change goal pose if goal pose is out of reach or with x <= 0
         goal_pose = self.reduce_goal_pose(goal_pose)
 
         self.goal_pose = goal_pose
         self.wrist_position = self.get_wrist_position(goal_pose)
+
+        # Check if the wrist is in the arm range and reduce the goal pose if not
         d_shoulder_wrist = np.linalg.norm(self.wrist_position - self.shoulder_position)
         if d_shoulder_wrist > self.upper_arm_size + self.forearm_size:
             self.goal_pose = self.reduce_goal_pose_no_limits(
                 goal_pose, d_shoulder_wrist, self.upper_arm_size + self.forearm_size
             )
+
+        # Get the intersection circle -> with the previous condition we should always find one
         intersection_circle = self.get_intersection_circle(goal_pose)
         if intersection_circle is not None:
             self.intersection_circle = intersection_circle
@@ -75,7 +83,11 @@ class SymbolicIK:
             return False, np.array([]), None
 
     def is_reachable(self, goal_pose: npt.NDArray[np.float64]) -> Tuple[bool, npt.NDArray[np.float64], Optional[Any]]:
+        """Check if the goal pose is reachable taking into account the limits of the wrist and the elbow"""
+
+        # Change goal pose if goal pose is out of reach or with x <= 0
         goal_pose = self.reduce_goal_pose(goal_pose)
+
         if SHOW_GRAPH:
             fig = plt.figure()
             self.ax = fig.add_subplot(111, projection="3d")
@@ -88,18 +100,16 @@ class SymbolicIK:
         self.goal_pose = goal_pose
         self.wrist_position = self.get_wrist_position(goal_pose)
 
-        d_shoulder_wrist = np.linalg.norm(self.wrist_position - self.shoulder_position)
-
         # Test if the wrist is in the arm range
+        d_shoulder_wrist = np.linalg.norm(self.wrist_position - self.shoulder_position)
         if d_shoulder_wrist > self.upper_arm_size + self.forearm_size:
             print("wrist out of range")
-            # todo check if the pose is the sphere of the arm
-            # todo check Trex arm
+            # TODO check Trex arm
             return False, np.array([]), None
 
+        # Test if the elbow is too much bent
         to_asin1 = d_shoulder_wrist / (2 * self.upper_arm_size)
         to_asin2 = d_shoulder_wrist / (2 * self.forearm_size)
-
         alpha = np.arcsin(to_asin1) + np.arcsin(to_asin2) - np.pi
         if alpha < np.radians(-self.elbow_limits) or alpha > np.radians(self.elbow_limits):
             return False, np.array([]), None
@@ -109,10 +119,11 @@ class SymbolicIK:
 
         if intersection_circle is not None:
             self.intersection_circle = intersection_circle
-            intervalle = self.are_circles_linked(intersection_circle, limitation_wrist_circle)
-            if len(intervalle) > 0:
+            # Check if the two circles are linked and return the interval of the valid angles
+            interval = self.are_circles_linked(intersection_circle, limitation_wrist_circle)
+            if len(interval) > 0:
                 if SHOW_GRAPH:
-                    elbow_position = self.get_coordinate_cercle(intersection_circle, intervalle[0])
+                    elbow_position = self.get_coordinate_cercle(intersection_circle, interval[0])
                     show_point(self.ax, elbow_position, "r")
                     self.ax.plot(
                         [goal_pose[0][0], self.wrist_position[0]],
@@ -155,32 +166,32 @@ class SymbolicIK:
                         "y",
                     )
                     plt.show()
-                return True, intervalle, self.get_joints
+                return True, interval, self.get_joints
 
-            # if SHOW_GRAPH:
-            #     show_point(self.ax, goal_pose[0], "g")
-            #     show_point(self.ax, self.wrist_position, "r")
-            #     show_point(self.ax, self.shoulder_position, "b")
-            #     show_point(self.ax, self.torso_pose, "y")
-            #     show_sphere(self.ax, self.wrist_position, self.forearm_size, "r")
-            #     show_sphere(self.ax, self.shoulder_position, self.upper_arm_size, "b")
-            #     show_circle(
-            #         self.ax,
-            #         intersection_circle[0],
-            #         intersection_circle[1],
-            #         intersection_circle[2],
-            #         np.array([[0, 2 * np.pi]]),
-            #         "g",
-            #     )
-            #     show_circle(
-            #         self.ax,
-            #         limitation_wrist_circle[0],
-            #         limitation_wrist_circle[1],
-            #         limitation_wrist_circle[2],
-            #         np.array([[0, 2 * np.pi]]),
-            #         "y",
-            #     )
-            #     plt.show()
+            if SHOW_GRAPH:
+                show_point(self.ax, goal_pose[0], "g")
+                show_point(self.ax, self.wrist_position, "r")
+                show_point(self.ax, self.shoulder_position, "b")
+                show_point(self.ax, self.torso_pose, "y")
+                show_sphere(self.ax, self.wrist_position, self.forearm_size, "r")
+                show_sphere(self.ax, self.shoulder_position, self.upper_arm_size, "b")
+                show_circle(
+                    self.ax,
+                    intersection_circle[0],
+                    intersection_circle[1],
+                    intersection_circle[2],
+                    np.array([[0, 2 * np.pi]]),
+                    "g",
+                )
+                show_circle(
+                    self.ax,
+                    limitation_wrist_circle[0],
+                    limitation_wrist_circle[1],
+                    limitation_wrist_circle[2],
+                    np.array([[0, 2 * np.pi]]),
+                    "y",
+                )
+                plt.show()
             return False, np.array([]), None
 
         if SHOW_GRAPH:
@@ -190,15 +201,6 @@ class SymbolicIK:
             show_point(self.ax, self.torso_pose, "y")
             show_sphere(self.ax, self.wrist_position, self.forearm_size, "r")
             show_sphere(self.ax, self.shoulder_position, self.upper_arm_size, "b")
-            if intersection_circle is not None:
-                show_circle(
-                    self.ax,
-                    intersection_circle[0],
-                    intersection_circle[1],
-                    intersection_circle[2],
-                    np.array([[0, 2 * np.pi]]),
-                    "g",
-                )
             show_circle(
                 self.ax,
                 limitation_wrist_circle[0],
@@ -212,13 +214,19 @@ class SymbolicIK:
         return False, np.array([]), None
 
     def reduce_goal_pose(self, goal_pose: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+        """Reduce the goal pose if the goal pose is out of reach and prevent the tip to go backward"""
         goal_position = goal_pose[0]
         d_shoulder_goal = np.linalg.norm(goal_pose[0] - self.shoulder_position)
+
+        # Reduce the goal pose if the goal pose is out of reach
         if d_shoulder_goal > self.max_arm_length:
+            # Make projection of the goal position on the reachable sphere
             goal_position = goal_pose[0]
             direction = goal_position - self.shoulder_position
             direction = direction / (np.linalg.norm(direction) + self.projection_margin)
             goal_position = self.shoulder_position + direction * self.max_arm_length
+
+        # Avoid the tip to go backward
         if goal_position[0] < self.backward_limit:
             goal_position[0] = self.backward_limit
         return np.array([goal_position, goal_pose[1]])
@@ -226,6 +234,9 @@ class SymbolicIK:
     def reduce_goal_pose_no_limits(
         self, pose: npt.NDArray[np.float64], d_shoulder_wrist: np.float64, d_shoulder_wrist_max: np.float64
     ) -> npt.NDArray[np.float64]:
+        """Reduce the goal pose if the wrist is out of reach"""
+        # Make projection of the wrist position on the reachable sphere of the wrist
+        # and apply the same projection to the goal position
         direction = self.wrist_position - self.shoulder_position
         direction = direction / (np.linalg.norm(d_shoulder_wrist) + self.projection_margin)
         new_wrist_position = self.shoulder_position + direction * d_shoulder_wrist_max
@@ -237,11 +248,15 @@ class SymbolicIK:
     def get_intersection_circle(
         self, goal_pose: npt.NDArray[np.float64]
     ) -> Optional[Tuple[npt.NDArray[np.float64], float, npt.NDArray[np.float64]]]:
+        """Get the intersection circle between the shoulder sphere and the wrist sphere"""
         P_shoulder_wrist = self.wrist_position - self.shoulder_position
 
+        # Check if the two spheres are linked
         d = np.sqrt(P_shoulder_wrist[0] ** 2 + P_shoulder_wrist[1] ** 2 + P_shoulder_wrist[2] ** 2)
         if d > self.upper_arm_size + self.forearm_size:
             return None
+        # Rotation matrix from the intersection frame (the x axe is the vector between the shoulder and the wrist)
+        # to the torso frame
         M_torso_intersection = R.from_euler(
             "xyz",
             [
@@ -250,15 +265,17 @@ class SymbolicIK:
                 math.atan2(P_shoulder_wrist[1], P_shoulder_wrist[0]),
             ],
         )
+        # Get the radius of the intersection circle
         radius = (
             1
             / (2 * d)
             * np.sqrt(4 * d**2 * self.upper_arm_size**2 - (d**2 - self.forearm_size**2 + self.upper_arm_size**2) ** 2)
         )
+        # Get the center of the intersection circle in the torso frame
         P_intersection_center = np.array([(d**2 - self.forearm_size**2 + self.upper_arm_size**2) / (2 * d), 0, 0])
         P_shoulder_center = M_torso_intersection.apply(P_intersection_center)
         P_torso_center = P_shoulder_center + self.shoulder_position
-
+        # Get the normal vector of the intersection circle in the torso frame
         V_intersection_normal = np.array([1.0, 0.0, 0.0])
         V_torso_normal = M_torso_intersection.apply(V_intersection_normal)
         return P_torso_center, radius, V_torso_normal
@@ -266,6 +283,8 @@ class SymbolicIK:
     def get_limitation_wrist_circle(
         self, goal_pose: npt.NDArray[np.float64]
     ) -> Tuple[npt.NDArray[np.float64], float, npt.NDArray[np.float64]]:
+        """Get the limitation circle of the wrist"""
+        # The normal vector is going out of the wrist sphere
         normal_vector = np.array(
             [
                 self.wrist_position[0] - goal_pose[0][0],
@@ -273,13 +292,13 @@ class SymbolicIK:
                 self.wrist_position[2] - goal_pose[0][2],
             ]
         )
-
         radius = np.sin(np.radians(self.wrist_limit)) * self.forearm_size
         vector = normal_vector / np.linalg.norm(normal_vector) * np.sqrt(self.forearm_size**2 - radius**2)
         center = self.wrist_position + vector
         return center, radius, normal_vector
 
     def get_wrist_position(self, goal_pose: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+        """Get the wrist position from the goal pose"""
         M_torso_goalPosition = R.from_euler("xyz", goal_pose[1]).as_matrix()
         T_torso_goalPosition = make_homogenous_matrix_from_rotation_matrix(goal_pose[0], M_torso_goalPosition)
         P_torso_wrist = np.array(np.dot(T_torso_goalPosition, np.array([0.0, 0.0, self.gripper_size, 1.0])))
@@ -290,6 +309,7 @@ class SymbolicIK:
         intersection_circle: Tuple[npt.NDArray[np.float64], float, npt.NDArray[np.float64]],
         limitation_wrist_circle: Tuple[npt.NDArray[np.float64], float, npt.NDArray[np.float64]],
     ) -> npt.NDArray[np.float64]:
+        """Get the intersection of the two circles and return the interval of the valid angles"""
         radius1 = limitation_wrist_circle[1]
         radius2 = intersection_circle[1]
 
@@ -331,35 +351,44 @@ class SymbolicIK:
         if np.any(V_torso_normal2 != 0):
             V_torso_normal2 = V_torso_normal2 / np.linalg.norm(V_torso_normal2)
 
+        # Check if the two circles are parallel
         if np.all(np.abs(V_torso_normal2 - V_torso_normal1) < self.normal_vector_margin) or np.all(
             np.abs(V_torso_normal2 + V_torso_normal1) < self.normal_vector_margin
         ):
+            # if the two circles are parallel the interval is full if above the wrist limitation circle
+            # (that means the intersection is in the autorized part of the wrist sphere) and empty otherwise
             if P_limitation_intersectionCenter[0] > 0:
                 return np.array([-np.pi, np.pi])
             else:
                 return np.array([])
+
         else:
             # Find the line of intersection of the planes
             q, v = self.points_of_nearest_approach(p1, V_torso_normal1, p2, V_torso_normal2)
             if len(q) == 0:
+                # if the two circles are not parallel and the line of intersection of the planes is empty
+                # -> not suppose to happen?
                 if P_limitation_intersectionCenter[0] > 0:
                     return np.array([-np.pi, np.pi])
                 else:
                     return np.array([])
+            # Find the intersection points of the circles with the line of intersection of the planes
             points = self.intersection_circle_line_3d_vd(p1, radius1, v, q)
-            # print(f"points: {points}")
             if points is None:
+                # Happens when the two circles are not linked but not parallel
+                # -> Check if the intersection is in the autorized part of the wrist sphere
                 if P_limitation_intersectionCenter[0] > 0:
                     return np.array([-np.pi, np.pi])
                 else:
                     return np.array([])
             else:
-                intervalle = self.get_intervalle_from_intersection(
+                # Get the right interval of the valid angles from the intersection points
+                interval = self.get_interval_from_intersection(
                     points, T_intersection_torso, T_torso_intersection, T_limitation_torso, radius2
                 )
-                return intervalle
+                return interval
 
-    def get_intervalle_from_intersection(
+    def get_interval_from_intersection(
         self,
         points: npt.NDArray[np.float64],
         T_intersection_torso: npt.NDArray[np.float64],
@@ -367,13 +396,17 @@ class SymbolicIK:
         T_limitation_torso: npt.NDArray[np.float64],
         radius2: float,
     ) -> npt.NDArray[np.float64]:
+        """Get the interval of the valid angles from the intersection points"""
+        # If there is only one intersection point the interval is the angle of the point
         if len(points) == 1:
+            # TODO check the case where the intersection is in the autorized part of the wrist sphere
             point = [points[0][0], points[0][1], points[0][2], 1]
             point_in_sphere_frame = np.dot(T_intersection_torso, point)
             angle = math.atan2(point_in_sphere_frame[2], point_in_sphere_frame[1])
-            intervalle = np.array([angle, angle])
-            return intervalle
+            interval = np.array([angle, angle])
+            return interval
 
+        # If there are two intersection points there is two intervals possible, we have to determine which one is valid
         if len(points) == 2:
             point1 = [points[0][0], points[0][1], points[0][2], 1]
             point2 = [points[1][0], points[1][1], points[1][2], 1]
@@ -393,24 +426,26 @@ class SymbolicIK:
             angle_test = (angle1 + angle2) / 2
 
             # finding which side of the circle is valid by testing the middle point of the arc
-            test_point = np.array([0, math.cos(angle_test) * radius2, math.sin(angle_test) * radius2, 1])
+            P_intersection_testPoint = np.array([0, math.cos(angle_test) * radius2, math.sin(angle_test) * radius2, 1])
 
-            # transforming the test point to the torso frame
-            test_point = np.dot(T_torso_intersection, test_point)
+            # transforming the test point to the torso frame and then to the wrist limitation frame
+            P_torso_testPoint = np.dot(T_torso_intersection, P_intersection_testPoint)
             if SHOW_GRAPH:
                 self.ax.plot(
-                    test_point[0] + self.wrist_position[0],
-                    test_point[1] + self.wrist_position[1],
-                    test_point[2] + self.wrist_position[2],
+                    P_torso_testPoint[0] + self.wrist_position[0],
+                    P_torso_testPoint[1] + self.wrist_position[1],
+                    P_torso_testPoint[2] + self.wrist_position[2],
                     "ro",
                 )
-            test_point_in_wrist_frame = np.dot(T_limitation_torso, test_point)
+            P_limitation_testPoint = np.dot(T_limitation_torso, P_torso_testPoint)
 
-            if test_point_in_wrist_frame[0] > 0:
-                intervalle = np.array([angle1, angle2])
+            # if the test point is in the autorized part of the wrist sphere the interval is valid
+            # otherwise the convention is to take the other interval -> interval[0] > interval[1
+            if P_limitation_testPoint[0] > 0:
+                interval = np.array([angle1, angle2])
             else:
-                intervalle = np.array([angle2, angle1])
-        return intervalle
+                interval = np.array([angle2, angle1])
+        return interval
 
     def intersection_point(
         self,
@@ -419,6 +454,7 @@ class SymbolicIK:
         v2: npt.NDArray[np.float64],
         p02: npt.NDArray[np.float64],
     ) -> npt.NDArray[np.float64]:
+        """Find the intersection point of two lines"""
         A = np.vstack((v1, -v2)).T
         b = np.subtract(p02, p01)
         params, _, _, _ = np.linalg.lstsq(A, b, rcond=None)
@@ -436,10 +472,16 @@ class SymbolicIK:
         p2: npt.NDArray[np.float64],
         V_torso_normal2: npt.NDArray[np.float64],
     ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+        """Find the line of intersection of the planes containing the circles"""
+        # vector perpendicular to both circles
         v = np.cross(V_torso_normal1, V_torso_normal2)
         v = v / np.linalg.norm(v)
+
+        # Vectors normal of the plans containing the circles
         vect1 = np.cross(v, V_torso_normal1)
         vect2 = np.cross(v, V_torso_normal2)
+
+        # Find the intersection point of the two lines defined by the normal vectors of the circles and their center
         q = np.array(self.intersection_point(vect1, p1, vect2, p2))
         return q, v
 
@@ -450,18 +492,21 @@ class SymbolicIK:
         direction: npt.NDArray[np.float64],
         point_on_line: npt.NDArray[np.float64],
     ) -> Optional[npt.NDArray[np.float64]]:
+        """Find the intersection points of a circle and a line"""
         a = np.dot(direction, direction)
         b = 2 * np.dot(direction, np.subtract(point_on_line, center))
         c = np.dot(np.subtract(point_on_line, center), np.subtract(point_on_line, center)) - radius**2
-
         discriminant = b**2 - 4 * a * c
 
+        # No intersection
         if discriminant < 0:
             return None
+        # One intersection
         elif discriminant == 0:
             t = -b / (2 * a)
             intersection = point_on_line + t * direction
             return np.array([intersection])
+        # Two intersections
         else:
             t1 = (-b + np.sqrt(discriminant)) / (2 * a)
             t2 = (-b - np.sqrt(discriminant)) / (2 * a)
@@ -482,18 +527,26 @@ class SymbolicIK:
     def get_coordinate_cercle(
         self, intersection_circle: Tuple[npt.NDArray[np.float64], float, npt.NDArray[np.float64]], theta: float
     ) -> npt.NDArray[np.float64]:
+        """Get the position of the elbow from the intersection circle and the angle theta"""
         R_torso_intersection = rotation_matrix_from_vector(np.array(intersection_circle[2]))
         T_torso_intersection = make_homogenous_matrix_from_rotation_matrix(intersection_circle[0], R_torso_intersection)
+        # Get the point on the circle in the intersection frame
         x = 0
         y = intersection_circle[1] * np.cos(theta)
         z = intersection_circle[1] * np.sin(theta)
         P_intersection_point = np.array([x, y, z, 1])
+        # Get the point on the circle in the torso frame
         P_torso_point = np.array(np.dot(T_torso_intersection, P_intersection_point))
         return P_torso_point
 
     def get_joints(
         self, theta: float, previous_joints: list[float] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+        """Get the joints from the angle theta
+        The previous joints is used to avoid the singularity of the elbow and the shoulder
+        Return the joints cast between -pi and pi
+        """
+
         self.elbow_position = self.get_coordinate_cercle(self.intersection_circle, theta)
         goal_orientation = self.goal_pose[1]
 
