@@ -58,17 +58,12 @@ class SymbolicIK:
             self.elbow_orientation_offset = [-x for x in elbow_orientation_offset]
 
     def is_reachable_no_limits(self, goal_pose: npt.NDArray[np.float64]) -> Tuple[bool, npt.NDArray[np.float64], Optional[Any]]:
-        # d_shoulder_goal = np.linalg.norm(goal_pose[0] - self.shoulder_position)
-
-        # if d_shoulder_goal > self.max_arm_length:
-        #     goal_pose = self._reduce_goal_pose(goal_pose, self.max_arm_length)
         goal_pose = self.reduce_goal_pose(goal_pose)
 
         self.goal_pose = goal_pose
         self.wrist_position = self.get_wrist_position(goal_pose)
         d_shoulder_wrist = np.linalg.norm(self.wrist_position - self.shoulder_position)
         if d_shoulder_wrist > self.upper_arm_size + self.forearm_size:
-            # print("wrist out of range")
             self.goal_pose = self.reduce_goal_pose_no_limits(
                 goal_pose, d_shoulder_wrist, self.upper_arm_size + self.forearm_size
             )
@@ -80,10 +75,6 @@ class SymbolicIK:
             return False, np.array([]), None
 
     def is_reachable(self, goal_pose: npt.NDArray[np.float64]) -> Tuple[bool, npt.NDArray[np.float64], Optional[Any]]:
-        # Check if the goal pose is in the arm range
-        # d_shoulder_goal = np.linalg.norm(goal_pose[0] - self.shoulder_position)
-        # if d_shoulder_goal > self.max_arm_length:
-        #     goal_pose = self._reduce_goal_pose(goal_pose, self.max_arm_length)
         goal_pose = self.reduce_goal_pose(goal_pose)
         if SHOW_GRAPH:
             fig = plt.figure()
@@ -106,28 +97,19 @@ class SymbolicIK:
             # todo check Trex arm
             return False, np.array([]), None
 
-        # TODO these values very often are not in the limits, is it normal? Is clipping a good idea?
-        # to_asin1 = np.clip(d_shoulder_wrist / (2 * self.upper_arm_size), -1, 1)
-        # to_asin2 = np.clip(d_shoulder_wrist / (2 * self.forearm_size), -1, 1)
-
         to_asin1 = d_shoulder_wrist / (2 * self.upper_arm_size)
         to_asin2 = d_shoulder_wrist / (2 * self.forearm_size)
-        # print(f"to_asin1: {to_asin1}")
-        # print(f"to_asin2: {to_asin2}")
 
         alpha = np.arcsin(to_asin1) + np.arcsin(to_asin2) - np.pi
         if alpha < np.radians(-self.elbow_limits) or alpha > np.radians(self.elbow_limits):
             return False, np.array([]), None
 
         intersection_circle = self.get_intersection_circle(goal_pose)
-        # print(f"intersection_circle: {intersection_circle}")
-
         limitation_wrist_circle = self.get_limitation_wrist_circle(goal_pose)
 
         if intersection_circle is not None:
             self.intersection_circle = intersection_circle
             intervalle = self.are_circles_linked(intersection_circle, limitation_wrist_circle)
-            # print(intervalle)
             if len(intervalle) > 0:
                 if SHOW_GRAPH:
                     elbow_position = self.get_coordinate_cercle(intersection_circle, intervalle[0])
@@ -233,7 +215,6 @@ class SymbolicIK:
         goal_position = goal_pose[0]
         d_shoulder_goal = np.linalg.norm(goal_pose[0] - self.shoulder_position)
         if d_shoulder_goal > self.max_arm_length:
-            # goal_pose = self._reduce_goal_pose(goal_pose, self.max_arm_length)
             goal_position = goal_pose[0]
             direction = goal_position - self.shoulder_position
             direction = direction / (np.linalg.norm(direction) + self.projection_margin)
@@ -342,11 +323,8 @@ class SymbolicIK:
         P_limitation_torso = np.dot(-R_limitation_torso, p1)
         T_limitation_torso = make_homogenous_matrix_from_rotation_matrix(P_limitation_torso, R_limitation_torso)
 
-        # P_torso_center1 = np.array([p1[0], p1[1], p1[2], 1])
         P_torso_center2 = np.array([p2[0], p2[1], p2[2], 1])
         P_limitation_intersectionCenter = np.dot(T_limitation_torso, P_torso_center2)
-        # P_intersection_center1 = np.dot(T_intersection_torso, P_torso_center1)
-        # V_intersection_normal1 = np.dot(R_intersection_torso, V_torso_normal1)
 
         if np.any(V_torso_normal1 != 0):
             V_torso_normal1 = V_torso_normal1 / np.linalg.norm(V_torso_normal1)
@@ -356,11 +334,6 @@ class SymbolicIK:
         if np.all(np.abs(V_torso_normal2 - V_torso_normal1) < self.normal_vector_margin) or np.all(
             np.abs(V_torso_normal2 + V_torso_normal1) < self.normal_vector_margin
         ):
-            # print("concurrent or parallel")
-            # print(P_limitation_intersectionCenter[0])
-            # if (P_intersection_center1[0] > 0 and V_intersection_normal1[0] < 0) or (
-            #     P_intersection_center1[0] < 0 and V_intersection_normal1[0] > 0
-            # ):
             if P_limitation_intersectionCenter[0] > 0:
                 return np.array([-np.pi, np.pi])
             else:
@@ -369,9 +342,6 @@ class SymbolicIK:
             # Find the line of intersection of the planes
             q, v = self.points_of_nearest_approach(p1, V_torso_normal1, p2, V_torso_normal2)
             if len(q) == 0:
-                # if (P_intersection_center1[0] > 0 and V_intersection_normal1[0] < 0) or (
-                #     P_intersection_center1[0] < 0 and V_intersection_normal1[0] > 0
-                # ):
                 if P_limitation_intersectionCenter[0] > 0:
                     return np.array([-np.pi, np.pi])
                 else:
@@ -379,11 +349,6 @@ class SymbolicIK:
             points = self.intersection_circle_line_3d_vd(p1, radius1, v, q)
             # print(f"points: {points}")
             if points is None:
-                # print(P_intersection_center1[0], V_intersection_normal1[0])
-                # print(P_limitation_intersectionCenter[0])
-                # if (P_intersection_center1[0] > 0 and V_intersection_normal1[0] < 0) or (
-                #     P_intersection_center1[0] < 0 and V_intersection_normal1[0] > 0
-                # ):
                 if P_limitation_intersectionCenter[0] > 0:
                     return np.array([-np.pi, np.pi])
                 else:
@@ -406,8 +371,6 @@ class SymbolicIK:
             point = [points[0][0], points[0][1], points[0][2], 1]
             point_in_sphere_frame = np.dot(T_intersection_torso, point)
             angle = math.atan2(point_in_sphere_frame[2], point_in_sphere_frame[1])
-            # if angle < 0:
-            #     angle = angle + 2 * np.pi
             intervalle = np.array([angle, angle])
             return intervalle
 
@@ -429,14 +392,11 @@ class SymbolicIK:
             [angle1, angle2] = sorted([angle1, angle2])
             angle_test = (angle1 + angle2) / 2
 
-            # angle_test = angle_diff(angle1, angle2) / 2 + angle2
-
             # finding which side of the circle is valid by testing the middle point of the arc
             test_point = np.array([0, math.cos(angle_test) * radius2, math.sin(angle_test) * radius2, 1])
 
             # transforming the test point to the torso frame
             test_point = np.dot(T_torso_intersection, test_point)
-            # print(test_point)
             if SHOW_GRAPH:
                 self.ax.plot(
                     test_point[0] + self.wrist_position[0],
@@ -534,9 +494,6 @@ class SymbolicIK:
     def get_joints(
         self, theta: float, previous_joints: list[float] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
-        # make elbow symetrical
-        # if self.arm == "l_arm":
-        #     theta = np.pi - theta
         self.elbow_position = self.get_coordinate_cercle(self.intersection_circle, theta)
         goal_orientation = self.goal_pose[1]
 
@@ -595,8 +552,6 @@ class SymbolicIK:
             elbow_yaw = previous_joints[2]
         else:
             elbow_yaw = -np.pi / 2 + math.atan2(P_elbow_wrist[2], -P_elbow_wrist[1])
-        # if elbow_yaw < -np.pi:
-        #     elbow_yaw = elbow_yaw + 2 * np.pi
 
         M_elbowYaw_elbow = R.from_euler("xyz", np.array([elbow_yaw, 0.0, 0.0])).as_matrix()
         T_elbowYaw_elbow = make_homogenous_matrix_from_rotation_matrix(np.array([0.0, 0.0, 0.0]), M_elbowYaw_elbow)
@@ -652,6 +607,4 @@ class SymbolicIK:
         elbow_yaw -= np.radians(self.elbow_orientation_offset[2])
 
         joints = np.array([shoulder_pitch, shoulder_roll, elbow_yaw, elbow_pitch, wrist_roll, wrist_pitch, wrist_yaw])
-
-        # joints = get_valid_arm_joints(joints)
         return joints, self.elbow_position
