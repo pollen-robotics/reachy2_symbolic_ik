@@ -30,6 +30,7 @@ def go_to_position(
 
 
 def r_arm_joint_names() -> List[str]:
+    ''' Return the joint names of the right arm '''
     names = []
     names.append("r_shoulder_pitch")
     names.append("r_shoulder_roll")
@@ -42,6 +43,7 @@ def r_arm_joint_names() -> List[str]:
 
 
 def l_arm_joint_names() -> List[str]:
+    ''' Return the joint names of the left arm '''
     names = []
     names.append("l_shoulder_pitch")
     names.append("l_shoulder_roll")
