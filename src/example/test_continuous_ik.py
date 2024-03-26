@@ -5,17 +5,6 @@ import numpy.typing as npt
 from reachy2_sdk import ReachySDK
 from scipy.spatial.transform import Rotation
 
-# def build_pose_matrix(x: np.float64, y: np.float64, z: np.float64) -> npt.NDArray[np.float64]:
-#     # The effector is always at the same orientation in the world frame
-#     return np.array(
-#         [
-#             [0., 0., -1., x],
-#             [0., 1., 0., y],
-#             [1., 0., 0., z],
-#             [0., 0., 0., 1.],
-#         ]
-#     )
-
 
 def get_homogeneous_matrix_msg_from_euler(
     position: npt.NDArray[np.float64] = np.array([0.0, 0.0, 0.0]),  # (x, y, z)
