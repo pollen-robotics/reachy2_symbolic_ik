@@ -3,8 +3,6 @@ from typing import Any, Tuple
 
 import numpy as np
 import numpy.typing as npt
-from scipy.spatial.transform import Rotation as R
-
 
 # def get_valid_arm_joints(joints: list[float]) -> list[float]:
 #     arm_joints = joints[4:7]
@@ -42,7 +40,7 @@ from scipy.spatial.transform import Rotation as R
 def make_homogenous_matrix_from_rotation_matrix(
     position: npt.NDArray[np.float64], rotation_matrix: npt.NDArray[np.float64]
 ) -> npt.NDArray[np.float64]:
-    ''' Create a 4x4 homogenous matrix from a 3x3 rotation matrix and a 3x1 position vector'''
+    """Create a 4x4 homogenous matrix from a 3x3 rotation matrix and a 3x1 position vector"""
     return np.array(
         [
             [rotation_matrix[0][0], rotation_matrix[0][1], rotation_matrix[0][2], position[0]],
@@ -79,7 +77,7 @@ def rotation_matrix_from_vector(vect: npt.NDArray[np.float64]) -> npt.NDArray[np
 
 
 def limit_theta_to_interval(theta: float, previous_theta: float, interval: list[float]) -> float:
-    ''' Limit the theta to the interval, if the theta is not in the interval, return the closest limit'''
+    """Limit the theta to the interval, if the theta is not in the interval, return the closest limit"""
 
     # Normalize the angles to be between -pi and pi
     theta = theta % (2 * np.pi)
@@ -107,7 +105,7 @@ def tend_to_prefered_theta(
     d_theta_max: float,
     goal_theta: float = -np.pi * 5 / 4,
 ) -> Tuple[bool, float]:
-    ''' Tend to the prefered theta, if the goal_theta is not reachable, return the closest reachable theta'''
+    """Tend to the prefered theta, if the goal_theta is not reachable, return the closest reachable theta"""
     if abs(angle_diff(goal_theta, previous_theta)) < d_theta_max:
         return True, goal_theta
 
@@ -123,13 +121,13 @@ def get_best_continuous_theta(
     prefered_theta: float,
     arm: str,
 ) -> Tuple[bool, float, str]:
-    ''' Get the best continuous theta, 
+    """Get the best continuous theta,
     if the entire circle is possible, return the prefered_theta
     theta_middle = the middle of the interval
     if theta_middle is reachable and close to the previous_theta, return theta_middle
     if theta_middle is reachable but far from the previous_theta, return the closest theta to the previous_theta
     if theta_middle is not reachable and previous_theta is okay return previous_theta
-    if theta_middle is not reachable and previous_theta is not okay, return the closest theta to the prefered_theta'''
+    if theta_middle is not reachable and previous_theta is not okay, return the closest theta to the prefered_theta"""
     side = 1
     if arm == "l_arm":
         side = -1
@@ -189,13 +187,13 @@ def get_best_continuous_theta(
 
 
 def is_elbow_ok(elbow_position: npt.NDArray[np.float64], side: int) -> bool:
-    ''' Check if the elbow is in a valid position
-    Prevent the elbow to touch the robot body'''
+    """Check if the elbow is in a valid position
+    Prevent the elbow to touch the robot body"""
     return bool(elbow_position[1] * side < -0.2)
 
 
 def is_valid_angle(angle: float, intervalle: list[float]) -> bool:
-    ''' Check if an angle is in the intervalle'''
+    """Check if an angle is in the intervalle"""
     if intervalle[0] % (2 * np.pi) == intervalle[1] % (2 * np.pi):
         return True
     if intervalle[0] < intervalle[1]:
@@ -218,7 +216,7 @@ def show_circle(
     intervalles: npt.NDArray[np.float64],
     color: str,
 ) -> None:
-    ''' Show a circle in the 3D space'''
+    """Show a circle in the 3D space"""
     theta = []
     for intervalle in intervalles:
         angle = np.linspace(intervalle[0], intervalle[1], 100)
@@ -245,7 +243,7 @@ def show_circle(
 
 
 def show_sphere(ax: Any, center: npt.NDArray[np.float64], radius: np.float64, color: str) -> None:
-    ''' Show a sphere in the 3D space'''
+    """Show a sphere in the 3D space"""
     u, v = np.mgrid[0 : 2 * np.pi : 30j, 0 : np.pi : 20j]  # type: ignore
     x = np.cos(u) * np.sin(v) * radius + center[0]
     y = np.sin(u) * np.sin(v) * radius + center[1]
@@ -254,5 +252,5 @@ def show_sphere(ax: Any, center: npt.NDArray[np.float64], radius: np.float64, co
 
 
 def show_point(ax: Any, point: npt.NDArray[np.float64], color: str) -> None:
-    ''' Show a point in the 3D space'''
+    """Show a point in the 3D space"""
     ax.plot(point[0], point[1], point[2], "o", color=color)
