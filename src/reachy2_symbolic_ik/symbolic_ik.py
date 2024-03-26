@@ -568,7 +568,7 @@ class SymbolicIK:
         P_shoulder_torso = np.dot(-M_shoulder_torso, P_torso_shoulder[:3])
         T_shoulder_torso = make_homogenous_matrix_from_rotation_matrix(P_shoulder_torso, M_shoulder_torso)
 
-        # The elbow position in the shoulder frame is used to find the shoulder pitch joint 
+        # The elbow position in the shoulder frame is used to find the shoulder pitch joint
         P_shoulder_elbow = np.dot(T_shoulder_torso, P_torso_elbow)
 
         # Case where the elbow is aligned with the shoulder
