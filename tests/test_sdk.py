@@ -4,9 +4,7 @@ from re import M
 
 import numpy as np
 import pytest
-from reachy2_sdk import ReachySDK
 from scipy.spatial.transform import Rotation
-
 
 def get_homogeneous_matrix_msg_from_euler(
     position: tuple = (0, 0, 0),  # (x, y, z)
@@ -18,7 +16,6 @@ def get_homogeneous_matrix_msg_from_euler(
     homogeneous_matrix[:3, 3] = position
     return homogeneous_matrix
 
-
 def angle_diff(a: float, b: float) -> float:
     """Returns the smallest distance between 2 angles"""
     d = a - b
@@ -26,8 +23,9 @@ def angle_diff(a: float, b: float) -> float:
     return d
 
 
-@pytest.mark.noplaco
+@pytest.mark.sdk
 def test_continuous_ik():
+    from reachy2_sdk import ReachySDK
     reachy = ReachySDK(host="localhost")
     assert not (reachy._grpc_status == "disconnected")
     time.sleep(0.5)

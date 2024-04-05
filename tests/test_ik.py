@@ -9,7 +9,7 @@ from scipy.spatial.transform import Rotation as R
 from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
 
 
-@pytest.mark.noplaco
+@pytest.mark.cicd
 def test_class() -> None:
     symbolic_ik = SymbolicIK(upper_arm_size=0.28, forearm_size=0.28, gripper_size=0.15)
     assert symbolic_ik is not None

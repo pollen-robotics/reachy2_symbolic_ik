@@ -8,7 +8,7 @@ from scipy.spatial.transform import Rotation as R
 
 from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
 
-
+@pytest.mark.placo
 def test_full() -> None:
     from reachy_placo.ik_reachy_placo import IKReachyQP
 
