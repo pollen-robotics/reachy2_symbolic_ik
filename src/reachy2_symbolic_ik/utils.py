@@ -222,3 +222,24 @@ def show_sphere(ax: Any, center: npt.NDArray[np.float64], radius: np.float64, co
 def show_point(ax: Any, point: npt.NDArray[np.float64], color: str) -> None:
     """Show a point in the 3D space"""
     ax.plot(point[0], point[1], point[2], "o", color=color)
+
+
+def show_frame(
+    ax: Any, position: npt.NDArray[np.float64], rotation_matrix: npt.NDArray[np.float64], color: bool = True, alpha: float = 1.0
+) -> None:
+    """show a frame in the 3D plot"""
+    x = np.array([1, 0, 0])
+    y = np.array([0, 1, 0])
+    z = np.array([0, 0, 1])
+    x = np.dot(rotation_matrix, x)
+    y = np.dot(rotation_matrix, y)
+    z = np.dot(rotation_matrix, z)
+    max_length = max(np.linalg.norm(x), np.linalg.norm(y), np.linalg.norm(z)) / 20
+    if color:
+        ax.quiver(position[0], position[1], position[2], x[0], x[1], x[2], color="r", length=max_length, alpha=alpha)
+        ax.quiver(position[0], position[1], position[2], y[0], y[1], y[2], color="g", length=max_length, alpha=alpha)
+        ax.quiver(position[0], position[1], position[2], z[0], z[1], z[2], color="b", length=max_length, alpha=alpha)
+    else:
+        ax.quiver(position[0], position[1], position[2], x[0], x[1], x[2], color="black", length=max_length, alpha=alpha)
+        ax.quiver(position[0], position[1], position[2], y[0], y[1], y[2], color="dimgray", length=max_length, alpha=alpha)
+        ax.quiver(position[0], position[1], position[2], z[0], z[1], z[2], color="lightgrey", length=max_length, alpha=alpha)
