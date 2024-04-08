@@ -219,11 +219,6 @@ def show_sphere(ax: Any, center: npt.NDArray[np.float64], radius: np.float64, co
     ax.plot_wireframe(x, y, z, color=color, alpha=0.2)
 
 
-def show_point(ax: Any, point: npt.NDArray[np.float64], color: str) -> None:
-    """Show a point in the 3D space"""
-    ax.plot(point[0], point[1], point[2], "o", color=color)
-
-
 def show_frame(
     ax: Any, position: npt.NDArray[np.float64], rotation_matrix: npt.NDArray[np.float64], color: bool = True, alpha: float = 1.0
 ) -> None:
@@ -243,3 +238,8 @@ def show_frame(
         ax.quiver(position[0], position[1], position[2], x[0], x[1], x[2], color="black", length=max_length, alpha=alpha)
         ax.quiver(position[0], position[1], position[2], y[0], y[1], y[2], color="dimgray", length=max_length, alpha=alpha)
         ax.quiver(position[0], position[1], position[2], z[0], z[1], z[2], color="lightgrey", length=max_length, alpha=alpha)
+
+
+def show_point(ax: Any, point: npt.NDArray[np.float64], color: str) -> None:
+    """Show a point in the 3D space"""
+    ax.plot(point[0], point[1], point[2], "o", color=color)
