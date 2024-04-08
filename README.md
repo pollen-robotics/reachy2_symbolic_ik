@@ -23,10 +23,17 @@ To ensure everything is functioning correctly, run the unit tests.
 $ pytest 
 ```
 
-Some unit tests need [Placo](https://github.com/pollen-robotics/reachy_placo). It is possible to download it or run the tests without it.
+Some unit tests need [Placo](https://github.com/pollen-robotics/reachy_placo) and some need reachy2_sdk.
+
+You can decide which test you want to run with a flag.
+- sdk : run tests with sdk
+- placo : run tests with placo
+- cicd : run tests using only reachy2_symbolic_ik
+
+Example :
 
 ```console
-$ pytest -m noplaco
+$ pytest -m cicd
 ```
 
 
