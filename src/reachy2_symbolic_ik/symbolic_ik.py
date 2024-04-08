@@ -676,5 +676,7 @@ class SymbolicIK:
         # Add the offset of the orientation of the elbow
         elbow_yaw -= np.radians(self.elbow_orientation_offset[2])
 
+        shoulder_pitch -= np.radians(self.shoulder_orientation_offset[0])
+
         joints = np.array([shoulder_pitch, shoulder_roll, elbow_yaw, elbow_pitch, wrist_roll, wrist_pitch, wrist_yaw])
         return joints, self.elbow_position
