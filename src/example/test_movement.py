@@ -11,10 +11,16 @@ from reachy2_symbolic_ik.utils import make_homogenous_matrix_from_rotation_matri
 def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> None:
     if arm == "r_arm":
         ik = reachy.r_arm.inverse_kinematics(pose)
+        real_pose = reachy.r_arm.forward_kinematics(ik)
+        pose_diff = np.linalg.norm(pose - real_pose)
+        print(f"pose diff {pose_diff}")
         for joint, goal_pos in zip(reachy.r_arm.joints.values(), ik):
             joint.goal_position = goal_pos
     elif arm == "l_arm":
         ik = reachy.l_arm.inverse_kinematics(pose)
+        real_pose = reachy.l_arm.forward_kinematics(ik)
+        pose_diff = np.linalg.norm(pose - real_pose)
+        print(f"pose diff {pose_diff}")
         for joint, goal_pos in zip(reachy.l_arm.joints.values(), ik):
             joint.goal_position = goal_pos
 
@@ -50,13 +56,17 @@ def make_line(
 
 
 def make_circle(
-    reachy: ReachySDK, center: npt.NDArray[np.float64], radius: float, nbr_points: int = 100, number_of_turns: int = 3
+    reachy: ReachySDK,
+    center: npt.NDArray[np.float64],
+    orientation: npt.NDArray[np.float64],
+    radius: float,
+    nbr_points: int = 100,
+    number_of_turns: int = 3,
 ) -> None:
     Y_r = center[1] + radius * np.cos(np.linspace(0, 2 * np.pi, nbr_points))
     Z = center[2] + radius * np.sin(np.linspace(0, 2 * np.pi, nbr_points))
     X = center[0] * np.ones(nbr_points)
     Y_l = -center[1] + radius * np.cos(np.linspace(0, 2 * np.pi, nbr_points))
-    orientation = [0, -np.pi / 2, 0]
 
     for k in range(number_of_turns):
         for i in range(nbr_points):
@@ -91,6 +101,21 @@ def make_rectangle(
         make_line(reachy, np.array([D, orientation]), np.array([A, orientation]), nbr_points)
 
 
+def turn_hand(reachy: ReachySDK, position: npt.NDArray[np.float64], orientation_init: npt.NDArray[np.float64]) -> None:
+    orientation = [orientation_init[0], orientation_init[1], orientation_init[2]]
+    for j in range(2):
+        for i in range(100):
+            rotation_matrix = R.from_euler("xyz", orientation).as_matrix()
+            pose = make_homogenous_matrix_from_rotation_matrix(position, rotation_matrix)
+            print(pose)
+            go_to_pose(reachy, pose, "r_arm")
+            time.sleep(0.05)
+            orientation[2] += 2 * np.pi / 100
+            if orientation[2] > np.pi:
+                orientation[2] = -np.pi
+            print(orientation)
+
+
 def main_test() -> None:
     print("Trying to connect on localhost Reachy...")
     reachy = ReachySDK(host="localhost")
@@ -109,10 +134,18 @@ def main_test() -> None:
 
     time.sleep(1.0)
 
+    print("Turning the hand")
+    position = np.array([0.0, -0.2, -0.68])
+    orientation = np.array([0, 0, 0])
+    turn_hand(reachy, position, orientation)
+
+    time.sleep(1.0)
+
     print("Making a circle")
     center = np.array([0.35, -0.3, -0.1])
+    orientation = np.array([0, -np.pi / 2, 0])
     radius = 0.15
-    make_circle(reachy, center, radius)
+    make_circle(reachy, center, orientation, radius)
 
     time.sleep(1.0)
 

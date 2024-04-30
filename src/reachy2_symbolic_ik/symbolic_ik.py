@@ -678,5 +678,4 @@ class SymbolicIK:
 
         joints = np.array([shoulder_pitch, shoulder_roll, elbow_yaw, elbow_pitch, wrist_roll, -wrist_pitch, -wrist_yaw])
 
-    
         return joints, self.elbow_position
