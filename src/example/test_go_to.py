@@ -162,22 +162,22 @@ def main_test() -> None:
     symbolic_ik_r = SymbolicIK(shoulder_orientation_offset=[10, 0, 15], elbow_orientation_offset=[0, 0, 0])
     symbolic_ik_l = SymbolicIK(arm="l_arm", shoulder_orientation_offset=[10, 0, 15], elbow_orientation_offset=[0, 0, 0])
 
-    # test_poses(reachy, symbolic_ik_r, symbolic_ik_l)
+    test_poses(reachy, symbolic_ik_r, symbolic_ik_l)
 
-    go_to_joint_positions(reachy, [0, 0, 0, 0, 0, 0, 0], "r_arm")
-    go_to_joint_positions(reachy, [0, 0, 0, 0, 0, 0, 0], "l_arm")
+    # go_to_joint_positions(reachy, [0, 0, 0, 0, 0, 0, 0], "r_arm")
+    # go_to_joint_positions(reachy, [0, 0, 0, 0, 0, 0, 0], "l_arm")
+    # time.sleep(1.0)
+    # while True:
+    #     go_to_joint_positions(reachy, [0, 0, 0, 0, 20, 0, 0], "r_arm")
+    #     go_to_joint_positions(reachy, [0, 0, 0, 0, 20, 0, 0], "l_arm")
+    #     print("+20")
+    #     time.sleep(1.0)
+    #     go_to_joint_positions(reachy, [0, 0, 0, 0, -20, 0, 0], "r_arm")
+    #     go_to_joint_positions(reachy, [0, 0, 0, 0, -20, 0, 0], "l_arm")
+    #     print("-20")
+    #     time.sleep(1.0)
+
     time.sleep(1.0)
-    while True:
-        go_to_joint_positions(reachy, [0, 0, 0, 0, 0, 20, 0], "r_arm")
-        go_to_joint_positions(reachy, [0, 0, 0, 0, 0, 20, 0], "l_arm")
-        print("+20")
-        time.sleep(1.0)
-        go_to_joint_positions(reachy, [0, 0, 0, 0, 0, -20, 0], "r_arm")
-        go_to_joint_positions(reachy, [0, 0, 0, 0, 0, -20, 0], "l_arm")
-        print("-20")
-        time.sleep(1.0)
-
-    time.sleep(10.0)
 
     # Rigth arm
     # Go to a specific pose with the right arm
