@@ -1,10 +1,11 @@
+import time
+
 import numpy as np
 import numpy.typing as npt
-import time
 from reachy2_sdk import ReachySDK
+from scipy.spatial.transform import Rotation as R
 
 from reachy2_symbolic_ik.utils import make_homogenous_matrix_from_rotation_matrix
-from scipy.spatial.transform import Rotation as R
 
 
 def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> None:
@@ -15,7 +16,8 @@ def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> No
     elif arm == "l_arm":
         ik = reachy.l_arm.inverse_kinematics(pose)
         reachy.l_arm.goto_joints(ik, 4.0, degrees=True, interpolation_mode="minimum_jerk")
-    
+
+
 def main() -> None:
     reachy = ReachySDK(host="localhost")
 
@@ -42,7 +44,6 @@ def main() -> None:
     # go_to_pose(reachy, np.array([[0.0, -0.2, -0.66], [0.0, 0.0, 0.0]]), "r_arm")
     # time.sleep(5)
 
-
     # go_to_pose(reachy, np.array([[0.0, 0.2, -0.66], [0.0, 0.0, 0.0]]), "l_arm")
     # time.sleep(5)
     go_to_pose(reachy, np.array([[0.38, 0.2, -0.28], [0.0, -np.pi / 2, 0.0]]), "l_arm")
@@ -59,8 +60,8 @@ def main() -> None:
     go_to_pose(reachy, np.array([[0.0, 0.2, -0.66], [0.0, 0.0, 0.0]]), "l_arm")
     time.sleep(5)
 
-
     reachy.disconnect()
+
 
 if __name__ == "__main__":
     main()
