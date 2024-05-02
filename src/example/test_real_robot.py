@@ -28,35 +28,28 @@ def main() -> None:
     reachy.turn_on()
 
     go_to_pose(reachy, np.array([[0.0, 0.2, -0.66], [0.0, 0.0, 0.0]]), "l_arm")
-    # go_to_pose(reachy, np.array([[0.0, -0.2, -0.66], [0.0, 0.0, 0.0]]), "r_arm")
-    # time.sleep(5)
-    # go_to_pose(reachy, np.array([[0.38, -0.2, -0.28], [0.0, -np.pi / 2, 0.0]]), "r_arm")
-    # time.sleep(5)
-    # go_to_pose(reachy, np.array([[0.20, -0.0, -0.28], [0.0, -np.pi / 2, np.pi / 4]]), "r_arm")
-    # time.sleep(5)
-
-    # go_to_pose(reachy, np.array([[0.38, -0.2, -0.28], [0.0, -np.pi / 2, 0.0]]), "r_arm")
-    # time.sleep(5)
-
-    # go_to_pose(reachy, np.array([[0.68, -0.2, -0.0], [0.0, -np.pi / 2, 0.0]]), "r_arm")
-    # time.sleep(5)
-
-    # go_to_pose(reachy, np.array([[0.0, -0.2, -0.66], [0.0, 0.0, 0.0]]), "r_arm")
-    # time.sleep(5)
-
-    # go_to_pose(reachy, np.array([[0.0, 0.2, -0.66], [0.0, 0.0, 0.0]]), "l_arm")
-    # time.sleep(5)
+    go_to_pose(reachy, np.array([[0.0, -0.2, -0.66], [0.0, 0.0, 0.0]]), "r_arm")
+    time.sleep(5)
+    go_to_pose(reachy, np.array([[0.38, -0.2, -0.28], [0.0, -np.pi / 2, 0.0]]), "r_arm")
+    time.sleep(5)
+    go_to_pose(reachy, np.array([[0.20, -0.0, -0.28], [0.0, -np.pi / 2, np.pi / 4]]), "r_arm")
+    time.sleep(5)
+    go_to_pose(reachy, np.array([[0.38, -0.2, -0.28], [0.0, -np.pi / 2, 0.0]]), "r_arm")
+    time.sleep(5)
+    go_to_pose(reachy, np.array([[0.68, -0.2, -0.0], [0.0, -np.pi / 2, 0.0]]), "r_arm")
+    time.sleep(5)
+    go_to_pose(reachy, np.array([[0.0, -0.2, -0.66], [0.0, 0.0, 0.0]]), "r_arm")
+    time.sleep(5)
+    go_to_pose(reachy, np.array([[0.0, 0.2, -0.66], [0.0, 0.0, 0.0]]), "l_arm")
+    time.sleep(5)
     go_to_pose(reachy, np.array([[0.38, 0.2, -0.28], [0.0, -np.pi / 2, 0.0]]), "l_arm")
     time.sleep(5)
     go_to_pose(reachy, np.array([[0.20, 0.0, -0.28], [0.0, -np.pi / 2, -np.pi / 4]]), "l_arm")
     time.sleep(5)
-
     go_to_pose(reachy, np.array([[0.38, 0.2, -0.28], [0.0, -np.pi / 2, 0.0]]), "l_arm")
     time.sleep(5)
-
     go_to_pose(reachy, np.array([[0.68, 0.2, -0.0], [0.0, -np.pi / 2, 0.0]]), "l_arm")
     time.sleep(5)
-
     go_to_pose(reachy, np.array([[0.0, 0.2, -0.66], [0.0, 0.0, 0.0]]), "l_arm")
     time.sleep(5)
 
