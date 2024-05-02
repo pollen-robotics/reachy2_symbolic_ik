@@ -70,6 +70,9 @@ def random_trajectoy(reachy: ReachySDK) -> None:
         l2_dist = np.linalg.norm(ik_r - l_mod)
         print(f"l2_dist: {l2_dist:.3f}")
         # print(f"ik_r: {ik_r}")
+        reachy.r_arm.forward_kinematics(ik_r)
+        goal_diff = np.linalg.norm(reachy.r_arm.forward_kinematics(ik_r) - M_r)
+        print(f"goal_diff: {goal_diff:.3f}")
         # print(f"ik_l: {ik_l}")
         if l2_dist < 0.0001:
             print("Symmetry OK")
