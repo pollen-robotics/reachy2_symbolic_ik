@@ -18,15 +18,7 @@ def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> No
         reachy.l_arm.goto_joints(ik, 4.0, degrees=True, interpolation_mode="minimum_jerk")
 
 
-def main() -> None:
-    reachy = ReachySDK(host="localhost")
-
-    if reachy._grpc_status == "disconnected":
-        print("Failed to connect to Reachy, exiting...")
-        return
-
-    reachy.turn_on()
-
+def test_movement(reachy: ReachySDK) -> None:
     go_to_pose(reachy, np.array([[0.0, 0.2, -0.66], [0.0, 0.0, 0.0]]), "l_arm")
     go_to_pose(reachy, np.array([[0.0, -0.2, -0.66], [0.0, 0.0, 0.0]]), "r_arm")
     time.sleep(5)
@@ -52,6 +44,28 @@ def main() -> None:
     time.sleep(5)
     go_to_pose(reachy, np.array([[0.0, 0.2, -0.66], [0.0, 0.0, 0.0]]), "l_arm")
     time.sleep(5)
+
+
+def go_to_zero(reachy: ReachySDK) -> None:
+    go_to_pose(reachy, np.array([[0.0, 0.2, -0.66], [0.0, 0.0, 0.0]]), "l_arm")
+    go_to_pose(reachy, np.array([[0.0, -0.2, -0.66], [0.0, 0.0, 0.0]]), "r_arm")
+
+
+def main() -> None:
+    reachy = ReachySDK(host="localhost")
+
+    if reachy._grpc_status == "disconnected":
+        print("Failed to connect to Reachy, exiting...")
+        return
+
+    reachy.turn_on()
+
+    go_to_zero(reachy)
+
+    go_to_pose(reachy, np.array([[0.38, -0.2, -0.28], [0.0, -np.pi / 2, 0.0]]), "r_arm")
+    time.sleep(10)
+
+    # test_movement(reachy)
 
     reachy.disconnect()
 
