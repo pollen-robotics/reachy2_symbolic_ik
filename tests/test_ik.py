@@ -40,7 +40,7 @@ def test_class() -> None:
 
     assert len(joints) == 7
 
-    goal_position = [0.0, -0.2, -0.65]
+    goal_position = [0.0001, -0.2, -0.65]
     goal_orientation = [0.0, 0.0, 0.0]
     goal_pose = [goal_position, goal_orientation]
 
@@ -53,3 +53,19 @@ def test_class() -> None:
     joints, elbow_position = result[2](0)
 
     assert len(joints) == 7
+
+    goal_position = [0.0, -0.2, -0.65]
+    goal_orientation = [0.0, 0.0, 0.0]
+    goal_pose = [goal_position, goal_orientation]
+
+    result = symbolic_ik.is_reachable(goal_pose)
+
+    assert not (result[0])
+
+    goal_position = [0.87, -0.2, -0.0]
+    goal_orientation = [0.0, -np.pi / 2, 0.0]
+    goal_pose = [goal_position, goal_orientation]
+
+    result = symbolic_ik.is_reachable(goal_pose)
+
+    assert not (result[0])
