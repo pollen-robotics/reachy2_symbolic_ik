@@ -30,7 +30,7 @@ class SymbolicIK:
         shoulder_orientation_offset: list[int] = [10, 0, 15],
         shoulder_position: npt.NDArray[np.float64] = np.array([0.0, -0.2, 0.0]),
         # TODO make sure it works with all 3 orientations
-        elbow_orientation_offset: list[int] = [0, 0, -15],
+        elbow_orientation_offset: list[int] = [0, 0, 0],
         elbow_limits: int = 130,
         projection_margin: float = 1e-8,
         backward_limit: float = 1e-10,
@@ -676,5 +676,6 @@ class SymbolicIK:
         # Add the offset of the orientation of the elbow
         elbow_yaw -= np.radians(self.elbow_orientation_offset[2])
 
-        joints = np.array([shoulder_pitch, shoulder_roll, elbow_yaw, elbow_pitch, wrist_roll, wrist_pitch, wrist_yaw])
+        joints = np.array([shoulder_pitch, shoulder_roll, elbow_yaw, elbow_pitch, wrist_roll, -wrist_pitch, -wrist_yaw])
+
         return joints, self.elbow_position

@@ -399,9 +399,14 @@ def show_circle2(
 
 
 def main() -> None:
-    symbolic_ik = SymbolicIK()
-    goal_position = [0.55, -0.3, -0.2]
-    goal_orientation = [0, -np.pi / 3, np.pi / 5]
+    symbolic_ik = SymbolicIK(
+        shoulder_orientation_offset=[10, 0, 15],
+        elbow_orientation_offset=[0, 0, 0],
+    )
+    # goal_position = [0.55, -0.3, -0.2]
+    goal_position = [0.0, -0.2, -0.66]
+    goal_orientation = [0, 0, 0]
+    # goal_orientation = [0, -np.pi / 3, np.pi / 5]
     goal_pose = np.array([goal_position, goal_orientation])
     show_graph(symbolic_ik, goal_pose)
 

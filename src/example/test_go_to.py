@@ -9,14 +9,79 @@ from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
 from reachy2_symbolic_ik.utils import make_homogenous_matrix_from_rotation_matrix
 
 
+def go_to_joint_positions(reachy: ReachySDK, joint_positions: npt.NDArray[np.float64], arm: str) -> None:
+    if arm == "r_arm":
+        for joint, goal_pos in zip(reachy.r_arm.joints.values(), joint_positions):
+            joint.goal_position = goal_pos
+    elif arm == "l_arm":
+        for joint, goal_pos in zip(reachy.l_arm.joints.values(), joint_positions):
+            joint.goal_position = goal_pos
+
+
+def go_to_pose_with_all_theta(
+    reachy: ReachySDK, symbolic_ik: SymbolicIK, pose: npt.NDArray[np.float64], arm: str, nbr_points: int = 50
+) -> None:
+    is_reachable, interval, get_joints = symbolic_ik.is_reachable(pose)
+    print(f"interval {interval}")
+    if interval[0] > interval[1]:
+        interval = [interval[0], interval[1] + 2 * np.pi]
+    print(interval)
+    if is_reachable:
+        for i in range(nbr_points):
+            theta = interval[0] + i * (interval[1] - interval[0]) / nbr_points
+            joints, elbow_position = get_joints(theta)
+            # print(f"joints {joints}")
+            if arm == "r_arm":
+                real_pose = reachy.r_arm.forward_kinematics(np.degrees(joints))
+                goal_pose_matrix = make_homogenous_matrix_from_rotation_matrix(
+                    pose[0], R.from_euler("xyz", pose[1]).as_matrix()
+                )
+                # print(f"pose by kdl {real_pose}")
+                goal_diff = np.linalg.norm(goal_pose_matrix - real_pose)
+                print(f"goal diff {goal_diff}")
+                for joint, goal_pos in zip(reachy.r_arm.joints.values(), np.degrees(joints)):
+                    joint.goal_position = goal_pos
+                time.sleep(0.1)
+            elif arm == "l_arm":
+                real_pose = reachy.l_arm.forward_kinematics(np.degrees(joints))
+                goal_pose_matrix = make_homogenous_matrix_from_rotation_matrix(
+                    pose[0], R.from_euler("xyz", pose[1]).as_matrix()
+                )
+                # print(f"pose by kdl {real_pose}")
+                goal_diff = np.linalg.norm(goal_pose_matrix - real_pose)
+                print(f"goal diff {goal_diff}")
+                for joint, goal_pos in zip(reachy.l_arm.joints.values(), np.degrees(joints)):
+                    joint.goal_position = goal_pos
+                time.sleep(0.1)
+    else:
+        print("Pose not reachable")
+
+
 def go_to_pose_with_choosen_theta(
-    reachy: ReachySDK, symbolic_ik: SymbolicIK, pose: npt.NDArray[np.float64], theta: float
+    reachy: ReachySDK, symbolic_ik: SymbolicIK, pose: npt.NDArray[np.float64], theta: float, arm: str
 ) -> None:
     is_reachable, interval, get_joints = symbolic_ik.is_reachable(pose)
     if is_reachable:
         joints, elbow_position = get_joints(theta)
-        for joint, goal_pos in zip(reachy.r_arm.joints.values(), np.degrees(joints)):
-            joint.goal_position = goal_pos
+        print(f"joints {joints}")
+        if arm == "r_arm":
+            real_pose = reachy.r_arm.forward_kinematics(np.degrees(joints))
+            goal_pose_matrix = make_homogenous_matrix_from_rotation_matrix(pose[0], R.from_euler("xyz", pose[1]).as_matrix())
+            # print(f"pose by kdl {real_pose}")
+            goal_diff = np.linalg.norm(goal_pose_matrix - real_pose)
+            print(f"goal diff {goal_diff}")
+            for joint, goal_pos in zip(reachy.r_arm.joints.values(), np.degrees(joints)):
+                joint.goal_position = goal_pos
+            time.sleep(1)
+        elif arm == "l_arm":
+            real_pose = reachy.r_arm.forward_kinematics(np.degrees(joints))
+            goal_pose_matrix = make_homogenous_matrix_from_rotation_matrix(pose[0], R.from_euler("xyz", pose[1]).as_matrix())
+            # print(f"pose by kdl {real_pose}")
+            goal_diff = np.linalg.norm(goal_pose_matrix - real_pose)
+            print(f"goal diff {goal_diff}")
+            for joint, goal_pos in zip(reachy.l_arm.joints.values(), np.degrees(joints)):
+                joint.goal_position = goal_pos
+            time.sleep(1)
     else:
         print("Pose not reachable")
 
@@ -24,13 +89,63 @@ def go_to_pose_with_choosen_theta(
 def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> None:
     if arm == "r_arm":
         ik = reachy.r_arm.inverse_kinematics(pose)
-        pose = reachy.r_arm.forward_kinematics(ik)
+        real_pose = reachy.r_arm.forward_kinematics(ik)
+        # print(f"pose by kdl {real_pose}")
+        pose_diff = np.linalg.norm(pose - real_pose)
+        print(f"pose diff {pose_diff}")
+        if pose_diff > 0.001:
+            print(f"pose by kdl {real_pose}")
         for joint, goal_pos in zip(reachy.r_arm.joints.values(), ik):
             joint.goal_position = goal_pos
     elif arm == "l_arm":
         ik = reachy.l_arm.inverse_kinematics(pose)
+        real_pose = reachy.l_arm.forward_kinematics(ik)
+        # print(f"pose by kdl {poreal_posese}")
+        pose_diff = np.linalg.norm(pose - real_pose)
+        print(f"pose diff {pose_diff}")
+        if pose_diff > 0.005:
+            print(f"pose by kdl {real_pose}")
         for joint, goal_pos in zip(reachy.l_arm.joints.values(), ik):
             joint.goal_position = goal_pos
+
+
+def test_poses(reachy: ReachySDK, r_symbolic_ik: SymbolicIK, l_symbolic_ik: SymbolicIK) -> None:
+    r_goal_poses = np.array(
+        [
+            [[0.0, -0.2, -0.66], [0, 0, 0]],
+            [[0.0, -0.86, -0.0], [-np.pi / 2, 0, 0]],
+            [[0.0, -0.58, -0.28], [-np.pi / 2, -np.pi / 2, 0]],
+            [[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]],
+            [[0.66, -0.2, -0.0], [0, -np.pi / 2, 0]],
+            [[0.0, -0.2, -0.66], [0, 0, 0]],
+        ]
+    )
+    l_goal_poses = np.array(
+        [
+            [[0.0, 0.2, -0.66], [0, 0, 0]],
+            [[0.0, 0.86, -0.0], [np.pi / 2, 0, 0]],
+            [[0.0, 0.58, -0.28], [np.pi / 2, -np.pi / 2, 0]],
+            [[0.38, 0.2, -0.28], [0, -np.pi / 2, 0]],
+            [[0.66, 0.2, -0.0], [0, -np.pi / 2, 0]],
+            [[0.0, 0.2, -0.66], [0, 0, 0]],
+        ]
+    )
+
+    for r_goal_pose in r_goal_poses:
+        is_reachable, interval, get_joints = r_symbolic_ik.is_reachable(r_goal_pose)
+        print(f"Is reachable {is_reachable}")
+        rotation_matrix = R.from_euler("xyz", r_goal_pose[1]).as_matrix()
+        goal_pose = make_homogenous_matrix_from_rotation_matrix(r_goal_pose[0], rotation_matrix)
+        go_to_pose(reachy, goal_pose, "r_arm")
+        time.sleep(2.0)
+
+    for l_goal_pose in l_goal_poses:
+        is_reachable, interval, get_joints = l_symbolic_ik.is_reachable(l_goal_pose)
+        print(f"Is reachable {is_reachable}")
+        rotation_matrix = R.from_euler("xyz", l_goal_pose[1]).as_matrix()
+        goal_pose = make_homogenous_matrix_from_rotation_matrix(l_goal_pose[0], rotation_matrix)
+        go_to_pose(reachy, goal_pose, "l_arm")
+        time.sleep(2.0)
 
 
 def main_test() -> None:
@@ -43,33 +158,63 @@ def main_test() -> None:
         return
 
     reachy.turn_on()
-    symbolic_ik_r = SymbolicIK(shoulder_orientation_offset=[0, 0, 15])
-    # symbolic_ik_l = SymbolicIK(arm="l_arm")
 
-    # Go to a specific pose with the right arm
-    goal_position = [0.2, -0.5, -0.2]
-    goal_orientation = [0, -np.pi / 2, 0]
-    # goal_position = [0.37, -0.2, -0.28]
-    # goal_orientation = [0, -np.pi / 2, 0]
-    # goal_position = [0.0, -0.85, -0.0]
-    # goal_orientation = [-np.pi / 2, 0, 0]
-    # goal_position = [0.0, -0.2, -0.86]
-    # goal_orientation = [0, 0, 0]
-    rotation_matrix = R.from_euler("xyz", goal_orientation).as_matrix()
-    goal_pose = make_homogenous_matrix_from_rotation_matrix(goal_position, rotation_matrix)
-    theta = -4 * np.pi / 5
-    go_to_pose(reachy, goal_pose, "r_arm")
-    time.sleep(2.0)
-    goal_pose = np.array([goal_position, goal_orientation])
-    go_to_pose_with_choosen_theta(reachy, symbolic_ik_r, goal_pose, theta)
+    symbolic_ik_r = SymbolicIK(shoulder_orientation_offset=[10, 0, 15], elbow_orientation_offset=[0, 0, 0])
+    symbolic_ik_l = SymbolicIK(arm="l_arm", shoulder_orientation_offset=[10, 0, 15], elbow_orientation_offset=[0, 0, 0])
+
+    test_poses(reachy, symbolic_ik_r, symbolic_ik_l)
+
+    # go_to_joint_positions(reachy, [0, 0, 0, 0, 0, 0, 0], "r_arm")
+    # go_to_joint_positions(reachy, [0, 0, 0, 0, 0, 0, 0], "l_arm")
+    # time.sleep(1.0)
+    # while True:
+    #     go_to_joint_positions(reachy, [0, 0, 0, 0, 20, 0, 0], "r_arm")
+    #     go_to_joint_positions(reachy, [0, 0, 0, 0, 20, 0, 0], "l_arm")
+    #     print("+20")
+    #     time.sleep(1.0)
+    #     go_to_joint_positions(reachy, [0, 0, 0, 0, -20, 0, 0], "r_arm")
+    #     go_to_joint_positions(reachy, [0, 0, 0, 0, -20, 0, 0], "l_arm")
+    #     print("-20")
+    #     time.sleep(1.0)
+
     time.sleep(1.0)
 
-    # Go to a specific pose with the left arm
-    # goal_position = [0.38, 0.2, -0.28]
+    # Rigth arm
+    # Go to a specific pose with the right arm
+    # goal_position = [0.0, -0.86, -0.0]
+    # goal_position = [0.0, -0.58, -0.28]
+    # goal_orientation = [-np.pi / 2, 0, 0]
+    # goal_position = [0.58, -0.2, -0.0]
+    # goal_position = [0.37, -0.2, -0.28]
+
+    # goal_position = [0.0, -0.2, -0.68]
     # goal_orientation = [0, -np.pi / 2, 0]
-    # rotation_matrix = R.from_euler("xyz", goal_orientation).as_matrix()
-    # goal_pose = make_homogenous_matrix_from_rotation_matrix(goal_position, rotation_matrix)
-    # go_to_pose(reachy, goal_pose, "l_arm")
+    # goal_position = [0.0, -0.86, -0.0]
+    goal_position = [0.0, -0.8, -0.24]
+    goal_orientation = [-np.pi / 2, -np.pi / 2, 0]
+    # goal_position = [0.0, -0.2, -0.66]
+    # goal_orientation = [0, 0, np.radians(120)]
+
+    goal_pose = np.array([goal_position, goal_orientation])
+    theta = -4 * np.pi / 5
+    go_to_pose_with_choosen_theta(reachy, symbolic_ik_r, goal_pose, theta, "r_arm")
+    time.sleep(2.0)
+    go_to_pose_with_all_theta(reachy, symbolic_ik_r, goal_pose, "r_arm")
+    time.sleep(1.0)
+
+    # Left arm
+
+    # goal_position = [0.0, 0.86, -0.0]
+    goal_position = [0.0, 0.55, -0.28]
+    goal_orientation = [np.pi / 2, 0, 0]
+    # goal_position = [0.0, -0.2, -0.66]
+    # goal_orientation = [0, 0, np.radians(120)]
+    goal_pose = np.array([goal_position, goal_orientation])
+    theta = -4 * np.pi / 5
+    go_to_pose_with_choosen_theta(reachy, symbolic_ik_l, goal_pose, theta, "l_arm")
+    time.sleep(2.0)
+    go_to_pose_with_all_theta(reachy, symbolic_ik_l, goal_pose, "l_arm")
+    time.sleep(1.0)
 
     print("Finished testing, disconnecting from Reachy...")
     time.sleep(0.5)
