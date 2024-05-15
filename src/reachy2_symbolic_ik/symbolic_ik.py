@@ -62,7 +62,7 @@ class SymbolicIK:
         Should alway return True"""
 
         # Change goal pose if goal pose is out of reach or with x <= 0
-        goal_pose = self.reduce_goal_pose(goal_pose)
+        _, goal_pose = self.is_pose_in_robot_reach(goal_pose)
 
         self.goal_pose = goal_pose
         self.wrist_position = self.get_wrist_position(goal_pose)
@@ -86,7 +86,9 @@ class SymbolicIK:
         """Check if the goal pose is reachable taking into account the limits of the wrist and the elbow"""
 
         # Change goal pose if goal pose is out of reach or with x <= 0
-        goal_pose = self.reduce_goal_pose(goal_pose)
+        is_reachable, goal_pose = self.is_pose_in_robot_reach(goal_pose)
+        if not is_reachable:
+            return False, np.array([]), None
 
         if SHOW_GRAPH:
             fig = plt.figure()
@@ -213,13 +215,15 @@ class SymbolicIK:
 
         return False, np.array([]), None
 
-    def reduce_goal_pose(self, goal_pose: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+    def is_pose_in_robot_reach(self, goal_pose: npt.NDArray[np.float64]) -> Tuple[bool, npt.NDArray[np.float64]]:
         """Reduce the goal pose if the goal pose is out of reach and prevent the tip to go backward"""
         goal_position = goal_pose[0]
         d_shoulder_goal = np.linalg.norm(goal_pose[0] - self.shoulder_position)
 
+        is_reachable = True
         # Reduce the goal pose if the goal pose is out of reach
         if d_shoulder_goal > self.max_arm_length:
+            is_reachable = False
             # Make projection of the goal position on the reachable sphere
             goal_position = goal_pose[0]
             direction = goal_position - self.shoulder_position
@@ -228,8 +232,9 @@ class SymbolicIK:
 
         # Avoid the tip to go backward
         if goal_position[0] < self.backward_limit:
+            is_reachable = False
             goal_position[0] = self.backward_limit
-        return np.array([goal_position, goal_pose[1]])
+        return is_reachable, np.array([goal_position, goal_pose[1]])
 
     def reduce_goal_pose_no_limits(
         self, pose: npt.NDArray[np.float64], d_shoulder_wrist: np.float64, d_shoulder_wrist_max: np.float64
