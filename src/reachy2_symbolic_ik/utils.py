@@ -153,6 +153,45 @@ def get_best_continuous_theta(
             state += "\n" + "theta milieu pas ok et moi pas ok - bouge vers theta pref"
             return False, previous_theta + sign * d_theta_max, state
 
+def get_best_discrete_theta(
+    previous_theta: float,
+    interval: npt.NDArray[np.float64],
+    get_joints: Any,
+    nb_search_points: int,
+    prefered_theta: float,
+    arm: str,
+) -> Tuple[bool, float, str]:
+    """Searches a valid theta in the interval that is the closest to prefered_theta.
+    A valid theta is a theta that is reachable and does not make the elbow touch the robot body."""
+    side = 1
+    if arm == "l_arm":
+        side = -1
+
+    state = f"{arm}"
+    state += "\n" + f"interval: {interval}"
+    epsilon = 0.00001
+    # get nb_search_points points in the interval
+    if interval[0] < interval[1]:
+        theta_points = np.linspace(interval[0], interval[1], nb_search_points)
+    else:
+        theta_points = np.linspace(interval[1], interval[0] + 2 * np.pi, nb_search_points)
+        
+    # test all theta points and rank them by distance to prefered_theta
+    best_theta = None
+    best_distance = np.inf
+    for theta in theta_points:
+        joints, elbow_position = get_joints(theta)
+        if is_elbow_ok(elbow_position, side):
+            distance = abs(angle_diff(theta, prefered_theta))
+            if distance < best_distance:
+                best_theta = theta
+                best_distance = distance
+                
+    if best_theta is not None:
+        return True, best_theta, state
+    else:
+        return False, previous_theta, state
+
 
 def is_elbow_ok(elbow_position: npt.NDArray[np.float64], side: int) -> bool:
     """Check if the elbow is in a valid position
