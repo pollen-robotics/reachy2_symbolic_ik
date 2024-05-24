@@ -82,13 +82,14 @@ class SymbolicIK:
         else:
             return False, np.array([]), None
 
-    def is_reachable(self, goal_pose: npt.NDArray[np.float64]) -> Tuple[bool, npt.NDArray[np.float64], Optional[Any]]:
+    def is_reachable(self, goal_pose: npt.NDArray[np.float64]) -> Tuple[bool, npt.NDArray[np.float64], Optional[Any], str]:
         """Check if the goal pose is reachable taking into account the limits of the wrist and the elbow"""
-
+        state = ""
         # Change goal pose if goal pose is out of reach or with x <= 0
         is_reachable, goal_pose = self.is_pose_in_robot_reach(goal_pose)
         if not is_reachable:
-            return False, np.array([]), None
+            state = "out of reach"
+            return False, np.array([]), None, state
 
         if SHOW_GRAPH:
             fig = plt.figure()
@@ -105,16 +106,17 @@ class SymbolicIK:
         # Test if the wrist is in the arm range
         d_shoulder_wrist = np.linalg.norm(self.wrist_position - self.shoulder_position)
         if d_shoulder_wrist > self.upper_arm_size + self.forearm_size:
-            print("wrist out of range")
+            state = "limited by wrist"
             # TODO check Trex arm
-            return False, np.array([]), None
+            return False, np.array([]), None, state
 
         # Test if the elbow is too much bent
         to_asin1 = d_shoulder_wrist / (2 * self.upper_arm_size)
         to_asin2 = d_shoulder_wrist / (2 * self.forearm_size)
         alpha = np.arcsin(to_asin1) + np.arcsin(to_asin2) - np.pi
         if alpha < np.radians(-self.elbow_limits) or alpha > np.radians(self.elbow_limits):
-            return False, np.array([]), None
+            state = "limited by elbow"
+            return False, np.array([]), None, state
 
         intersection_circle = self.get_intersection_circle(goal_pose)
         limitation_wrist_circle = self.get_limitation_wrist_circle(goal_pose)
@@ -168,7 +170,8 @@ class SymbolicIK:
                         "y",
                     )
                     plt.show()
-                return True, interval, self.get_joints
+                state = "reachable"
+                return True, interval, self.get_joints, state
 
             if SHOW_GRAPH:
                 show_point(self.ax, goal_pose[0], "g")
@@ -194,7 +197,8 @@ class SymbolicIK:
                     "y",
                 )
                 plt.show()
-            return False, np.array([]), None
+            state = "interval void"
+            return False, np.array([]), None, state
 
         if SHOW_GRAPH:
             show_point(self.ax, goal_pose[0], "g")
@@ -212,8 +216,8 @@ class SymbolicIK:
                 "y",
             )
             plt.show()
-
-        return False, np.array([]), None
+        state = "no intersection circle"
+        return False, np.array([]), None, state
 
     def is_pose_in_robot_reach(self, goal_pose: npt.NDArray[np.float64]) -> Tuple[bool, npt.NDArray[np.float64]]:
         """Reduce the goal pose if the goal pose is out of reach and prevent the tip to go backward"""
