@@ -25,35 +25,24 @@ def angle_diff(a: float, b: float) -> float:
 
 
 def random_trajectoy(reachy: ReachySDK) -> None:
-    x0, y0, z0 = 0.3, -0.4, -0.3
-    roll0, pitch0, yaw0 = 0.0, -np.pi / 2, 0.0
-    reductor = 1.0
+    q = [0, 0, 0, 0, 0, 0, 0]
+    ik_r = q
+    ik_l = q
+    q0 = [-65, -45, 30, 0, 0, 0, 0]
+    q_amps = [30, 30, 30, 30, 25, 25, 25]
+
     freq_reductor = 2.0
-    # Note Orbita3D's cone is currently limited to 42.5 rad in the control loop, but this can't be represented correctly with the xyz euler angles used here
-    amp = [0.35 * reductor, 0.35 * reductor, 0.35 * reductor, np.pi / 6, np.pi / 6, np.pi / 6]
-    freq = [0.3 * freq_reductor, 0.17 * freq_reductor, 0.39 * freq_reductor, 0.18, 0.31, 0.47]
+    freq = [0.3 * freq_reductor, 0.17 * freq_reductor, 0.39 * freq_reductor, 0.18, 0.31, 0.47, 0.25]
     control_freq = 120
-    max_angular_change = 5.0  # degrees
-    ik_r = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-    ik_l = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-    prev_ik_r = ik_r
-    prev_ik_l = ik_l
-    prev_M_r = get_homogeneous_matrix_msg_from_euler(np.array([x0, y0, z0]), np.array([roll0, pitch0, yaw0]), degrees=False)
-    prev_M_l = get_homogeneous_matrix_msg_from_euler(np.array([x0, -y0, z0]), np.array([-roll0, pitch0, -yaw0]), degrees=False)
-    first = True
     t_init = time.time()
     while True:
-        # input("go?")
         t = time.time() - t_init + 11
-        x = x0 + amp[0] * np.sin(freq[0] * t)
-        y = y0 + amp[1] * np.sin(freq[1] * t)
-        z = z0 + amp[2] * np.sin(freq[2] * t)
-        roll = roll0 + amp[3] * np.sin(freq[3] * t)
-        pitch = pitch0 + amp[4] * np.sin(freq[4] * t)
-        yaw = yaw0 + amp[5] * np.sin(freq[5] * t)
+        # randomise the joint angles
+        r_q = [q0[i] + q_amps[i] * np.sin(2 * np.pi * freq[i] * t) for i in range(7)]
+        l_q = [r_q[0], -r_q[1], -r_q[2], r_q[3], -r_q[4], r_q[5], -r_q[6]]
 
-        M_r = get_homogeneous_matrix_msg_from_euler(np.array([x, y, z]), np.array([roll, pitch, yaw]), degrees=False)
-        M_l = get_homogeneous_matrix_msg_from_euler(np.array([x, -y, z]), np.array([-roll, pitch, -yaw]), degrees=False)
+        M_r = reachy.r_arm.forward_kinematics(r_q)
+        M_l = reachy.l_arm.forward_kinematics(l_q)
 
         t0 = time.time()
         try:
@@ -81,58 +70,34 @@ def random_trajectoy(reachy: ReachySDK) -> None:
         l_mod = np.array([ik_l[0], -ik_l[1], -ik_l[2], ik_l[3], -ik_l[4], ik_l[5], -ik_l[6]])
         # calculate l2 distance between r_joints and l_mod
         l2_dist = np.linalg.norm(ik_r - l_mod)
-        print(f"l2_dist: {l2_dist:.3f}")
+        print(f"l2_dist: {l2_dist:.5f}")
         # print(f"ik_r: {ik_r}")
+
         reachy.r_arm.forward_kinematics(ik_r)
-        goal_diff = np.linalg.norm(reachy.r_arm.forward_kinematics(ik_r) - M_r)
-        print(f"goal_diff: {goal_diff:.3f}")
-        # print(f"ik_l: {ik_l}")
-        if l2_dist < 0.0001:
-            print("Symmetry OK")
-            pass
+        r_goal_diff = np.linalg.norm(reachy.r_arm.forward_kinematics(ik_r) - M_r)
+        print(f"r_goal_diff: {r_goal_diff:.3f}")
+        reachy.l_arm.forward_kinematics(ik_l)
+        l_goal_diff = np.linalg.norm(reachy.l_arm.forward_kinematics(ik_l) - M_l)
+        print(f"l_goal_diff: {l_goal_diff:.3f}")
+        if r_goal_diff < 0.01 and l_goal_diff < 0.01:
+            print("precisions OK")
         else:
-            pass
+            print("precisions NOT OK!!")
+            print(f"ik_r {np.round(ik_r, 3).tolist()}")
+            print(f"ik_l {np.round(ik_l, 3).tolist()}")
+            print(f"M_r {M_r}")
+            print(f"M_l {M_l}")
+            # break
+        # print(f"ik_l: {ik_l}")
+        if l2_dist < 0.01:
+            print("Symmetry OK")
+        else:
             print("Symmetry NOT OK!!")
-            print(f"prev_ik_r {np.round(prev_ik_r, 3).tolist()}")
-            print(f"prev_ik_l {np.round(prev_ik_l, 3).tolist()}")
             print(f"ik_r {np.round(ik_r, 3).tolist()}")
             print(f"ik_l_sym {np.round(l_mod, 3).tolist()}")
-            print(f"prev_M_r {prev_M_r}")
-            print(f"prev_M_l {prev_M_l}")
             print(f"M_r {M_r}")
             print(f"M_l {M_l}")
             break
-
-        # Test continuity
-        # calculating the maximum angulare change in joint space
-        # create a list based on angle_diff for each joint
-        r_diff = [angle_diff(np.deg2rad(a), np.deg2rad(b)) for a, b in zip(ik_r, prev_ik_r)]
-        l_diff = [angle_diff(np.deg2rad(a), np.deg2rad(b)) for a, b in zip(ik_l, prev_ik_l)]
-        max_angular_change_r = np.rad2deg(np.max(np.abs(r_diff)))
-        max_angular_change_l = np.rad2deg(np.max(np.abs(l_diff)))
-
-        if max_angular_change_r < max_angular_change and max_angular_change_l < max_angular_change:
-            print("Continuity OK")
-        else:
-            print("Continuity NOT OK!!")
-            print(f"prev_ik_r {np.round(prev_ik_r, 3).tolist()}")
-            print(f"prev_ik_l {np.round(prev_ik_l, 3).tolist()}")
-            print(f"ik_r {np.round(ik_r, 3).tolist()}")
-            print(f"ik_l {np.round(ik_l, 3).tolist()}")
-            print(f"max_angular_change_r {max_angular_change_r:.3f}")
-            print(f"max_angular_change_l {max_angular_change_l:.3f}")
-            print(f"prev_M_r {prev_M_r}")
-            print(f"prev_M_l {prev_M_l}")
-            print(f"M_r {M_r}")
-            print(f"M_l {M_l}")
-            if not first:
-                break
-
-        prev_ik_r = ik_r
-        prev_ik_l = ik_l
-        prev_M_r = M_r
-        prev_M_l = M_l
-        first = False
 
         # print(f"ik_r: {ik_r}, ik_l: {ik_l}, time_r: {t1-t0}, time_l: {t2-t1}")
         print(f"time_r: {(t1-t0)*1000:.1f}ms\ntime_l: {(t2-t1)*1000:.1f}ms")
