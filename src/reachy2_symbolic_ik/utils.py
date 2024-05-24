@@ -153,6 +153,7 @@ def get_best_continuous_theta(
             state += "\n" + "theta milieu pas ok et moi pas ok - bouge vers theta pref"
             return False, previous_theta + sign * d_theta_max, state
 
+
 def get_best_discrete_theta(
     previous_theta: float,
     interval: npt.NDArray[np.float64],
@@ -175,22 +176,30 @@ def get_best_discrete_theta(
         theta_points = np.linspace(interval[0], interval[1], nb_search_points)
     else:
         theta_points = np.linspace(interval[1], interval[0] + 2 * np.pi, nb_search_points)
-        
-    # test all theta points and rank them by distance to prefered_theta
+
+    theta_points = np.insert(theta_points, 0, prefered_theta)
+    state += "\n" + f"theta_points: {theta_points}"
+
+    # test all theta points and choose the closest to prefered_theta
     best_theta = None
     best_distance = np.inf
-    for theta in theta_points:
+
+    for idx, theta in enumerate(theta_points):
         joints, elbow_position = get_joints(theta)
         if is_elbow_ok(elbow_position, side):
             distance = abs(angle_diff(theta, prefered_theta))
             if distance < best_distance:
                 best_theta = theta
                 best_distance = distance
-                
+            if idx == 0:
+                # prefered_theta is reachable no need to do more
+                break
+
     if best_theta is not None:
         return True, best_theta, state
     else:
         return False, previous_theta, state
+
 
 def get_best_discrete_theta_min_mouvement(
     previous_theta: float,
@@ -215,8 +224,7 @@ def get_best_discrete_theta_min_mouvement(
         theta_points = np.linspace(interval[0], interval[1], nb_search_points)
     else:
         theta_points = np.linspace(interval[1], interval[0] + 2 * np.pi, nb_search_points)
-        
-    
+
     best_theta = None
     best_distance = np.inf
     for theta in theta_points:
@@ -229,7 +237,7 @@ def get_best_discrete_theta_min_mouvement(
             if distance < best_distance:
                 best_theta = theta
                 best_distance = distance
-                
+
     if best_theta is not None:
         return True, best_theta, state
     else:
