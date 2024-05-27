@@ -24,12 +24,12 @@ def angle_diff(a: float, b: float) -> float:
     return d
 
 
-def random_trajectoy(reachy: ReachySDK) -> None:
+def random_trajectoy(reachy: ReachySDK, debug_pose=False) -> None:
     q = [0, 0, 0, 0, 0, 0, 0]
     ik_r = q
     ik_l = q
-    q0 = [-65, -45, 30, 0, 0, 0, 0]
-    q_amps = [30, 30, 30, 30, 25, 25, 25]
+    q0 = [-65, -45, 0, 45, 0, -45, 0]  # ?? Shouldn't it be -90 for the wrist pitch? Why -45?
+    q_amps = [30, 30, 30, 40, 25, 25, 25]
 
     freq_reductor = 2.0
     freq = [0.3 * freq_reductor, 0.17 * freq_reductor, 0.39 * freq_reductor, 0.18, 0.31, 0.47, 0.25]
@@ -38,7 +38,18 @@ def random_trajectoy(reachy: ReachySDK) -> None:
     while True:
         t = time.time() - t_init + 11
         # randomise the joint angles
-        r_q = [q0[i] + q_amps[i] * np.sin(2 * np.pi * freq[i] * t) for i in range(7)]
+        if not debug_pose:
+            r_q = [q0[i] + q_amps[i] * np.sin(2 * np.pi * freq[i] * t) for i in range(7)]
+        else:
+            r_q = [
+                -35.78853788564081,
+                -15.498597138514409,
+                25.764970562656003,
+                -29.883534556661207,
+                -24.94795468578275,
+                24.47051189664784,
+                -21.197897851824024,
+            ]
         l_q = [r_q[0], -r_q[1], -r_q[2], r_q[3], -r_q[4], r_q[5], -r_q[6]]
 
         M_r = reachy.r_arm.forward_kinematics(r_q)
@@ -83,6 +94,7 @@ def random_trajectoy(reachy: ReachySDK) -> None:
             print("precisions OK")
         else:
             print("precisions NOT OK!!")
+            print(f"initial r_q {r_q}")
             print(f"ik_r {np.round(ik_r, 3).tolist()}")
             print(f"ik_l {np.round(ik_l, 3).tolist()}")
             print(f"M_r {M_r}")
@@ -93,6 +105,7 @@ def random_trajectoy(reachy: ReachySDK) -> None:
             print("Symmetry OK")
         else:
             print("Symmetry NOT OK!!")
+            print(f"initial r_q {r_q}")
             print(f"ik_r {np.round(ik_r, 3).tolist()}")
             print(f"ik_l_sym {np.round(l_mod, 3).tolist()}")
             print(f"M_r {M_r}")
@@ -122,7 +135,7 @@ def main_test() -> None:
         joint.goal_position = 0
     time.sleep(1.0)
 
-    random_trajectoy(reachy)
+    random_trajectoy(reachy, debug_pose=False)
 
     print("Finished testing, disconnecting from Reachy...")
     time.sleep(0.5)

@@ -169,79 +169,94 @@ def get_best_discrete_theta(
         side = -1
 
     state = f"{arm}"
-    state += "\n" + f"interval: {interval}"
+    state += "\n" + f"interval: {interval}, prefered_theta: {prefered_theta}"
     epsilon = 0.00001
-    # get nb_search_points points in the interval
-    if interval[0] < interval[1]:
-        theta_points = np.linspace(interval[0], interval[1], nb_search_points)
-    else:
-        theta_points = np.linspace(interval[1], interval[0] + 2 * np.pi, nb_search_points)
+    best_theta = None
+    best_distance = np.inf
 
-    theta_points = np.insert(theta_points, 0, prefered_theta)
+    if is_valid_angle(prefered_theta, interval):
+        # if prefered_theta is in the interval, test it first
+        joints, elbow_position = get_joints(prefered_theta)
+        if is_elbow_ok(elbow_position, side):
+            best_theta = prefered_theta
+            best_distance = 0
+            state += "\n" + f"prefered_theta worked!"
+            return True, best_theta, state
+
+    if (abs(abs(interval[0]) + abs(interval[1]) - 2 * np.pi)) < epsilon:
+        # The entire circle is possible, sampling with a vertical symmetry (instead of horizontal) so that the results are symetric for both arms
+        theta_points = np.linspace(np.pi / 2, np.pi / 2 + 2 * np.pi, nb_search_points)
+    else:
+        # Sampling the interval
+        if interval[0] < interval[1]:
+            theta_points = np.linspace(interval[0], interval[1], nb_search_points)
+        else:
+            theta_points = np.linspace(interval[1], interval[0] + 2 * np.pi, nb_search_points)
+
     state += "\n" + f"theta_points: {theta_points}"
+    debug_dict = {}
 
     # test all theta points and choose the closest to prefered_theta
-    best_theta = None
-    best_distance = np.inf
-
-    for idx, theta in enumerate(theta_points):
-        joints, elbow_position = get_joints(theta)
-        if is_elbow_ok(elbow_position, side):
-            distance = abs(angle_diff(theta, prefered_theta))
-            if distance < best_distance:
-                best_theta = theta
-                best_distance = distance
-            if idx == 0:
-                # prefered_theta is reachable no need to do more
-                break
-
-    if best_theta is not None:
-        return True, best_theta, state
-    else:
-        return False, previous_theta, state
-
-
-def get_best_discrete_theta_min_mouvement(
-    previous_theta: float,
-    interval: npt.NDArray[np.float64],
-    get_joints: Any,
-    nb_search_points: int,
-    prefered_theta: float,
-    arm: str,
-    current_joints: npt.NDArray[np.float64],
-) -> Tuple[bool, float, str]:
-    """Searches a valid theta in the interval that minimises the mouvement in joint space.
-    A valid theta is a theta that is reachable and does not make the elbow touch the robot body."""
-    side = 1
-    if arm == "l_arm":
-        side = -1
-
-    state = f"{arm}"
-    state += "\n" + f"interval: {interval}"
-    epsilon = 0.00001
-    # get nb_search_points points in the interval
-    if interval[0] < interval[1]:
-        theta_points = np.linspace(interval[0], interval[1], nb_search_points)
-    else:
-        theta_points = np.linspace(interval[1], interval[0] + 2 * np.pi, nb_search_points)
-
-    best_theta = None
-    best_distance = np.inf
     for theta in theta_points:
         joints, elbow_position = get_joints(theta)
         if is_elbow_ok(elbow_position, side):
-            # test all theta points and rank them by the l2 distance to the current joints
-            # distance = np.linalg.norm(joints - current_joints)
-            # # test all theta points and rank them by the max distance to the current joints
-            distance = np.max(np.abs(joints - current_joints))
+            distance = abs(angle_diff(theta, prefered_theta))
+            debug_dict[theta] = distance
             if distance < best_distance:
                 best_theta = theta
                 best_distance = distance
+        else:
+            debug_dict[theta] = "-1"
+    state += "\n" + f"debug_dict: {debug_dict}"
 
     if best_theta is not None:
         return True, best_theta, state
     else:
         return False, previous_theta, state
+
+
+# To be recoded base on get_best_discrete_theta
+# def get_best_discrete_theta_min_mouvement(
+#     previous_theta: float,
+#     interval: npt.NDArray[np.float64],
+#     get_joints: Any,
+#     nb_search_points: int,
+#     prefered_theta: float,
+#     arm: str,
+#     current_joints: npt.NDArray[np.float64],
+# ) -> Tuple[bool, float, str]:
+#     """Searches a valid theta in the interval that minimises the mouvement in joint space.
+#     A valid theta is a theta that is reachable and does not make the elbow touch the robot body."""
+#     side = 1
+#     if arm == "l_arm":
+#         side = -1
+
+#     state = f"{arm}"
+#     state += "\n" + f"interval: {interval}"
+#     epsilon = 0.00001
+#     # get nb_search_points points in the interval
+#     if interval[0] < interval[1]:
+#         theta_points = np.linspace(interval[0], interval[1], nb_search_points)
+#     else:
+#         theta_points = np.linspace(interval[1], interval[0] + 2 * np.pi, nb_search_points)
+
+#     best_theta = None
+#     best_distance = np.inf
+#     for theta in theta_points:
+#         joints, elbow_position = get_joints(theta)
+#         if is_elbow_ok(elbow_position, side):
+#             # test all theta points and rank them by the l2 distance to the current joints
+#             # distance = np.linalg.norm(joints - current_joints)
+#             # # test all theta points and rank them by the max distance to the current joints
+#             distance = np.max(np.abs(joints - current_joints))
+#             if distance < best_distance:
+#                 best_theta = theta
+#                 best_distance = distance
+
+#     if best_theta is not None:
+#         return True, best_theta, state
+#     else:
+#         return False, previous_theta, state
 
 
 def is_elbow_ok(elbow_position: npt.NDArray[np.float64], side: int) -> bool:
