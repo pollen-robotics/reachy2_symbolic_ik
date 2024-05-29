@@ -191,7 +191,7 @@ def get_best_discrete_theta(
         if interval[0] < interval[1]:
             theta_points = np.linspace(interval[0], interval[1], nb_search_points)
         else:
-            theta_points = np.linspace(interval[1], interval[0] + 2 * np.pi, nb_search_points)
+            theta_points = np.linspace(interval[0], interval[1] + 2 * np.pi, nb_search_points)
 
     state += "\n" + f"theta_points: {theta_points}"
     debug_dict = {}
@@ -262,7 +262,11 @@ def get_best_discrete_theta(
 def is_elbow_ok(elbow_position: npt.NDArray[np.float64], side: int) -> bool:
     """Check if the elbow is in a valid position
     Prevent the elbow to touch the robot body"""
-    return bool(elbow_position[1] * side < -0.2)
+    is_ok = True
+    if elbow_position[1] * side > -0.15:
+        if elbow_position[0] < 0.9:
+            is_ok = False
+    return is_ok
 
 
 def is_valid_angle(angle: float, interval: list[float]) -> bool:
