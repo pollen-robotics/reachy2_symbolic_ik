@@ -156,7 +156,7 @@ def get_best_continuous_theta(
 
 def get_best_discrete_theta(
     previous_theta: float,
-    interval: npt.NDArray[np.float64],
+    interval: list[float],
     get_joints: Any,
     nb_search_points: int,
     prefered_theta: float,
@@ -180,11 +180,12 @@ def get_best_discrete_theta(
         if is_elbow_ok(elbow_position, side):
             best_theta = prefered_theta
             best_distance = 0
-            state += "\n" + f"prefered_theta worked!"
+            state += "\n" + "prefered_theta worked!"
             return True, best_theta, state
 
     if (abs(abs(interval[0]) + abs(interval[1]) - 2 * np.pi)) < epsilon:
-        # The entire circle is possible, sampling with a vertical symmetry (instead of horizontal) so that the results are symetric for both arms
+        # The entire circle is possible, sampling with a vertical symmetry (instead of horizontal) 
+        # so that the results are symetric for both arms
         theta_points = np.linspace(np.pi / 2, np.pi / 2 + 2 * np.pi, nb_search_points)
     else:
         # Sampling the interval
@@ -206,7 +207,7 @@ def get_best_discrete_theta(
                 best_theta = theta
                 best_distance = distance
         else:
-            debug_dict[theta] = "-1"
+            debug_dict[theta] = np.inf
     state += "\n" + f"debug_dict: {debug_dict}"
 
     if best_theta is not None:

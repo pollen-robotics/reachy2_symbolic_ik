@@ -25,7 +25,7 @@ class SymbolicIK:
         upper_arm_size: np.float64 = np.float64(0.28),
         forearm_size: np.float64 = np.float64(0.28),
         gripper_size: np.float64 = np.float64(0.10),
-        wrist_limit: int = 42.5,
+        wrist_limit: np.float64 = np.float64(42.5),
         # shoulder orientation and shoulder position are for the rigth arm
         shoulder_orientation_offset: list[int] = [10, 0, 15],
         shoulder_position: npt.NDArray[np.float64] = np.array([0.0, -0.2, 0.0]),
