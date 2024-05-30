@@ -80,13 +80,13 @@ def random_trajectoy(reachy: ReachySDK, debug_pose=False, bypass=False) -> None:
             t0 = time.time()
             try:
                 ik_r = reachy.r_arm.inverse_kinematics(M_r)
-            except:
+            except Exception as e:
                 # print("Failed to calculate IK for right arm, this should not happen!")
                 raise ValueError("Failed to calculate IK for right arm, this should not happen!")
             t1 = time.time()
             try:
                 ik_l = reachy.l_arm.inverse_kinematics(M_l)
-            except:
+            except Exception as e:
                 # print("Failed to calculate IK for left arm, this should not happen!")
                 raise ValueError("Failed to calculate IK for left arm, this should not happen!")
             t2 = time.time()
@@ -143,7 +143,7 @@ def random_trajectoy(reachy: ReachySDK, debug_pose=False, bypass=False) -> None:
 
 
 def test_joints(reachy: ReachySDK) -> None:
-    q0 = [-65, -45, 0, 45, 0, -45, 0]  # ?? Shouldn't it be -90 for the wrist pitch? Why -45?
+    # q0 = [-65, -45, 0, 45, 0, -45, 0]  # ?? Shouldn't it be -90 for the wrist pitch? Why -45?
 
     r_q = [
         -88.382705930125,

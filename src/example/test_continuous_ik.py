@@ -24,12 +24,13 @@ def angle_diff(a: float, b: float) -> float:
     return d
 
 
-def random_trajectoy(reachy: ReachySDK) -> None:
+def random_trajectoy(reachy: ReachySDK) -> None: # noqa: C901
     x0, y0, z0 = 0.3, -0.4, -0.3
     roll0, pitch0, yaw0 = 0.0, -np.pi / 2, 0.0
     reductor = 1.0
     freq_reductor = 2.0
-    # Note Orbita3D's cone is currently limited to 42.5 rad in the control loop, but this can't be represented correctly with the xyz euler angles used here
+    # Note Orbita3D's cone is currently limited to 42.5 rad in the control loop, 
+    # but this can't be represented correctly with the xyz euler angles used here
     amp = [0.35 * reductor, 0.35 * reductor, 0.35 * reductor, np.pi / 6, np.pi / 6, np.pi / 6]
     freq = [0.3 * freq_reductor, 0.17 * freq_reductor, 0.39 * freq_reductor, 0.18, 0.31, 0.47]
     control_freq = 120
@@ -58,13 +59,13 @@ def random_trajectoy(reachy: ReachySDK) -> None:
         t0 = time.time()
         try:
             ik_r = reachy.r_arm.inverse_kinematics(M_r)
-        except:
+        except Exception as e:
             print("Failed to calculate IK for right arm, this should not happen!")
             # raise ValueError("Failed to calculate IK for right arm, this should not happen!")
         t1 = time.time()
         try:
             ik_l = reachy.l_arm.inverse_kinematics(M_l)
-        except:
+        except Exception as e:
             print("Failed to calculate IK for left arm, this should not happen!")
             # raise ValueError("Failed to calculate IK for left arm, this should not happen!")
 

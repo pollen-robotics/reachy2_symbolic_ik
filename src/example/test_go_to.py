@@ -175,7 +175,7 @@ def null_space_test() -> None:
 
     reachy.turn_on()
 
-    symbolic_ik_r = SymbolicIK(arm="r_arm", upper_arm_size=0.28, forearm_size=0.28, gripper_size=0.10, wrist_limit=42.5)
+    # symbolic_ik_r = SymbolicIK(arm="r_arm", upper_arm_size=0.28, forearm_size=0.28, gripper_size=0.10, wrist_limit=42.5)
     symbolic_ik_l = SymbolicIK(arm="l_arm", upper_arm_size=0.28, forearm_size=0.28, gripper_size=0.10, wrist_limit=42.5)
 
     goal_pose = np.array(
