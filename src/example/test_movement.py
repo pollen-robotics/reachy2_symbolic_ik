@@ -8,6 +8,9 @@ from scipy.spatial.transform import Rotation as R
 from reachy2_symbolic_ik.utils import make_homogenous_matrix_from_rotation_matrix
 
 
+##TODO fix this test : movement test can not work with the discrete control function
+
+
 def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> None:
     if arm == "r_arm":
         ik = reachy.r_arm.inverse_kinematics(pose)
@@ -23,7 +26,6 @@ def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> No
         print(f"pose diff {pose_diff}")
         for joint, goal_pos in zip(reachy.l_arm.joints.values(), ik):
             joint.goal_position = goal_pos
-
 
 def make_line(
     reachy: ReachySDK, start_pose: npt.NDArray[np.float64], end_pose: npt.NDArray[np.float64], nbr_points: int = 100

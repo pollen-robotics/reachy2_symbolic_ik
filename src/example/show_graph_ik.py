@@ -25,8 +25,9 @@ def show_graph(symbolic_ik: SymbolicIK, goal_pose: npt.NDArray[np.float64]) -> N
         else:
             theta_middle = (result[1][0] + result[1][1]) / 2
         joints, elbow_position = result[2](theta_middle)
-    SymbolicIK
+    # SymbolicIK
 
+    
     intersection_circle = symbolic_ik.get_intersection_circle(goal_pose)
     print(intersection_circle)
     limitation_wrist_circle = symbolic_ik.get_limitation_wrist_circle(goal_pose)
@@ -404,7 +405,7 @@ def main() -> None:
         elbow_orientation_offset=[0, 0, 0],
     )
     # goal_position = [0.55, -0.3, -0.2]
-    goal_position = [0.0, -0.2, -0.66]
+    goal_position = [0.0001, -0.2, -0.65]
     goal_orientation = [0, 0, 0]
     # goal_orientation = [0, -np.pi / 3, np.pi / 5]
     goal_pose = np.array([goal_position, goal_orientation])

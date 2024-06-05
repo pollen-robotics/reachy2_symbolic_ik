@@ -69,3 +69,11 @@ def test_class() -> None:
     result = symbolic_ik.is_reachable(goal_pose)
 
     assert not (result[0])
+
+    goal_position = [0.35, -0.2, -0.28]
+    goal_orientation = [0.0, -np.pi / 2, 0.0]
+    goal_pose = [goal_position, goal_orientation]
+
+    result = symbolic_ik.is_reachable(goal_pose)
+
+    assert result[0]

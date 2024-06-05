@@ -24,6 +24,9 @@ def angle_diff(a: float, b: float) -> float:
     return d
 
 
+
+#TODO fix this test : continuous test can not work with the discrete control function
+
 def random_trajectoy(reachy: ReachySDK) -> None:  # noqa: C901
     x0, y0, z0 = 0.3, -0.4, -0.3
     roll0, pitch0, yaw0 = 0.0, -np.pi / 2, 0.0

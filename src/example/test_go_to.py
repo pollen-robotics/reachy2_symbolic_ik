@@ -76,7 +76,7 @@ def go_to_pose_with_all_theta(
 def go_to_pose_with_choosen_theta(
     reachy: ReachySDK, symbolic_ik: SymbolicIK, pose: npt.NDArray[np.float64], theta: float, arm: str
 ) -> None:
-    is_reachable, interval, get_joints = symbolic_ik.is_reachable(pose)
+    is_reachable, interval, get_joints, _ = symbolic_ik.is_reachable(pose)
     if is_reachable:
         joints, elbow_position = get_joints(theta)
         print(f"joints {joints}")
@@ -148,7 +148,7 @@ def test_poses(reachy: ReachySDK, r_symbolic_ik: SymbolicIK, l_symbolic_ik: Symb
     )
 
     for r_goal_pose in r_goal_poses:
-        is_reachable, interval, get_joints = r_symbolic_ik.is_reachable(r_goal_pose)
+        is_reachable, interval, get_joints, _ = r_symbolic_ik.is_reachable(r_goal_pose)
         print(f"Is reachable {is_reachable}")
         rotation_matrix = R.from_euler("xyz", r_goal_pose[1]).as_matrix()
         goal_pose = make_homogenous_matrix_from_rotation_matrix(r_goal_pose[0], rotation_matrix)
@@ -156,7 +156,7 @@ def test_poses(reachy: ReachySDK, r_symbolic_ik: SymbolicIK, l_symbolic_ik: Symb
         time.sleep(2.0)
 
     for l_goal_pose in l_goal_poses:
-        is_reachable, interval, get_joints = l_symbolic_ik.is_reachable(l_goal_pose)
+        is_reachable, interval, get_joints, _ = l_symbolic_ik.is_reachable(l_goal_pose)
         print(f"Is reachable {is_reachable}")
         rotation_matrix = R.from_euler("xyz", l_goal_pose[1]).as_matrix()
         goal_pose = make_homogenous_matrix_from_rotation_matrix(l_goal_pose[0], rotation_matrix)

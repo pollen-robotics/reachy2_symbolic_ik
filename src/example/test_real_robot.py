@@ -7,6 +7,7 @@ from scipy.spatial.transform import Rotation as R
 
 from reachy2_symbolic_ik.utils import make_homogenous_matrix_from_rotation_matrix
 
+# TODO fix poses to have reachable poses
 
 def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> None:
     pose = make_homogenous_matrix_from_rotation_matrix(pose[0], R.from_euler("xyz", pose[1]).as_matrix())
