@@ -24,12 +24,21 @@ def angle_diff(a: float, b: float) -> float:
     return d
 
 
-def random_trajectoy(reachy: ReachySDK, debug_pose=False, bypass=False) -> None:
-    q = [0, 0, 0, 0, 0, 0, 0]
+def set_joints(reachy: ReachySDK, joints: list[float], arm: str) -> None:
+    if arm == "r_arm":
+        for joint, goal_pos in zip(reachy.r_arm.joints.values(), joints):
+            joint.goal_position = goal_pos
+    elif arm == "l_arm":
+        for joint, goal_pos in zip(reachy.l_arm.joints.values(), joints):
+            joint.goal_position = goal_pos
+
+
+def random_trajectoy(reachy: ReachySDK, debug_pose: bool = False, bypass: bool = False) -> None:
+    q = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     ik_r = q
     ik_l = q
-    q0 = [-45, -60, 0, -45, 0, 0, 0]  # ?? Shouldn't it be -90 for the wrist pitch? Why -45?
-    q_amps = [30, 30, 30, 45, 25, 25, 90]
+    q0 = [-45.0, -60.0, 0.0, -45.0, 0.0, 0.0, 0.0]  # ?? Shouldn't it be -90 for the wrist pitch? Why -45?
+    q_amps = [30.0, 30.0, 30.0, 45.0, 25.0, 25.0, 90.0]
 
     freq_reductor = 2.0
     freq = [0.3 * freq_reductor, 0.17 * freq_reductor, 0.39 * freq_reductor, 0.18, 0.31, 0.47, 0.25]
@@ -82,13 +91,13 @@ def random_trajectoy(reachy: ReachySDK, debug_pose=False, bypass=False) -> None:
                 ik_r = reachy.r_arm.inverse_kinematics(M_r)
             except Exception as e:
                 # print("Failed to calculate IK for right arm, this should not happen!")
-                raise ValueError("Failed to calculate IK for right arm, this should not happen!")
+                raise ValueError(f"Failed to calculate IK for right arm, this should not happen! {e}")
             t1 = time.time()
             try:
                 ik_l = reachy.l_arm.inverse_kinematics(M_l)
             except Exception as e:
                 # print("Failed to calculate IK for left arm, this should not happen!")
-                raise ValueError("Failed to calculate IK for left arm, this should not happen!")
+                raise ValueError(f"Failed to calculate IK for left arm, this should not happen! {e}")
             t2 = time.time()
             print(f"time_r: {(t1-t0)*1000:.1f}ms\ntime_l: {(t2-t1)*1000:.1f}ms")
         else:
@@ -96,11 +105,14 @@ def random_trajectoy(reachy: ReachySDK, debug_pose=False, bypass=False) -> None:
             ik_l = l_q
         # print(f" x,y,z, {x,y,z}, roll,pitch,yaw {roll,pitch,yaw}")
 
-        for joint, goal_pos in zip(reachy.r_arm.joints.values(), ik_r):
-            joint.goal_position = goal_pos
+        set_joints(reachy, ik_r, "r_arm")
+        set_joints(reachy, ik_l, "l_arm")
 
-        for joint, goal_pos in zip(reachy.l_arm.joints.values(), ik_l):
-            joint.goal_position = goal_pos
+        # for joint, goal_pos in zip(reachy.r_arm.joints.values(), ik_r):
+        #     joint.goal_position = goal_pos
+
+        # for joint, goal_pos in zip(reachy.l_arm.joints.values(), ik_l):
+        #     joint.goal_position = goal_pos
 
         # Testing the symmetry
         l_mod = np.array([ik_l[0], -ik_l[1], -ik_l[2], ik_l[3], -ik_l[4], ik_l[5], -ik_l[6]])

@@ -24,12 +24,12 @@ def angle_diff(a: float, b: float) -> float:
     return d
 
 
-def random_trajectoy(reachy: ReachySDK) -> None: # noqa: C901
+def random_trajectoy(reachy: ReachySDK) -> None:  # noqa: C901
     x0, y0, z0 = 0.3, -0.4, -0.3
     roll0, pitch0, yaw0 = 0.0, -np.pi / 2, 0.0
     reductor = 1.0
     freq_reductor = 2.0
-    # Note Orbita3D's cone is currently limited to 42.5 rad in the control loop, 
+    # Note Orbita3D's cone is currently limited to 42.5 rad in the control loop,
     # but this can't be represented correctly with the xyz euler angles used here
     amp = [0.35 * reductor, 0.35 * reductor, 0.35 * reductor, np.pi / 6, np.pi / 6, np.pi / 6]
     freq = [0.3 * freq_reductor, 0.17 * freq_reductor, 0.39 * freq_reductor, 0.18, 0.31, 0.47]
@@ -60,13 +60,13 @@ def random_trajectoy(reachy: ReachySDK) -> None: # noqa: C901
         try:
             ik_r = reachy.r_arm.inverse_kinematics(M_r)
         except Exception as e:
-            print("Failed to calculate IK for right arm, this should not happen!")
+            print(f"Failed to calculate IK for right arm, this should not happen! {e}")
             # raise ValueError("Failed to calculate IK for right arm, this should not happen!")
         t1 = time.time()
         try:
             ik_l = reachy.l_arm.inverse_kinematics(M_l)
         except Exception as e:
-            print("Failed to calculate IK for left arm, this should not happen!")
+            print(f"Failed to calculate IK for left arm, this should not happen!, {e}")
             # raise ValueError("Failed to calculate IK for left arm, this should not happen!")
 
         t2 = time.time()
@@ -112,6 +112,7 @@ def random_trajectoy(reachy: ReachySDK) -> None: # noqa: C901
         max_angular_change_r = np.rad2deg(np.max(np.abs(r_diff)))
         max_angular_change_l = np.rad2deg(np.max(np.abs(l_diff)))
 
+        # TODO fix - actually not working because connected to the discrete controle function
         if max_angular_change_r < max_angular_change and max_angular_change_l < max_angular_change:
             print("Continuity OK")
         else:

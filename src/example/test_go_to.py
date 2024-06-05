@@ -189,7 +189,7 @@ def null_space_test() -> None:
     # transform to  goal_position, goal_orientation
     goal_position = goal_pose[:3, 3]
     goal_orientation = R.from_matrix(goal_pose[:3, :3]).as_euler("xyz")
-    pose = [goal_position, goal_orientation]
+    pose = np.array([goal_position, goal_orientation])
     go_to_pose_with_all_theta(reachy, symbolic_ik_l, pose, "l_arm")
     time.sleep(1.0)
 

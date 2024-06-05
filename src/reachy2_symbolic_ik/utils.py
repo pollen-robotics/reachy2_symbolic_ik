@@ -184,7 +184,7 @@ def get_best_discrete_theta(
             return True, best_theta, state
 
     if (abs(abs(interval[0]) + abs(interval[1]) - 2 * np.pi)) < epsilon:
-        # The entire circle is possible, sampling with a vertical symmetry (instead of horizontal) 
+        # The entire circle is possible, sampling with a vertical symmetry (instead of horizontal)
         # so that the results are symetric for both arms
         theta_points = np.linspace(np.pi / 2, np.pi / 2 + 2 * np.pi, nb_search_points)
     else:
