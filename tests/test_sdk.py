@@ -48,10 +48,10 @@ def test_continuous_ik():
     # prev_M_r = get_homogeneous_matrix_msg_from_euler((x0, y0, z0), (roll0, pitch0, yaw0), degrees=False)
     # prev_M_l = get_homogeneous_matrix_msg_from_euler((x0, -y0, z0), (-roll0, pitch0, -yaw0), degrees=False)
     # first = True
-    
+
     # TODO fix this test : continuous test can not work with the discrete control function
 
-    # 
+    #
     #     # t_init = time.time()
     # while time.time() - t_init < 10:
     #     t = time.time() - t_init + 11
