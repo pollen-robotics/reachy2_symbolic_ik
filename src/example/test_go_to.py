@@ -128,12 +128,16 @@ def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> No
 def test_poses(reachy: ReachySDK, r_symbolic_ik: SymbolicIK, l_symbolic_ik: SymbolicIK) -> None:
     r_goal_poses = np.array(
         [
+            # [[0.0, -0.2, -0.66], [0, 0, 0]],
+            # [[0.0, -0.86, -0.0], [-np.pi / 2, 0, 0]],
+            # [[0.0, -0.58, -0.28], [-np.pi / 2, -np.pi / 2, 0]],
+            # [[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]],
+            # [[0.66, -0.2, -0.0], [0, -np.pi / 2, 0]],
             [[0.0, -0.2, -0.66], [0, 0, 0]],
-            [[0.0, -0.86, -0.0], [-np.pi / 2, 0, 0]],
-            [[0.0, -0.58, -0.28], [-np.pi / 2, -np.pi / 2, 0]],
-            [[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]],
-            [[0.66, -0.2, -0.0], [0, -np.pi / 2, 0]],
-            [[0.0, -0.2, -0.66], [0, 0, 0]],
+            [[0.2, 0.20, -0.18], [np.pi / 2, -np.pi / 2, 0]],
+            [[0.10, 0.20, -0.22], [np.pi / 3, -np.pi / 2, 0]],
+            [[0.10, 0.25, -0.22], [np.pi / 3, -np.pi / 2, 0]],
+
         ]
     )
     l_goal_poses = np.array(

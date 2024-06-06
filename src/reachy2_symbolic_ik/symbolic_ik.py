@@ -31,7 +31,7 @@ class SymbolicIK:
         shoulder_position: npt.NDArray[np.float64] = np.array([0.0, -0.2, 0.0]),
         # TODO make sure it works with all 3 orientations
         elbow_orientation_offset: list[int] = [0, 0, 0],
-        elbow_limits: int = 130,
+        elbow_limits: int = 127,
         projection_margin: float = 1e-8,
         backward_limit: float = 1e-10,
     ) -> None:
