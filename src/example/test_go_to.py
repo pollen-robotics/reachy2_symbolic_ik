@@ -137,7 +137,6 @@ def test_poses(reachy: ReachySDK, r_symbolic_ik: SymbolicIK, l_symbolic_ik: Symb
             [[0.2, 0.20, -0.18], [np.pi / 2, -np.pi / 2, 0]],
             [[0.10, 0.20, -0.22], [np.pi / 3, -np.pi / 2, 0]],
             [[0.10, 0.25, -0.22], [np.pi / 3, -np.pi / 2, 0]],
-
         ]
     )
     l_goal_poses = np.array(
