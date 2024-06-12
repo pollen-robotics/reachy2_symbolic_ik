@@ -128,15 +128,15 @@ def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> No
 def test_poses(reachy: ReachySDK, r_symbolic_ik: SymbolicIK, l_symbolic_ik: SymbolicIK) -> None:
     r_goal_poses = np.array(
         [
+            [[0.0001, -0.2, -0.65], [0, 0, 0]],
+            [[0.0001, -0.85, -0.0], [-np.pi / 2, 0, 0]],
+            [[0.0, -0.58, -0.28], [-np.pi / 2, -np.pi / 2, 0]],
+            [[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]],
+            [[0.66, -0.2, -0.0], [0, -np.pi / 2, 0]],
             # [[0.0, -0.2, -0.66], [0, 0, 0]],
-            # [[0.0, -0.86, -0.0], [-np.pi / 2, 0, 0]],
-            # [[0.0, -0.58, -0.28], [-np.pi / 2, -np.pi / 2, 0]],
-            # [[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]],
-            # [[0.66, -0.2, -0.0], [0, -np.pi / 2, 0]],
-            [[0.0, -0.2, -0.66], [0, 0, 0]],
-            [[0.2, 0.20, -0.18], [np.pi / 2, -np.pi / 2, 0]],
-            [[0.10, 0.20, -0.22], [np.pi / 3, -np.pi / 2, 0]],
-            [[0.10, 0.25, -0.22], [np.pi / 3, -np.pi / 2, 0]],
+            # [[0.2, 0.20, -0.18], [np.pi / 2, -np.pi / 2, 0]],
+            # [[0.10, 0.20, -0.22], [np.pi / 3, -np.pi / 2, 0]],
+            # [[0.10, 0.25, -0.22], [np.pi / 3, -np.pi / 2, 0]],
         ]
     )
     l_goal_poses = np.array(
@@ -151,8 +151,10 @@ def test_poses(reachy: ReachySDK, r_symbolic_ik: SymbolicIK, l_symbolic_ik: Symb
     )
 
     for r_goal_pose in r_goal_poses:
+        print(f"Goal pose {r_goal_pose}")
         is_reachable, interval, get_joints, _ = r_symbolic_ik.is_reachable(r_goal_pose)
         print(f"Is reachable {is_reachable}")
+        print(f"Goal pose {r_goal_pose}")
         rotation_matrix = R.from_euler("xyz", r_goal_pose[1]).as_matrix()
         goal_pose = make_homogenous_matrix_from_rotation_matrix(r_goal_pose[0], rotation_matrix)
         go_to_pose(reachy, goal_pose, "r_arm")
@@ -215,7 +217,12 @@ def main_test() -> None:
     symbolic_ik_r = SymbolicIK(shoulder_orientation_offset=[10, 0, 15], elbow_orientation_offset=[0, 0, 0])
     symbolic_ik_l = SymbolicIK(arm="l_arm", shoulder_orientation_offset=[10, 0, 15], elbow_orientation_offset=[0, 0, 0])
 
-    test_poses(reachy, symbolic_ik_r, symbolic_ik_l)
+    # test_poses(reachy, symbolic_ik_r, symbolic_ik_l)
+
+    mat2 = np.array([[-0.83356, -0.2197, -0.50686, 0.35384], [0.21478, -0.97422, 0.06905, 0.2214], [-0.50896, -0.051306, 0.85926, -0.2526], [0, 0, 0, 1]])
+
+    go_to_pose(reachy, mat2, "r_arm")
+
 
     # go_to_joint_positions(reachy, [0, 0, 0, 0, 0, 0, 0], "r_arm")
     # go_to_joint_positions(reachy, [0, 0, 0, 0, 0, 0, 0], "l_arm")
@@ -230,7 +237,7 @@ def main_test() -> None:
     #     print("-20")
     #     time.sleep(1.0)
 
-    time.sleep(1.0)
+    time.sleep(10.0)
 
     # Rigth arm
     # Go to a specific pose with the right arm

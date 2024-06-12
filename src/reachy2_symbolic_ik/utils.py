@@ -3,6 +3,7 @@ from typing import Any, Tuple
 
 import numpy as np
 import numpy.typing as npt
+from scipy.spatial.transform import Rotation
 
 
 def make_homogenous_matrix_from_rotation_matrix(
@@ -42,6 +43,15 @@ def rotation_matrix_from_vector(vect: npt.NDArray[np.float64]) -> npt.NDArray[np
     kmat = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
     rotation_matrix = np.array(np.eye(3) + kmat + kmat.dot(kmat) * ((1 - c) / (s**2)))
     return rotation_matrix
+
+
+def get_euler_from_homogeneous_matrix(
+    homogeneous_matrix: npt.NDArray[np.float64], degrees: bool = False
+) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    position = homogeneous_matrix[:3, 3]
+    rotation_matrix = homogeneous_matrix[:3, :3]
+    euler_angles = Rotation.from_matrix(rotation_matrix).as_euler("xyz", degrees=degrees)
+    return position, euler_angles
 
 
 def limit_theta_to_interval(theta: float, previous_theta: float, interval: list[float]) -> float:
@@ -156,7 +166,7 @@ def get_best_continuous_theta(
 
 def get_best_discrete_theta(
     previous_theta: float,
-    interval: list[float],
+    interval: npt.NDArray[np.float64],
     get_joints: Any,
     nb_search_points: int,
     prefered_theta: float,
@@ -270,13 +280,13 @@ def is_elbow_ok(elbow_position: npt.NDArray[np.float64], side: int) -> bool:
     return is_ok
 
 
-def is_valid_angle(angle: float, interval: list[float]) -> bool:
+def is_valid_angle(angle: float, interval: npt.NDArray[np.float64]) -> bool:
     """Check if an angle is in the interval"""
     if interval[0] % (2 * np.pi) == interval[1] % (2 * np.pi):
         return True
     if interval[0] < interval[1]:
-        return (interval[0] <= angle) and (angle <= interval[1])
-    return (interval[0] <= angle) or (angle <= interval[1])
+        return bool(interval[0] <= angle) and (angle <= interval[1])
+    return bool(interval[0] <= angle) or (angle <= interval[1])
 
 
 def angle_diff(a: float, b: float) -> float:
@@ -284,6 +294,57 @@ def angle_diff(a: float, b: float) -> float:
     d = a - b
     d = ((d + math.pi) % (2 * math.pi)) - math.pi
     return d
+
+
+def allow_multiturn(new_joints: list[float], prev_joints: list[float], name: str) -> list[float]:
+    """This function will always guarantee that the joint takes the shortest path to the new position.
+    The practical effect is that it will allow the joint to rotate more than 2pi if it is the shortest path.
+    """
+    for i in range(len(new_joints)):
+        # if i == 0:
+        #     self.logger.warning(
+        #         f"Joint 6: [{new_joints[i]}, {prev_joints[i]}], angle_diff: {angle_diff(new_joints[i], prev_joints[i])}"
+        #     )
+        diff = angle_diff(new_joints[i], prev_joints[i])
+        new_joints[i] = prev_joints[i] + diff
+    # Temp : showing a warning if a multiturn is detected. TODO do better. This info is critical
+    # and should be saved dyamically on disk.
+    # indexes_that_can_multiturn = [0, 2, 6]
+    # for index in indexes_that_can_multiturn:
+    # if abs(new_joints[index]) > np.pi:
+    #     logger.warning(
+    #         f" {name} Multiturn detected on joint {index} with value: {new_joints[index]} @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
+    #         throttle_duration_sec=1,
+    #     )
+    # TEMP forbidding multiturn
+    # new_joints[index] = np.sign(new_joints[index]) * np.pi
+    return new_joints
+
+
+def limit_orbita3d_joints(joints: list[float], orbita3D_max_angle: float) -> list[float]:
+    """Casts the 3 orientations to ensure the orientation is reachable by an Orbita3D. i.e. casting into Orbita's cone."""
+    # self.logger.info(f"HEAD initial: {joints}")
+    rotation = Rotation.from_euler("XYZ", [joints[0], joints[1], joints[2]], degrees=False)
+    new_joints = rotation.as_euler("ZYZ", degrees=False)
+    new_joints[1] = min(orbita3D_max_angle, max(-orbita3D_max_angle, new_joints[1]))
+    rotation = Rotation.from_euler("ZYZ", new_joints, degrees=False)
+    [roll, pitch, yaw] = rotation.as_euler("XYZ", degrees=False)
+    joints = [float(roll), float(pitch), float(yaw)]
+    # self.logger.info(f"HEAD final: {new_joints}")
+
+    return joints
+
+
+def limit_orbita3d_joints_wrist(joints: list[float], orbita3D_max_angle: float) -> list[float]:
+    """Casts the 3 orientations to ensure the orientation is reachable by an Orbita3D using the wrist conventions.
+    i.e. casting into Orbita's cone."""
+    wrist_joints = joints[4:7]
+
+    wrist_joints = limit_orbita3d_joints(wrist_joints, orbita3D_max_angle)
+
+    joints[4:7] = wrist_joints
+
+    return joints
 
 
 def show_circle(
