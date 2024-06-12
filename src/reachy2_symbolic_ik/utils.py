@@ -154,6 +154,45 @@ def get_best_continuous_theta(
             return False, previous_theta + sign * d_theta_max, state
 
 
+def get_best_continuous_theta2(
+    previous_theta: float,
+    interval: list[float],
+    get_joints: Any,
+    nb_search_points: int,
+    d_theta_max: float,
+    prefered_theta: float,
+    arm: str,
+) -> Tuple[bool, float, str]:
+    """Get the best theta to aim for,
+    tend to the closest reachable theta (sampled with nb_search_points) to prefered_theta"""
+    side = 1
+    if arm == "l_arm":
+        side = -1
+
+    state = f"{arm}"
+    state += "\n" + f"interval: {interval}"
+    epsilon = 0.00001
+    is_reachable, theta_goal, state = get_best_discrete_theta(
+        previous_theta, interval, get_joints, nb_search_points, prefered_theta, arm
+    )
+    if not is_reachable:
+        # No solution was found
+        return False, previous_theta, state
+
+    # A solution was found
+    if abs(angle_diff(theta_goal, previous_theta)) < d_theta_max:
+        # theta_goal is reachable and close to previous theta
+        state += "\n" + "theta theta_goal ok et proche"
+        return True, theta_goal, state
+    else:
+        # middle theta is reachable but far from previous theta
+        sign = angle_diff(theta_goal, previous_theta) / np.abs(angle_diff(theta_goal, previous_theta))
+        state += "\n" + "theta theta_goal ok mais loin"
+        theta_tends = previous_theta + sign * d_theta_max
+        # Saying True here is not always true. It could be that the intermediate theta_tends is not reachable, but eventually it will reach a reachable theta
+        return True, theta_tends, state
+
+
 def get_best_discrete_theta(
     previous_theta: float,
     interval: list[float],
