@@ -304,7 +304,7 @@ def is_elbow_ok(elbow_position: npt.NDArray[np.float64], side: int) -> bool:
     Prevent the elbow to touch the robot body"""
     is_ok = True
     if elbow_position[1] * side > -0.15:
-        if elbow_position[0] < 0.9:
+        if elbow_position[0] < 0.09:
             is_ok = False
     return is_ok
 
