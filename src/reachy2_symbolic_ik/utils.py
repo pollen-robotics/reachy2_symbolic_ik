@@ -3,6 +3,7 @@ from typing import Any, Tuple
 
 import numpy as np
 import numpy.typing as npt
+import copy
 
 
 def make_homogenous_matrix_from_rotation_matrix(
@@ -299,12 +300,64 @@ def get_best_discrete_theta(
 #         return False, previous_theta, state
 
 
+def get_best_theta_to_current_joints(
+    get_joints: Any,
+    nb_search_points: int,
+    current_joints: list[float],
+    arm: str,
+) -> Tuple[float, str]:
+    """Searches all theta in the entire circle that minimises the distance to the current joints."""
+    best_theta = None
+    best_distance = np.inf
+    state = ""
+    current_joints = copy.deepcopy(current_joints)
+    # # modulo 2pi on all joints
+    # for i in range(len(current_joints)):
+    #     current_joints[i] = ((current_joints[i] + np.pi) % (2 * np.pi)) - np.pi
+
+    # Simple linear search
+    # for theta in np.linspace(-np.pi, np.pi, nb_search_points):
+    #     joints, elbow_position = get_joints(theta)
+    #     distance = np.linalg.norm(joints - current_joints)
+    #     if distance < best_distance:
+    #         best_theta = theta
+    #         best_distance = distance
+
+    # Dichotomic search to find the best theta instead
+    low = -np.pi
+    high = np.pi
+    tolerance = 0.001
+
+    while (high - low) > tolerance:
+        mid1 = low + (high - low) / 3
+        mid2 = high - (high - low) / 3
+        joints1, elbow_position1 = get_joints(mid1)
+        joints2, elbow_position2 = get_joints(mid2)
+        diff1 = [angle_diff(joints1[i], current_joints[i]) for i in range(len(current_joints))]
+        diff2 = [angle_diff(joints2[i], current_joints[i]) for i in range(len(current_joints))]
+
+        f_mid1 = np.linalg.norm(diff1)
+        f_mid2 = np.linalg.norm(diff2)
+
+        if f_mid1 < f_mid2:
+            high = mid2
+        else:
+            low = mid1
+
+    best_theta = (low + high) / 2
+    joints, _ = get_joints(best_theta)
+    best_distance = np.linalg.norm(joints - current_joints)
+    state += f"best_distance = {best_distance}"
+
+    return best_theta, state
+
+
 def is_elbow_ok(elbow_position: npt.NDArray[np.float64], side: int) -> bool:
     """Check if the elbow is in a valid position
     Prevent the elbow to touch the robot body"""
     is_ok = True
     if elbow_position[1] * side > -0.15:
-        if elbow_position[0] < 0.09:
+        if elbow_position[0] < 0.15:
             is_ok = False
     return is_ok
 
