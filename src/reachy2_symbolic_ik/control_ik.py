@@ -21,13 +21,17 @@ SHOW_GRAPH = False
 
 class ControlIK:
     def __init__(
-        self, current_position: list[list[float]] = np.radians([[0, -10, -15, 0, 0, 0, 0], [0, 10, 15, 0, 0, 0, 0]]), logger: Any = None
+        # TODO : default current position depends of the shoulder offset
+        self,
+        current_position: list[list[float]] = np.radians(
+            [[0.0, -10.0, -15.0, 0.0, 0.0, 0.0, 0.0], [0.0, 10.0, 15.0, 0.0, 0.0, 0.0, 0.0]]
+        ),
+        logger: Any = None,
     ) -> None:
         self.symbolic_ik_solver = {}
         self.last_call_t = {}
         self.call_timeout = 0.5
 
-        # self.prefered_theta = -4 * np.pi / 6  # 5 * np.pi / 4  # np.pi / 4
         self.nb_search_points = 20
 
         self.prefered_theta: Dict[str, float] = {}
@@ -50,13 +54,8 @@ class ControlIK:
             else:
                 self.prefered_theta[arm] = -np.pi - self.prefered_theta["r_arm"]
                 self.previous_sol[arm] = current_position[1]
-            # if name.startswith("r"):
-            #     prefered_theta = self.prefered_theta
-            # else:
-            #     prefered_theta = -np.pi - self.prefered_theta
 
             self.previous_theta[arm] = self.prefered_theta[arm]
-            # self.previous_sol[arm] = None
             self.last_call_t[arm] = 0.0
 
     def symbolic_inverse_kinematics(
@@ -67,12 +66,9 @@ class ControlIK:
         current_position: list[float] = [],
         interval_limit: list[float] = [],
     ) -> Tuple[list[float], bool, str]:
-        
-        self.print_log(f"{name} M: {M}")
-
         goal_position, goal_orientation = get_euler_from_homogeneous_matrix(M)
         goal_pose = np.array([goal_position, goal_orientation])
-        # self.logger.warning(f"{name} goal_position: {goal_position}")
+        self.print_log(f"{name} goal_position: {goal_position}")
 
         if current_position == []:
             current_position = self.previous_sol[name]
@@ -82,30 +78,29 @@ class ControlIK:
                 interval_limit = [-4 * np.pi / 5, 0]
                 if name.startswith("l"):
                     interval_limit = [-np.pi - interval_limit[1], -np.pi - interval_limit[0]]
-            ik_joints, is_reachable, state = self.symbolic_inverse_kinematics_continuous(name, goal_pose, interval_limit, current_position)
+            ik_joints, is_reachable, state = self.symbolic_inverse_kinematics_continuous(
+                name, goal_pose, interval_limit, current_position
+            )
         elif control_type == "discrete":
             if interval_limit == []:
                 interval_limit = [-np.pi, np.pi]
                 if name.startswith("l"):
                     interval_limit = [-np.pi - interval_limit[1], -np.pi - interval_limit[0]]
-            ik_joints, is_reachable, state = self.symbolic_inverse_kinematics_discrete(name, goal_pose, interval_limit, current_position)
+            ik_joints, is_reachable, state = self.symbolic_inverse_kinematics_discrete(
+                name, goal_pose, interval_limit, current_position
+            )
         else:
             raise ValueError(f"Unknown type {control_type}")
 
-        self.print_log(f"{name} ik_brut={ik_joints}")
+        # self.print_log(f"{name} ik_brut={ik_joints}")
 
         ik_joints_raw = ik_joints
         ik_joints = limit_orbita3d_joints_wrist(ik_joints_raw, self.orbita3D_max_angle)
         if not np.allclose(ik_joints, ik_joints_raw):
-            # self.logger.warning(f"{name} Wrist joint limit reached.
-            # \nRaw joints: {ik_joints_raw}\nLimited joints: {ik_joints}")
             self.print_log(f"{name} Wrist joint limit reached. \nRaw joints: {ik_joints_raw}\nLimited joints: {ik_joints}")
 
         ik_joints_allowed = allow_multiturn(ik_joints, self.previous_sol[name], name)
         if not np.allclose(ik_joints_allowed, ik_joints):
-            # self.logger.warning(
-            #     f"{name} Multiturn joint limit reached. \nRaw joints: {ik_joints}\nLimited joints: {ik_joints_allowed}"
-            # )
             self.print_log(
                 f"{name} Multiturn joint limit reached. \nRaw joints: {ik_joints}\nLimited joints: {ik_joints_allowed}"
             )
@@ -117,15 +112,16 @@ class ControlIK:
 
         # TODO reactivate a smoothing technique
         # self.logger.warning(f"{name} ik={ik_joints}", throttle_duration_sec=0.1)
-        self.print_log(f"{name} ik={ik_joints}")
+        # self.print_log(f"{name} ik={ik_joints}")
 
         return ik_joints, is_reachable, state
 
     def symbolic_inverse_kinematics_continuous(
         self, name: str, goal_pose: npt.NDArray[np.float64], interval_limit: list[float], current_position: list[float]
     ) -> Tuple[list[float], bool, str]:
-        self.print_log("continuous")
+        # self.print_log("continuous")
         t = time.time()
+        state = ""
         if abs(t - self.last_call_t[name]) > self.call_timeout:
             # self.logger.warning(
             #     f"{name} Timeout reached. Resetting previous_theta and previous_sol"
@@ -161,7 +157,7 @@ class ControlIK:
             name
         ].is_reachable(goal_pose)
         if is_reachable:
-            is_reachable, theta, state = get_best_continuous_theta(
+            is_reachable, theta, state_theta = get_best_continuous_theta(
                 self.previous_theta[name],
                 interval,
                 theta_to_joints_func,
@@ -169,30 +165,23 @@ class ControlIK:
                 self.prefered_theta[name],
                 self.symbolic_ik_solver[name].arm,
             )
-            # self.logger.warning(
-            #    f"name: {name}, theta: {theta}")
-            theta = limit_theta_to_interval(theta, self.previous_theta[name], interval_limit)
-            # self.logger.warning(
-            #    f"name: {name}, theta: {theta}, previous_theta: {self.previous_theta[name]}, state: {state}"
+            if not is_reachable:
+                self.print_log(f"{name} Pose not reachable. State: {state_theta}")
+                state = "limited by shoulder"
+            # self.print_log(f"name: {name}, theta: {theta}")
+            theta, state_interval = limit_theta_to_interval(theta, self.previous_theta[name], interval_limit)
+            self.print_log(f"{name} State interval: {state_interval}")
+            # self.print_log(
+            #    f"name: {name}, theta: {theta}, previous_theta: {self.previous_theta[name]}, state: {state_theta}"
             # )
             self.previous_theta[name] = theta
             ik_joints, elbow_position = theta_to_joints_func(theta, previous_joints=self.previous_sol[name])
-            # self.logger.warning(
-            #    f"{name} Is reachable. Is truly reachable: {is_reachable}. State: {state}"
+            # self.print_log(
+            #    f"{name} Is reachable. Is truly reachable: {is_reachable}. State: {state_theta}"
             # )
 
         else:
-            # if self.logger is not None:
-            #     self.logger.error(
-            #         f"{name} Pose not reachable before even reaching theta selection. State: {state_reachable}",
-            #         throttle_duration_sec=1,
-            #     )
-            # else:
-            #     print(
-            #         f"{name} Pose not reachable before even reaching theta selection. State: {state_reachable}"
-            #     )
             self.print_log(f"{name} Pose not reachable before even reaching theta selection. State: {state_reachable}")
-            # self.logger.warning(f"{name} Pose not reachable but doing our best")
             is_reachable, interval, theta_to_joints_func = self.symbolic_ik_solver[name].is_reachable_no_limits(goal_pose)
             if is_reachable:
                 is_reachable, theta = tend_to_prefered_theta(
@@ -202,73 +191,26 @@ class ControlIK:
                     d_theta_max,
                     goal_theta=self.prefered_theta[name],
                 )
-                theta = limit_theta_to_interval(theta, self.previous_theta[name], interval_limit)
-                # self.logger.warning(
+                theta, state = limit_theta_to_interval(theta, self.previous_theta[name], interval_limit)
+                # self.print_log(
                 #    f"name: {name}, theta: {theta}, previous_theta: {self.previous_theta[name]}"
                 # )
                 self.previous_theta[name] = theta
                 ik_joints, elbow_position = theta_to_joints_func(theta, previous_joints=self.previous_sol[name])
             else:
-                # if self.logger is not None:
-                #     self.logger.error(
-                #         f"{name} Pose not reachable, this has to be fixed by projecting far poses to reachable sphere"
-                #     )
-                # else:
-                #     print(
-                #         f"{name} Pose not reachable, this has to be fixed by projecting far poses to reachable sphere"
-                #     )
                 self.print_log(f"{name} Pose not reachable, this has to be fixed by projecting far poses to reachable sphere")
                 raise RuntimeError("Pose not reachable in symbolic IK. We crash on purpose while we are on the debug sessions.")
-        # self.logger.warning(f"{name} new_theta: {theta}")
-        # if name.startswith("l"):
-        #     self.logger.warning(
-        #         f"Symetrised previous_theta diff: {(self.previous_theta['r_arm'] -
-        #  (np.pi - self.previous_theta['l_arm']))%(2*np.pi)}"
-        #     )
+            state = state_reachable
 
-        # self.logger.warning(f"{name} jump in joint space")
-        # self.logger.warning(f"{name} ik={ik_joints}")
-        # self.logger.warning(f"name {name} previous_sol: {self.previous_sol[name]}")
-        # if self.logger is not None:
-        #     self.logger.warning(f"{name} ik_brut={ik_joints}", throttle_duration_sec=0.1)
-        # else:
-        #     print(f"{name} ik_brut={ik_joints}")
-
-        # self.print_log(f"{name} ik_brut={ik_joints}")
-
-        # ik_joints_raw = ik_joints
-        # ik_joints = limit_orbita3d_joints_wrist(ik_joints_raw, self.orbita3D_max_angle)
-        # if not np.allclose(ik_joints, ik_joints_raw):
-        #     # self.logger.warning(f"{name} Wrist joint limit reached.
-        #     # \nRaw joints: {ik_joints_raw}\nLimited joints: {ik_joints}")
-        #     self.print_log(f"{name} Wrist joint limit reached. \nRaw joints: {ik_joints_raw}\nLimited joints: {ik_joints}")
-
-        # ik_joints_allowed = allow_multiturn(ik_joints, self.previous_sol[name], name)
-        # if not np.allclose(ik_joints_allowed, ik_joints):
-        #     # self.logger.warning(
-        #     #     f"{name} Multiturn joint limit reached. \nRaw joints: {ik_joints}\nLimited joints: {ik_joints_allowed}"
-        #     # )
-        #     self.print_log(
-        #         f"{name} Multiturn joint limit reached. \nRaw joints: {ik_joints}\nLimited joints: {ik_joints_allowed}"
-        #     )
-        # ik_joints = ik_joints_allowed
-        # # self.logger.info(f"{name} ik={ik_joints}")
-        # self.previous_sol[name] = copy.deepcopy(ik_joints)
-        # # self.previous_sol[name] = ik_joints
-        # # self.logger.info(f"{name} ik={ik_joints}, elbow={elbow_position}")
-
-        # # TODO reactivate a smoothing technique
-        # # self.logger.warning(f"{name} ik={ik_joints}", throttle_duration_sec=0.1)
-        # self.print_log(f"{name} ik={ik_joints}")
-
-        state = ""
+        # self.print_log(f"State: {state}")
+        # self.print_log(f"state : {state_theta}")
 
         return ik_joints, is_reachable, state
 
     def symbolic_inverse_kinematics_discrete(
         self, name: str, goal_pose: npt.NDArray[np.float64], interval_limit: list[float], current_position: list[float]
     ) -> Tuple[list[float], bool, str]:
-        self.print_log("discrete")
+        # self.print_log("discrete")
         # Checks if an interval exists that handles the wrist limits and the elbow limits
         (
             is_reachable,
@@ -278,10 +220,10 @@ class ControlIK:
         ) = self.symbolic_ik_solver[
             name
         ].is_reachable(goal_pose)
-
+        state = state_reachable
         if is_reachable:
             # Explores the interval to find a solution with no collision elbow-torso
-            is_reachable, theta, state = get_best_discrete_theta(
+            is_reachable, theta, state_theta = get_best_discrete_theta(
                 self.previous_theta[name],
                 interval,
                 theta_to_joints_func,
@@ -289,6 +231,10 @@ class ControlIK:
                 self.prefered_theta[name],
                 self.symbolic_ik_solver[name].arm,
             )
+
+            if not is_reachable:
+                self.print_log(f"{name} Pose not reachable. State: {state_theta}")
+                state = "limited by shoulder"
             # is_reachable, theta, state = get_best_discrete_theta_min_mouvement(
             #     self.previous_theta[name],
             #     interval,
@@ -302,25 +248,12 @@ class ControlIK:
             # self.logger.info(f"Best theta: {theta}")
         # else:
         #     self.logger.error(f"{name} Pose not reachable before even reaching theta selection. State: {state_reachable}")
-        self.print_log(f"State: {is_reachable}")
+        # self.print_log(f"State: {is_reachable}")
 
         if is_reachable:
             ik_joints, elbow_position = theta_to_joints_func(theta, previous_joints=self.previous_sol[name])
-            # ik_joints = limit_orbita3d_joints_wrist(ik_joints_raw, self.orbita3D_max_angle)
-            # TODO enable this log with a throttle mechanism
-            # if not np.allclose(ik_joints, ik_joints_raw):
-            #     self.logger.warning(
-            #         f"{name} Wrist joint limit reached. \nRaw joints: {ik_joints_raw}\nLimited joints: {ik_joints}"
-            #     )
-
-            # ik_joints_allowed = allow_multiturn(ik_joints, current_position, name)
-            # if not np.allclose(ik_joints_allowed, ik_joints):
-            #     self.logger.warning(
-            #         f"{name} Multiturn joint limit reached. \nRaw joints: {ik_joints}\nLimited joints: {ik_joints_allowed}"
-            #     )
         else:
             ik_joints = current_position
-        state = ""
 
         return ik_joints, is_reachable, state
 

@@ -3,8 +3,9 @@ import time
 import numpy as np
 import numpy.typing as npt
 from reachy2_sdk import ReachySDK
-from reachy2_symbolic_ik.control_ik import ControlIK
 from scipy.spatial.transform import Rotation
+
+# from reachy2_symbolic_ik.control_ik import ControlIK
 
 
 def get_homogeneous_matrix_msg_from_euler(
@@ -29,13 +30,13 @@ def angle_diff(a: float, b: float) -> float:
 
 
 def random_trajectoy(reachy: ReachySDK) -> None:  # noqa: C901
-    control_ik = ControlIK()
+    # control_ik = ControlIK()
 
     x0, y0, z0 = 0.3, -0.4, -0.3
     roll0, pitch0, yaw0 = 0.0, -np.pi / 2, 0.0
     reductor = 1.0
     freq_reductor = 2.0
-    
+
     # Note Orbita3D's cone is currently limited to 42.5 rad in the control loop,
     # but this can't be represented correctly with the xyz euler angles used here
     amp = [0.35 * reductor, 0.35 * reductor, 0.35 * reductor, np.pi / 6, np.pi / 6, np.pi / 6]
@@ -66,7 +67,8 @@ def random_trajectoy(reachy: ReachySDK) -> None:  # noqa: C901
         t0 = time.time()
         try:
             ik_r = reachy.r_arm.inverse_kinematics(M_r)
-            # ik_r, is_reachable, state = control_ik.symbolic_inverse_kinematics("r_arm", M_r, "continuous", interval_limit=[-np.pi, np.pi])
+            # ik_r, is_reachable, state = control_ik.symbolic_inverse_kinematics
+            # ("r_arm", M_r, "continuous", interval_limit=[-np.pi, np.pi])
             # ik_r = np.degrees(ik_r)
         except Exception as e:
             print(f"Failed to calculate IK for right arm, this should not happen! {e}")
@@ -74,7 +76,8 @@ def random_trajectoy(reachy: ReachySDK) -> None:  # noqa: C901
         t1 = time.time()
         try:
             ik_l = reachy.l_arm.inverse_kinematics(M_l)
-            # ik_l, is_reachable, state = control_ik.symbolic_inverse_kinematics("l_arm", M_l, "continuous", interval_limit=[-np.pi, np.pi])
+            # ik_l, is_reachable, state = control_ik.symbolic_inverse_kinematics
+            # ("l_arm", M_l, "continuous", interval_limit=[-np.pi, np.pi])
             # ik_l = np.degrees(ik_l)
         except Exception as e:
             print(f"Failed to calculate IK for left arm, this should not happen!, {e}")

@@ -1,9 +1,10 @@
+import copy
 import math
 from typing import Any, Tuple
 
 import numpy as np
 import numpy.typing as npt
-from scipy.spatial.transform import Rotation
+from scipy.spatial.transform import Rotation as R
 
 
 def make_homogenous_matrix_from_rotation_matrix(
@@ -18,6 +19,22 @@ def make_homogenous_matrix_from_rotation_matrix(
             [0.0, 0.0, 0.0, 1.0],
         ]
     )
+
+
+def distance_from_singularity(elbow_position: npt.NDArray[np.float64], arm: str) -> float:
+    """Compute the distance from the singularity"""
+    # TODO take robot dimensions in the urdf
+    shoudler_offset = [-10.0, -15.0, 0.0]
+    shoulder_position = np.array([0.0, -0.2, 0.0])
+    upper_arm_size = 0.28
+    if arm == "l_arm":
+        shoulder_position[1] *= -1
+        shoudler_offset[1] *= -1
+    rotation_matrix = R.from_euler("xyz", shoudler_offset, degrees=True).as_matrix()
+    T_torso_shoulder = make_homogenous_matrix_from_rotation_matrix(shoulder_position, rotation_matrix)
+    singularity_position = np.array([0.0, -upper_arm_size, 0.0, 1.0])
+    singularity_position = np.dot(T_torso_shoulder, singularity_position)[:3]
+    return np.linalg.norm(elbow_position - singularity_position)
 
 
 def rotation_matrix_from_vector(vect: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
@@ -50,11 +67,11 @@ def get_euler_from_homogeneous_matrix(
 ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     position = homogeneous_matrix[:3, 3]
     rotation_matrix = homogeneous_matrix[:3, :3]
-    euler_angles = Rotation.from_matrix(rotation_matrix).as_euler("xyz", degrees=degrees)
+    euler_angles = R.from_matrix(rotation_matrix).as_euler("xyz", degrees=degrees)
     return position, euler_angles
 
 
-def limit_theta_to_interval(theta: float, previous_theta: float, interval: list[float]) -> float:
+def limit_theta_to_interval(theta: float, previous_theta: float, interval: list[float]) -> Tuple[float, str]:
     """Limit the theta to the interval, if the theta is not in the interval, return the closest limit"""
 
     # Normalize the angles to be between -pi and pi
@@ -67,13 +84,13 @@ def limit_theta_to_interval(theta: float, previous_theta: float, interval: list[
 
     # If the angle is in the interval, return it
     if is_valid_angle(theta, interval):
-        return theta
+        return theta, "theta in interval"
     # If the angle is not in the interval, return the closest limit
     posDiff = angle_diff(theta, interval[1])
     negDiff = angle_diff(theta, interval[0])
     if abs(posDiff) < abs(negDiff):
-        return interval[1]
-    return interval[0]
+        return interval[1], "theta not in interval"
+    return interval[0], "theta not in interval"
 
 
 def tend_to_prefered_theta(
@@ -142,6 +159,8 @@ def get_best_continuous_theta(
             theta_side = previous_theta + sign * d_theta_max
             joints, elbow_position = get_joints(theta_side)
             is_reachable = is_elbow_ok(elbow_position, side)
+            is_reachable = is_reachable and is_valid_angle(theta_side, interval)
+            state += "\n" + f"previous_theta: {previous_theta}"
             state += "\n" + f"theta milieu ok mais loin - et moi je suis {is_reachable}"
             return is_reachable, theta_side, state
 
@@ -275,7 +294,7 @@ def is_elbow_ok(elbow_position: npt.NDArray[np.float64], side: int) -> bool:
     Prevent the elbow to touch the robot body"""
     is_ok = True
     if elbow_position[1] * side > -0.15:
-        if elbow_position[0] < 0.9:
+        if elbow_position[0] < 0.09:
             is_ok = False
     return is_ok
 
@@ -300,6 +319,7 @@ def allow_multiturn(new_joints: list[float], prev_joints: list[float], name: str
     """This function will always guarantee that the joint takes the shortest path to the new position.
     The practical effect is that it will allow the joint to rotate more than 2pi if it is the shortest path.
     """
+    new_joints = copy.deepcopy(new_joints)
     for i in range(len(new_joints)):
         # if i == 0:
         #     self.logger.warning(
@@ -324,20 +344,21 @@ def allow_multiturn(new_joints: list[float], prev_joints: list[float], name: str
 def limit_orbita3d_joints(joints: list[float], orbita3D_max_angle: float) -> list[float]:
     """Casts the 3 orientations to ensure the orientation is reachable by an Orbita3D. i.e. casting into Orbita's cone."""
     # self.logger.info(f"HEAD initial: {joints}")
-    rotation = Rotation.from_euler("XYZ", [joints[0], joints[1], joints[2]], degrees=False)
+    joints = copy.deepcopy(joints)
+    rotation = R.from_euler("XYZ", [joints[0], joints[1], joints[2]], degrees=False)
     new_joints = rotation.as_euler("ZYZ", degrees=False)
     new_joints[1] = min(orbita3D_max_angle, max(-orbita3D_max_angle, new_joints[1]))
-    rotation = Rotation.from_euler("ZYZ", new_joints, degrees=False)
+    rotation = R.from_euler("ZYZ", new_joints, degrees=False)
     [roll, pitch, yaw] = rotation.as_euler("XYZ", degrees=False)
     joints = [float(roll), float(pitch), float(yaw)]
     # self.logger.info(f"HEAD final: {new_joints}")
-
     return joints
 
 
 def limit_orbita3d_joints_wrist(joints: list[float], orbita3D_max_angle: float) -> list[float]:
     """Casts the 3 orientations to ensure the orientation is reachable by an Orbita3D using the wrist conventions.
     i.e. casting into Orbita's cone."""
+    joints = copy.deepcopy(joints)
     wrist_joints = joints[4:7]
 
     wrist_joints = limit_orbita3d_joints(wrist_joints, orbita3D_max_angle)

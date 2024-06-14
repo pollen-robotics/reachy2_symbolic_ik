@@ -1,12 +1,11 @@
+import time
+
 import numpy as np
+from reachy2_sdk import ReachySDK
+from scipy.spatial.transform import Rotation as R
 
 from reachy2_symbolic_ik.control_ik import ControlIK
 from reachy2_symbolic_ik.utils import make_homogenous_matrix_from_rotation_matrix
-from reachy2_sdk import ReachySDK
-
-from scipy.spatial.transform import Rotation as R
-
-import time
 
 
 def discrete_test() -> None:
@@ -80,7 +79,6 @@ def test_go_to(ik: ControlIK, reachy: ReachySDK) -> None:
 
 
 def main_test() -> None:
-
     ik_control = ControlIK()
     reachy = ReachySDK(host="localhost")
 

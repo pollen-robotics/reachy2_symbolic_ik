@@ -1,3 +1,4 @@
+import copy
 import math
 from typing import Any, Optional, Tuple
 
@@ -62,7 +63,7 @@ class SymbolicIK:
         Should alway return True"""
 
         # Change goal pose if goal pose is out of reach or with x <= 0
-        _, goal_pose = self.is_pose_in_robot_reach(goal_pose)
+        _, goal_pose, _ = self.is_pose_in_robot_reach(goal_pose)
 
         self.goal_pose = goal_pose
         self.wrist_position = self.get_wrist_position(goal_pose)
@@ -86,9 +87,9 @@ class SymbolicIK:
         """Check if the goal pose is reachable taking into account the limits of the wrist and the elbow"""
         state = ""
         # Change goal pose if goal pose is out of reach or with x <= 0
-        is_reachable, goal_pose = self.is_pose_in_robot_reach(goal_pose)
+        is_reachable, goal_pose, reach_state = self.is_pose_in_robot_reach(goal_pose)
         if not is_reachable:
-            state = "out of reach"
+            state = reach_state
             return False, np.array([]), None, state
 
         if SHOW_GRAPH:
@@ -106,7 +107,7 @@ class SymbolicIK:
         # Test if the wrist is in the arm range
         d_shoulder_wrist = np.linalg.norm(self.wrist_position - self.shoulder_position)
         if d_shoulder_wrist > self.upper_arm_size + self.forearm_size:
-            state = "limited by wrist"
+            state = "wrist out of range"
             # TODO check Trex arm
             return False, np.array([]), None, state
 
@@ -197,7 +198,7 @@ class SymbolicIK:
                     "y",
                 )
                 plt.show()
-            state = "interval void"
+            state = "limited by wrist"
             return False, np.array([]), None, state
 
         if SHOW_GRAPH:
@@ -216,14 +217,16 @@ class SymbolicIK:
                 "y",
             )
             plt.show()
-        state = "no intersection circle"
+        state = "out of reach - should not happen"
         return False, np.array([]), None, state
 
-    def is_pose_in_robot_reach(self, goal_pose: npt.NDArray[np.float64]) -> Tuple[bool, npt.NDArray[np.float64]]:
+    def is_pose_in_robot_reach(self, goal_pose: npt.NDArray[np.float64]) -> Tuple[bool, npt.NDArray[np.float64], str]:
         """Reduce the goal pose if the goal pose is out of reach and prevent the tip to go backward"""
+        goal_pose = copy.deepcopy(goal_pose)
+
         goal_position = goal_pose[0]
         d_shoulder_goal = np.linalg.norm(goal_pose[0] - self.shoulder_position)
-
+        state = ""
         is_reachable = True
         # Reduce the goal pose if the goal pose is out of reach
         if d_shoulder_goal > self.max_arm_length:
@@ -233,12 +236,14 @@ class SymbolicIK:
             direction = goal_position - self.shoulder_position
             direction = direction / (np.linalg.norm(direction) + self.projection_margin)
             goal_position = self.shoulder_position + direction * self.max_arm_length
+            state = "Pose out of reach"
 
         # Avoid the tip to go backward
         if goal_position[0] < self.backward_limit:
             is_reachable = False
             goal_position[0] = self.backward_limit
-        return is_reachable, np.array([goal_position, goal_pose[1]])
+            state = "Backward pose"
+        return is_reachable, np.array([goal_position, goal_pose[1]]), state
 
     def reduce_goal_pose_no_limits(
         self, pose: npt.NDArray[np.float64], d_shoulder_wrist: np.float64, d_shoulder_wrist_max: np.float64

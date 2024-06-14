@@ -122,12 +122,28 @@ def random_trajectoy(reachy: ReachySDK, debug_pose: bool = False, bypass: bool =
         # print(f"ik_r: {ik_r}")
 
         reachy.r_arm.forward_kinematics(ik_r)
-        r_goal_diff = np.linalg.norm(reachy.r_arm.forward_kinematics(ik_r) - M_r)
-        print(f"r_goal_diff: {r_goal_diff:.3f}")
+        # r_goal_diff = np.linalg.norm(reachy.r_arm.forward_kinematics(ik_r) - M_r)
+        r_position_diff = np.linalg.norm(reachy.r_arm.forward_kinematics(ik_r)[:3, 3] - M_r[:3, 3])
+        r_euler_diff = np.linalg.norm(
+            Rotation.from_matrix(reachy.r_arm.forward_kinematics(ik_r)[:3, :3]).as_euler("xyz")
+            - Rotation.from_matrix(M_r[:3, :3]).as_euler("xyz")
+        )
+        print(f"r_position_diff: {r_position_diff:.3f}")
+        print(f"r_euler_diff: {r_euler_diff:.3f}")
+
+        # print(f"r_goal_diff: {r_goal_diff:.3f}")
         reachy.l_arm.forward_kinematics(ik_l)
-        l_goal_diff = np.linalg.norm(reachy.l_arm.forward_kinematics(ik_l) - M_l)
-        print(f"l_goal_diff: {l_goal_diff:.3f}")
-        if r_goal_diff < 0.01 and l_goal_diff < 0.01:
+        # l_goal_diff = np.linalg.norm(reachy.l_arm.forward_kinematics(ik_l) - M_l)
+        l_position_diff = np.linalg.norm(reachy.l_arm.forward_kinematics(ik_l)[:3, 3] - M_l[:3, 3])
+        l_euler_diff = np.linalg.norm(
+            Rotation.from_matrix(reachy.l_arm.forward_kinematics(ik_l)[:3, :3]).as_euler("xyz")
+            - Rotation.from_matrix(M_l[:3, :3]).as_euler("xyz")
+        )
+        print(f"l_position_diff: {l_position_diff:.3f}")
+        print(f"l_euler_diff: {l_euler_diff:.3f}")
+
+        # print(f"l_goal_diff: {l_goal_diff:.3f}")
+        if (r_position_diff < 0.01 or r_position_diff < 0.01) and (l_position_diff < 0.01 or l_position_diff < 0.01):
             print("precisions OK")
         else:
             print("precisions NOT OK!!")
