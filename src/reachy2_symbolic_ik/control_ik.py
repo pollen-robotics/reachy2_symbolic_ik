@@ -23,7 +23,10 @@ class ControlIK:
     def __init__(
         # TODO : default current position depends of the shoulder offset
         self,
-        current_position: list[list[float]] = [[0.0, -0.17453292519943295, -0.2617993877991494, 0.0, 0.0, 0.0, 0.0], [0.0, 0.17453292519943295, 0.2617993877991494, 0.0, 0.0, 0.0, 0.0]],
+        current_position: list[list[float]] = [
+            [0.0, -0.17453292519943295, -0.2617993877991494, 0.0, 0.0, 0.0, 0.0],
+            [0.0, 0.17453292519943295, 0.2617993877991494, 0.0, 0.0, 0.0, 0.0],
+        ],
         logger: Any = None,
     ) -> None:
         self.symbolic_ik_solver = {}
