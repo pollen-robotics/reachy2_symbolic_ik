@@ -70,6 +70,7 @@ class ControlIK:
         goal_position, goal_orientation = get_euler_from_homogeneous_matrix(M)
         goal_pose = np.array([goal_position, goal_orientation])
         # self.print_log(f"{name} goal_position: {goal_position}")
+        # self.print_log(f" controle_type: {control_type}")
 
         if current_position == []:
             current_position = self.previous_sol[name]
@@ -77,16 +78,16 @@ class ControlIK:
         if control_type == "continuous":
             if interval_limit == []:
                 interval_limit = [-4 * np.pi / 5, 0]
-                if name.startswith("l"):
-                    interval_limit = [-np.pi - interval_limit[1], -np.pi - interval_limit[0]]
+            if name.startswith("l"):
+                interval_limit = [-np.pi - interval_limit[1], -np.pi - interval_limit[0]]
             ik_joints, is_reachable, state = self.symbolic_inverse_kinematics_continuous(
                 name, goal_pose, interval_limit, current_position
             )
         elif control_type == "discrete":
             if interval_limit == []:
                 interval_limit = [-np.pi, np.pi]
-                if name.startswith("l"):
-                    interval_limit = [-np.pi - interval_limit[1], -np.pi - interval_limit[0]]
+            if name.startswith("l"):
+                interval_limit = [-np.pi - interval_limit[1], -np.pi - interval_limit[0]]
             ik_joints, is_reachable, state = self.symbolic_inverse_kinematics_discrete(
                 name, goal_pose, interval_limit, current_position
             )
@@ -171,7 +172,7 @@ class ControlIK:
                 state = "limited by shoulder"
             # self.print_log(f"name: {name}, theta: {theta}")
             theta, state_interval = limit_theta_to_interval(theta, self.previous_theta[name], interval_limit)
-            self.print_log(f"{name} State interval: {state_interval}")
+            # self.print_log(f"{name} State interval: {state_interval}")
             # self.print_log(
             #    f"name: {name}, theta: {theta}, previous_theta: {self.previous_theta[name]}, state: {state_theta}"
             # )
