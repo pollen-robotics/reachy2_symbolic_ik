@@ -1,9 +1,9 @@
+import copy
 import math
 from typing import Any, Tuple
 
 import numpy as np
 import numpy.typing as npt
-import copy
 
 
 def make_homogenous_matrix_from_rotation_matrix(
@@ -166,13 +166,8 @@ def get_best_continuous_theta2(
 ) -> Tuple[bool, float, str]:
     """Get the best theta to aim for,
     tend to the closest reachable theta (sampled with nb_search_points) to prefered_theta"""
-    side = 1
-    if arm == "l_arm":
-        side = -1
-
     state = f"{arm}"
     state += "\n" + f"interval: {interval}"
-    epsilon = 0.00001
     is_reachable, theta_goal, state = get_best_discrete_theta(
         previous_theta, interval, get_joints, nb_search_points, prefered_theta, arm
     )
@@ -190,7 +185,8 @@ def get_best_continuous_theta2(
         sign = angle_diff(theta_goal, previous_theta) / np.abs(angle_diff(theta_goal, previous_theta))
         state += "\n" + "theta theta_goal ok mais loin"
         theta_tends = previous_theta + sign * d_theta_max
-        # Saying True here is not always true. It could be that the intermediate theta_tends is not reachable, but eventually it will reach a reachable theta
+        # Saying True here is not always true. It could be that the intermediate theta_tends is not reachable
+        # but eventually it will reach a reachable theta
         return True, theta_tends, state
 
 
@@ -346,7 +342,7 @@ def get_best_theta_to_current_joints(
 
     best_theta = (low + high) / 2
     joints, _ = get_joints(best_theta)
-    best_distance = np.linalg.norm(joints - current_joints)
+    best_distance = np.linalg.norm(joints - current_joints)  # type: ignore
     state += f"best_distance = {best_distance}"
 
     return best_theta, state
