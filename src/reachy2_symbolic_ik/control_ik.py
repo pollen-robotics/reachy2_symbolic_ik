@@ -23,9 +23,7 @@ class ControlIK:
     def __init__(
         # TODO : default current position depends of the shoulder offset
         self,
-        current_position: list[list[float]] = np.radians(
-            [[0.0, -10.0, -15.0, 0.0, 0.0, 0.0, 0.0], [0.0, 10.0, 15.0, 0.0, 0.0, 0.0, 0.0]]
-        ),
+        current_position: list[list[float]] = [[0.0, -0.17453292519943295, -0.2617993877991494, 0.0, 0.0, 0.0, 0.0], [0.0, 0.17453292519943295, 0.2617993877991494, 0.0, 0.0, 0.0, 0.0]],
         logger: Any = None,
     ) -> None:
         self.symbolic_ik_solver = {}
@@ -68,7 +66,7 @@ class ControlIK:
     ) -> Tuple[list[float], bool, str]:
         goal_position, goal_orientation = get_euler_from_homogeneous_matrix(M)
         goal_pose = np.array([goal_position, goal_orientation])
-        self.print_log(f"{name} goal_position: {goal_position}")
+        # self.print_log(f"{name} goal_position: {goal_position}")
 
         if current_position == []:
             current_position = self.previous_sol[name]

@@ -108,7 +108,7 @@ def go_to_pose(
     pose: npt.NDArray[np.float64],
     arm: str,
     controle_type: str = "discrete",
-    interval_limit: npt.NDArray[np.float64] = [-np.pi, np.pi],
+    interval_limit: npt.NDArray[np.float64] = np.array([-np.pi, np.pi]),
 ) -> None:
     controle_ik = ControlIK()
     if arm == "r_arm":
@@ -148,7 +148,7 @@ def test_poses(
     r_symbolic_ik: SymbolicIK,
     l_symbolic_ik: SymbolicIK,
     controle_type: str = "discrete",
-    interval_limit: npt.NDArray[np.float64] = [-np.pi, np.pi],
+    interval_limit: npt.NDArray[np.float64] = np.array([-np.pi, np.pi]),
 ) -> None:
     r_goal_poses = np.array(
         [
@@ -241,8 +241,8 @@ def main_test() -> None:
     symbolic_ik_r = SymbolicIK(shoulder_orientation_offset=[10, 0, 15], elbow_orientation_offset=[0, 0, 0])
     symbolic_ik_l = SymbolicIK(arm="l_arm", shoulder_orientation_offset=[10, 0, 15], elbow_orientation_offset=[0, 0, 0])
 
-    test_poses(reachy, symbolic_ik_r, symbolic_ik_l, controle_type="discrete", interval_limit=[-np.pi, np.pi])
-    test_poses(reachy, symbolic_ik_r, symbolic_ik_l, controle_type="continuous", interval_limit=[-4 * np.pi / 5, 0])
+    test_poses(reachy, symbolic_ik_r, symbolic_ik_l, controle_type="discrete", interval_limit=np.array([-np.pi, np.pi]))
+    test_poses(reachy, symbolic_ik_r, symbolic_ik_l, controle_type="continuous", interval_limit=np.array([-4 * np.pi / 5, 0]))
 
     # mat2 = np.array(
     #     [
