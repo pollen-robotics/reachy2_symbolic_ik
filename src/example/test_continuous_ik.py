@@ -5,6 +5,8 @@ import numpy.typing as npt
 from reachy2_sdk import ReachySDK
 from scipy.spatial.transform import Rotation
 
+# from reachy2_symbolic_ik.control_ik import ControlIK
+
 
 def get_homogeneous_matrix_msg_from_euler(
     position: npt.NDArray[np.float64] = np.array([0.0, 0.0, 0.0]),  # (x, y, z)
@@ -18,28 +20,39 @@ def get_homogeneous_matrix_msg_from_euler(
 
 
 def angle_diff(a: float, b: float) -> float:
-    """Returns the smallest distance between 2 angles"""
+    """Returns the smallest distance between 2 angles in rads"""
     d = a - b
     d = ((d + np.pi) % (2 * np.pi)) - np.pi
     return d
 
 
-def random_trajectoy(reachy: ReachySDK) -> None:
+# TODO fix this test : continuous test can not work with the discrete control function
+
+
+def random_trajectoy(reachy: ReachySDK) -> None:  # noqa: C901
+    # control_ik = ControlIK()
+
     x0, y0, z0 = 0.3, -0.4, -0.3
     roll0, pitch0, yaw0 = 0.0, -np.pi / 2, 0.0
     reductor = 1.0
     freq_reductor = 2.0
+
+    # Note Orbita3D's cone is currently limited to 42.5 rad in the control loop,
+    # but this can't be represented correctly with the xyz euler angles used here
     amp = [0.35 * reductor, 0.35 * reductor, 0.35 * reductor, np.pi / 6, np.pi / 6, np.pi / 6]
     freq = [0.3 * freq_reductor, 0.17 * freq_reductor, 0.39 * freq_reductor, 0.18, 0.31, 0.47]
     control_freq = 120
-    max_angular_change = 5.0  # degrees
-    prev_ik_r = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-    prev_ik_l = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    max_angular_change = 5  # degrees
+    ik_r = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    ik_l = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    prev_ik_r = ik_r
+    prev_ik_l = ik_l
     prev_M_r = get_homogeneous_matrix_msg_from_euler(np.array([x0, y0, z0]), np.array([roll0, pitch0, yaw0]), degrees=False)
     prev_M_l = get_homogeneous_matrix_msg_from_euler(np.array([x0, -y0, z0]), np.array([-roll0, pitch0, -yaw0]), degrees=False)
     first = True
     t_init = time.time()
     while True:
+        # input("go?")
         t = time.time() - t_init + 11
         x = x0 + amp[0] * np.sin(freq[0] * t)
         y = y0 + amp[1] * np.sin(freq[1] * t)
@@ -52,9 +65,24 @@ def random_trajectoy(reachy: ReachySDK) -> None:
         M_l = get_homogeneous_matrix_msg_from_euler(np.array([x, -y, z]), np.array([-roll, pitch, -yaw]), degrees=False)
 
         t0 = time.time()
-        ik_r = reachy.r_arm.inverse_kinematics(M_r)
+        try:
+            ik_r = reachy.r_arm.inverse_kinematics(M_r)
+            # ik_r, is_reachable, state = control_ik.symbolic_inverse_kinematics
+            # ("r_arm", M_r, "continuous", interval_limit=[-np.pi, np.pi])
+            # ik_r = np.degrees(ik_r)
+        except Exception as e:
+            print(f"Failed to calculate IK for right arm, this should not happen! {e}")
+            # raise ValueError("Failed to calculate IK for right arm, this should not happen!")
         t1 = time.time()
-        ik_l = reachy.l_arm.inverse_kinematics(M_l)
+        try:
+            ik_l = reachy.l_arm.inverse_kinematics(M_l)
+            # ik_l, is_reachable, state = control_ik.symbolic_inverse_kinematics
+            # ("l_arm", M_l, "continuous", interval_limit=[-np.pi, np.pi])
+            # ik_l = np.degrees(ik_l)
+        except Exception as e:
+            print(f"Failed to calculate IK for left arm, this should not happen!, {e}")
+            # raise ValueError("Failed to calculate IK for left arm, this should not happen!")
+
         t2 = time.time()
         # print(f" x,y,z, {x,y,z}, roll,pitch,yaw {roll,pitch,yaw}")
 
@@ -93,11 +121,12 @@ def random_trajectoy(reachy: ReachySDK) -> None:
         # Test continuity
         # calculating the maximum angulare change in joint space
         # create a list based on angle_diff for each joint
-        r_diff = [angle_diff(a, b) for a, b in zip(ik_r, prev_ik_r)]
-        l_diff = [angle_diff(a, b) for a, b in zip(ik_l, prev_ik_l)]
-        max_angular_change_r = np.max(np.abs(r_diff))
-        max_angular_change_l = np.max(np.abs(l_diff))
+        r_diff = [angle_diff(np.deg2rad(a), np.deg2rad(b)) for a, b in zip(ik_r, prev_ik_r)]
+        l_diff = [angle_diff(np.deg2rad(a), np.deg2rad(b)) for a, b in zip(ik_l, prev_ik_l)]
+        max_angular_change_r = np.rad2deg(np.max(np.abs(r_diff)))
+        max_angular_change_l = np.rad2deg(np.max(np.abs(l_diff)))
 
+        # TODO fix - actually not working because connected to the discrete controle function
         if max_angular_change_r < max_angular_change and max_angular_change_l < max_angular_change:
             print("Continuity OK")
         else:

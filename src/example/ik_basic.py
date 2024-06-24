@@ -15,7 +15,7 @@ def main_test() -> None:
     goal_pose = np.array([goal_position, goal_orientation])
 
     # Check if the goal pose is reachable
-    is_reachable_r, interval_r, get_joints_r = symbolic_ik_r.is_reachable(goal_pose)
+    is_reachable_r, interval_r, get_joints_r, _ = symbolic_ik_r.is_reachable(goal_pose)
 
     if is_reachable_r:
         print("Pose reachable")
@@ -35,7 +35,7 @@ def main_test() -> None:
     goal_pose = np.array([goal_position, goal_orientation])
 
     # Check if the goal pose is reachable
-    is_reachable_l, interval_l, get_joints_l = symbolic_ik_l.is_reachable(goal_pose)
+    is_reachable_l, interval_l, get_joints_l, _ = symbolic_ik_l.is_reachable(goal_pose)
 
     if is_reachable_l:
         print("Pose reachable")
