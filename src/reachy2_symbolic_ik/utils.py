@@ -21,20 +21,22 @@ def make_homogenous_matrix_from_rotation_matrix(
     )
 
 
-# def distance_from_singularity(elbow_position: npt.NDArray[np.float64], arm: str) -> float:
-#     """Compute the distance from the singularity"""
-#     # TODO take robot dimensions in the urdf
-#     shoudler_offset = [-10.0, -15.0, 0.0]
-#     shoulder_position = np.array([0.0, -0.2, 0.0])
-#     upper_arm_size = 0.28
-#     if arm == "l_arm":
-#         shoulder_position[1] *= -1
-#         shoudler_offset[1] *= -1
-#     rotation_matrix = R.from_euler("xyz", shoudler_offset, degrees=True).as_matrix()
-#     T_torso_shoulder = make_homogenous_matrix_from_rotation_matrix(shoulder_position, rotation_matrix)
-#     singularity_position = np.array([0.0, -upper_arm_size, 0.0, 1.0])
-#     singularity_position = np.dot(T_torso_shoulder, singularity_position)[:3]
-#     return np.linalg.norm(elbow_position - singularity_position)
+def distance_from_singularity(elbow_position: npt.NDArray[np.float64], arm: str) -> float:
+    """Compute the distance from the singularity"""
+    # TODO take robot dimensions in the urdf
+    if arm == "r_arm":
+        side = 1
+    else:
+        side = -1
+    shoudler_offset = [10.0 * side, 0.0, 15.0 * side]
+    shoulder_position = np.array([0.0, -0.2 * side, 0.0])
+    upper_arm_size = 0.28
+    rotation_matrix = R.from_euler("xyz", shoudler_offset, degrees=True).as_matrix()
+    T_torso_shoulder = make_homogenous_matrix_from_rotation_matrix(shoulder_position, rotation_matrix)
+    singularity_position = np.array([0.0, -upper_arm_size * side, 0.0, 1.0])
+    singularity_position = np.dot(T_torso_shoulder, singularity_position)[:3]
+    # print(f"singularity position {singularity_position}")
+    return float(np.linalg.norm(elbow_position - singularity_position))
 
 
 def rotation_matrix_from_vector(vect: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
@@ -181,6 +183,102 @@ def get_best_continuous_theta(
             sign = angle_diff(prefered_theta, previous_theta) / np.abs(angle_diff(prefered_theta, previous_theta))
             state += "\n" + "theta milieu pas ok et moi pas ok - bouge vers theta pref"
             return False, previous_theta + sign * d_theta_max, state
+
+
+def get_best_continuous_theta2(
+    previous_theta: float,
+    interval: npt.NDArray[np.float64],
+    get_joints: Any,
+    nb_search_points: int,
+    d_theta_max: float,
+    prefered_theta: float,
+    arm: str,
+) -> Tuple[bool, float, str]:
+    """Get the best theta to aim for,
+    tend to the closest reachable theta (sampled with nb_search_points) to prefered_theta"""
+    state = f"{arm}"
+    state += "\n" + f"interval: {interval}"
+    is_reachable, theta_goal, state = get_best_discrete_theta(
+        previous_theta, interval, get_joints, nb_search_points, prefered_theta, arm
+    )
+    if not is_reachable:
+        # No solution was found
+        return False, previous_theta, state
+
+    # A solution was found
+    if abs(angle_diff(theta_goal, previous_theta)) < d_theta_max:
+        # theta_goal is reachable and close to previous theta
+        state += "\n" + "theta theta_goal ok et proche"
+        return True, theta_goal, state
+    else:
+        # middle theta is reachable but far from previous theta
+        sign = angle_diff(theta_goal, previous_theta) / np.abs(angle_diff(theta_goal, previous_theta))
+        state += "\n" + "theta theta_goal ok mais loin"
+        theta_tends = previous_theta + sign * d_theta_max
+        # Saying True here is not always true. It could be that the intermediate theta_tends is not reachable,
+        # but eventually it will reach a reachable theta
+        return True, theta_tends, state
+
+
+def get_best_theta_to_current_joints(
+    get_joints: Any,
+    nb_search_points: int,
+    current_joints: list[float],
+    arm: str,
+) -> Tuple[float, str]:
+    """Searches all theta in the entire circle that minimises the distance to the current joints."""
+    best_theta = None
+    best_distance = np.inf
+    state = ""
+    current_joints = copy.deepcopy(current_joints)
+    # # modulo 2pi on all joints
+    # for i in range(len(current_joints)):
+    #     current_joints[i] = ((current_joints[i] + np.pi) % (2 * np.pi)) - np.pi
+
+    # Simple linear search
+    # for theta in np.linspace(-np.pi, np.pi, nb_search_points):
+    #     joints, elbow_position = get_joints(theta)
+    #     distance = np.linalg.norm(joints - current_joints)
+    #     if distance < best_distance:
+    #         best_theta = theta
+    #         best_distance = distance
+
+    # Dichotomic search to find the best theta instead
+    low = -np.pi
+    high = np.pi
+    if arm == "l_arm":
+        low = 0
+        high = 2 * np.pi
+
+    tolerance = 0.001
+
+    while (high - low) > tolerance:
+        mid1 = low + (high - low) / 3
+        mid2 = high - (high - low) / 3
+        joints1, elbow_position1 = get_joints(mid1)
+        joints2, elbow_position2 = get_joints(mid2)
+        diff1 = [angle_diff(joints1[i], current_joints[i]) for i in range(len(current_joints))]
+        diff2 = [angle_diff(joints2[i], current_joints[i]) for i in range(len(current_joints))]
+
+        f_mid1 = np.linalg.norm(diff1)
+        f_mid2 = np.linalg.norm(diff2)
+
+        # mid = (low + high) / 2
+
+        if f_mid1 < f_mid2:
+            high = mid2
+        else:
+            low = mid1
+    state += f" \n low = {low}, high = {high}"
+
+    best_theta = (low + high) / 2
+    joints, _ = get_joints(best_theta)
+    best_distance = np.linalg.norm(joints - current_joints)  # type: ignore
+    state += f" \n best_distance = {best_distance}"
+    state += f" \n joints = {joints}"
+    state += f" \n current_joints = {current_joints}"
+
+    return best_theta, state
 
 
 def get_best_discrete_theta(

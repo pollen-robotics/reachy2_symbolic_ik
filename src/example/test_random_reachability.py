@@ -1,4 +1,5 @@
 import time
+from typing import Tuple
 
 import numpy as np
 import numpy.typing as npt
@@ -8,10 +9,11 @@ from reachy2_sdk_api.kinematics_pb2 import Matrix4x4
 from scipy.spatial.transform import Rotation
 
 from reachy2_symbolic_ik.control_ik import ControlIK
+from reachy2_symbolic_ik.utils import distance_from_singularity
 
 # CONTROLE_TYPE = "local_discrete"
-CONTROLE_TYPE = "local_continuous"
-# CONTROLE_TYPE = "sdk_discrete"
+# CONTROLE_TYPE = "local_continuous"
+CONTROLE_TYPE = "sdk_discrete"
 # CONTROLE_TYPE = "sdk_continuous"
 
 
@@ -42,15 +44,22 @@ def set_joints(reachy: ReachySDK, joints: list[float], arm: str) -> None:
             joint.goal_position = goal_pos
 
 
-def get_ik(reachy: ReachySDK, M: npt.NDArray[np.float64], arm: str) -> list[float]:
-    control_ik = ControlIK()
+def get_ik(
+    reachy: ReachySDK, control_ik: ControlIK, M: npt.NDArray[np.float64], arm: str
+) -> Tuple[list[float], npt.NDArray[np.float64]]:
+    # control_ik = ControlIK()
     joints = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    elbow_position = np.array([0.0, 0.0, 0.0])
     if CONTROLE_TYPE == "local_discrete":
         joints, is_reachable, state = control_ik.symbolic_inverse_kinematics(arm, M, "discrete")
         joints = list(np.degrees(joints))
+        elbow_position = (control_ik.symbolic_ik_solver[arm].elbow_position)[:3]
+        # print(f"elbow_position: {elbow_position}")
     elif CONTROLE_TYPE == "local_continuous":
         joints, is_reachable, state = control_ik.symbolic_inverse_kinematics(arm, M, "continuous")
         joints = list(np.degrees(joints))
+        elbow_position = (control_ik.symbolic_ik_solver[arm].elbow_position)[:3]
+        # print(f"is_reachable: {is_reachable}, state: {state}")
     elif CONTROLE_TYPE == "sdk_discrete":
         if arm == "r_arm":
             joints = reachy.r_arm.inverse_kinematics(M)
@@ -63,14 +72,14 @@ def get_ik(reachy: ReachySDK, M: npt.NDArray[np.float64], arm: str) -> list[floa
                 goal_pose=Matrix4x4(data=M.flatten().tolist()),
             )
             reachy.r_arm._arm_stub.SendArmCartesianGoal(request)
-            print(reachy.r_arm.shoulder.pitch.present_position)
+            # print(reachy.r_arm.shoulder.pitch.present_position)
         elif arm == "l_arm":
             request = ArmCartesianGoal(
                 id=reachy.l_arm._part_id,
                 goal_pose=Matrix4x4(data=M.flatten().tolist()),
             )
             reachy.l_arm._arm_stub.SendArmCartesianGoal(request)
-    return joints
+    return joints, elbow_position
 
 
 def random_trajectoy(reachy: ReachySDK, debug_pose: bool = False, bypass: bool = False) -> None:
@@ -79,6 +88,8 @@ def random_trajectoy(reachy: ReachySDK, debug_pose: bool = False, bypass: bool =
     ik_l = q
     q0 = [-45.0, -60.0, 0.0, -45.0, 0.0, 0.0, 0.0]  # ?? Shouldn't it be -90 for the wrist pitch? Why -45?
     q_amps = [30.0, 30.0, 30.0, 45.0, 25.0, 25.0, 90.0]
+
+    control_ik = ControlIK()
 
     freq_reductor = 2.0
     freq = [0.3 * freq_reductor, 0.17 * freq_reductor, 0.39 * freq_reductor, 0.18, 0.31, 0.47, 0.25]
@@ -123,19 +134,27 @@ def random_trajectoy(reachy: ReachySDK, debug_pose: bool = False, bypass: bool =
 
         l_q = [r_q[0], -r_q[1], -r_q[2], r_q[3], -r_q[4], r_q[5], -r_q[6]]
         M_r = reachy.r_arm.forward_kinematics(r_q)
-        M_l = reachy.l_arm.forward_kinematics(l_q)
+        # M_l = reachy.l_arm.forward_kinematics(l_q)
+        M_l = np.array(
+            [
+                [M_r[0][0], -M_r[0][1], M_r[0][2], M_r[0][3]],
+                [-M_r[1][0], M_r[1][1], -M_r[1][2], -M_r[1][3]],
+                [M_r[2][0], -M_r[2][1], M_r[2][2], M_r[2][3]],
+                [0, 0, 0, 1],
+            ]
+        )
 
         if not bypass:
             t0 = time.time()
             try:
-                ik_r = get_ik(reachy, M_r, "r_arm")
+                ik_r, elbow_position_r = get_ik(reachy, control_ik, M_r, "r_arm")
                 # ik_r = reachy.r_arm.inverse_kinematics(M_r)
             except Exception as e:
                 # print("Failed to calculate IK for right arm, this should not happen!")
                 raise ValueError(f"Failed to calculate IK for right arm, this should not happen! {e}")
             t1 = time.time()
             try:
-                ik_l = get_ik(reachy, M_l, "l_arm")
+                ik_l, elbow_position_l = get_ik(reachy, control_ik, M_l, "l_arm")
                 # ik_l = reachy.l_arm.inverse_kinematics(M_l)
             except Exception as e:
                 # print("Failed to calculate IK for left arm, this should not happen!")
@@ -148,7 +167,7 @@ def random_trajectoy(reachy: ReachySDK, debug_pose: bool = False, bypass: bool =
         # print(f" x,y,z, {x,y,z}, roll,pitch,yaw {roll,pitch,yaw}")
 
         if CONTROLE_TYPE == "sdk_continuous":
-            time.sleep(0.05)
+            time.sleep(0.1)
             r_real_pose = reachy.r_arm.forward_kinematics()
             l_real_pose = reachy.l_arm.forward_kinematics()
         else:
@@ -157,74 +176,15 @@ def random_trajectoy(reachy: ReachySDK, debug_pose: bool = False, bypass: bool =
             r_real_pose = reachy.r_arm.forward_kinematics(ik_r)
             l_real_pose = reachy.l_arm.forward_kinematics(ik_l)
 
-        # print(f"r_real_pose {r_real_pose}")
-        # print(f"l_real_pose {l_real_pose}")
-
-        # Testing the symmetry
-        # l_mod = np.array([ik_l[0], -ik_l[1], -ik_l[2], ik_l[3], -ik_l[4], ik_l[5], -ik_l[6]])
-        # # calculate l2 distance between r_joints and l_mod
-        # l2_dist = np.linalg.norm(ik_r - l_mod)
-        # print(f"l2_dist: {l2_dist:.5f}")
-        # print(f"ik_r: {ik_r}")
-
-        # reachy.r_arm.forward_kinematics(ik_r)
-        # print(f"real_pose_r {reachy.r_arm.forward_kinematics()}")
-        # r_goal_diff = np.linalg.norm(reachy.r_arm.forward_kinematics(ik_r) - M_r)
-        # print(reachy.r_arm.forward_kinematics()[:3, 3])
-        # print(M_r[:3, 3])
-        # r_position_diff = np.linalg.norm(r_real_pose[:3, 3] - M_r[:3, 3])
-        # # print(f"real_pose_r {reachy.r_arm.forward_kinematics()}")
-        # r_euler_diff = np.linalg.norm(
-        #     Rotation.from_matrix(r_real_pose[:3, :3]).as_euler("xyz") - Rotation.from_matrix(M_r[:3, :3]).as_euler("xyz")
-        # )
-        # # print(f"real_pose_r {reachy.r_arm.forward_kinematics()}")
-        # print(f"r_position_diff: {r_position_diff:.3f}")
-        # print(f"r_euler_diff: {r_euler_diff:.3f}")
-
-        # # print(f"r_goal_diff: {r_goal_diff:.3f}")
-        # reachy.l_arm.forward_kinematics(ik_l)
-        # # print(f"real_pose_r {reachy.r_arm.forward_kinematics()}")
-        # # l_goal_diff = np.linalg.norm(reachy.l_arm.forward_kinematics(ik_l) - M_l)
-        # # l_position_diff = np.linalg.norm(l_real_pose[:3, 3] - M_l[:3, 3])
-        # # l_euler_diff = np.linalg.norm(
-        # #     Rotation.from_matrix(l_real_pose[:3, :3]).as_euler("xyz") - Rotation.from_matrix(M_l[:3, :3]).as_euler("xyz")
-        # # )
-        # # print(f"real_pose_r {reachy.r_arm.forward_kinematics()}")
-        # print(f"l_position_diff: {l_position_diff:.3f}")
-        # print(f"l_euler_diff: {l_euler_diff:.3f}")
-
-        # print(f"l_goal_diff: {l_goal_diff:.3f}")
-        # if (r_position_diff < 0.01 or r_position_diff < 0.01) and (l_position_diff < 0.01 or l_position_diff < 0.01):
-        #     print("precisions OK")
-        # else:
-        #     print("precisions NOT OK!!")
-        #     print(f"initial r_q {r_q}")
-        #     print(f"real_pose_r {reachy.r_arm.forward_kinematics()}")
-        #     print(f"real_pose_l {reachy.l_arm.forward_kinematics()}")
-        #     print(f"ik_r {np.round(ik_r, 3).tolist()}")
-        #     print(f"ik_l {np.round(ik_l, 3).tolist()}")
-        #     print(f"M_r {M_r}")
-        #     print(f"M_l {M_l}")
-        #     break
-        # print(f"ik_l: {ik_l}")
-        # if l2_dist < 0.1:
-        #     print("Symmetry OK")
-        # else:
-        #     print("Symmetry NOT OK!!")
-        #     print(f"initial r_q {r_q}")
-        #     print(f"ik_r {np.round(ik_r, 3).tolist()}")
-        #     print(f"ik_l_sym {np.round(l_mod, 3).tolist()}")
-        #     print(f"M_r {M_r}")
-        #     print(f"M_l {M_l}")
-        #     break
-
-        is_real_pose_correct = check_precision_and_symmetry(reachy, M_r, M_l, r_real_pose, l_real_pose, ik_r, ik_l)
+        is_real_pose_correct = check_precision_and_symmetry(
+            reachy, M_r, M_l, r_real_pose, l_real_pose, ik_r, ik_l, elbow_position_r, elbow_position_l
+        )
         if not is_real_pose_correct:
             break
 
         # print(f"ik_r: {ik_r}, ik_l: {ik_l}, time_r: {t1-t0}, time_l: {t2-t1}")
         # Trying to emulate a control loop
-        print(max(0, 1.0 / control_freq - (time.time() - t)))
+        # print(max(0, 1.0 / control_freq - (time.time() - t)))
         time.sleep(max(0, 1.0 / control_freq - (time.time() - t)))
 
 
@@ -236,8 +196,19 @@ def check_precision_and_symmetry(
     l_real_pose: npt.NDArray[np.float64],
     ik_r: list[float],
     ik_l: list[float],
+    elbow_position_r: npt.NDArray[np.float64],
+    elbow_position_l: npt.NDArray[np.float64],
 ) -> bool:
     is_real_pose_correct = True
+
+    if CONTROLE_TYPE == "local_continuous" or CONTROLE_TYPE == "local_discrete":
+        # print(elbow_position_r)
+        distance_from_singularity_r = distance_from_singularity(elbow_position_r, "r_arm")
+        distance_from_singularity_l = distance_from_singularity(elbow_position_l, "l_arm")
+        print(f"distance_from_singularity_r: {distance_from_singularity_r:.5f}")
+        print(f"distance_from_singularity_l: {distance_from_singularity_l:.5f}")
+        if distance_from_singularity_r < 1e-4 or distance_from_singularity_l < 1e-4:
+            print("Singularity reached_______________________________________________________________________")
 
     l_mod = np.array([ik_l[0], -ik_l[1], -ik_l[2], ik_l[3], -ik_l[4], ik_l[5], -ik_l[6]])
     # calculate l2 distance between r_joints and l_mod
@@ -270,8 +241,8 @@ def check_precision_and_symmetry(
         print(f"M_r {M_r}")
         print(f"M_l {M_l}")
         is_real_pose_correct = False
-    print(f"ik_l: {ik_l}")
-    if l2_dist < 0.1:
+    # print(f"ik_l: {ik_l}")
+    if l2_dist < 0.00001:
         print("Symmetry OK")
     else:
         print("Symmetry NOT OK!!")
@@ -281,7 +252,7 @@ def check_precision_and_symmetry(
         print(f"M_r {M_r}")
         print(f"M_l {M_l}")
         is_real_pose_correct = False
-
+    print("_____________________")
     return is_real_pose_correct
 
 
