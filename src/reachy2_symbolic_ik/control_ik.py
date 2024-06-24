@@ -6,9 +6,8 @@ import numpy as np
 import numpy.typing as npt
 
 from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
-from reachy2_symbolic_ik.utils import (  # get_best_continuous_theta2,
+from reachy2_symbolic_ik.utils import (  # get_best_continuous_theta2,; distance_from_singularity,
     allow_multiturn,
-    # distance_from_singularity,
     get_best_continuous_theta,
     get_best_discrete_theta,
     get_best_theta_to_current_joints,
@@ -161,12 +160,12 @@ class ControlIK:
 
         ik_joints_raw = ik_joints
         ik_joints = limit_orbita3d_joints_wrist(ik_joints_raw, self.orbita3D_max_angle)
-        #TODO add throttle_duration_sec=0.1
+        # TODO add throttle_duration_sec=0.1
         # if not np.allclose(ik_joints, ik_joints_raw):
         #     self.print_log(f"{name} Wrist joint limit reached. \nRaw joints: {ik_joints_raw}\nLimited joints: {ik_joints}")
 
         ik_joints_allowed = allow_multiturn(ik_joints, self.previous_sol[name], name)
-        #TODO add throttle_duration_sec=0.1
+        # TODO add throttle_duration_sec=0.1
         # if not np.allclose(ik_joints_allowed, ik_joints):
         #     self.print_log(
         #         f"{name} Multiturn joint limit reached. \nRaw joints: {ik_joints}\nLimited joints: {ik_joints_allowed}"
