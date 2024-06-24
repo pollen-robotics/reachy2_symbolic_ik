@@ -81,9 +81,20 @@ class ControlIK:
                 self.prefered_theta[arm] = -np.pi - self.prefered_theta["r_arm"]
                 self.previous_sol[arm] = current_joints[1]
                 self.previous_pose[arm] = current_pose[1]
-            self.previous_theta[arm] = self.prefered_theta[arm]
+            current_goal_position, current_goal_orientation = get_euler_from_homogeneous_matrix(self.previous_pose[arm])
+            current_pose_tuple = np.array([current_goal_position, current_goal_orientation])
+            is_reachable, interval, theta_to_joints_func = self.symbolic_ik_solver[arm].is_reachable_no_limits(
+                current_pose_tuple,
+            )
+            best_prev_theta, state = get_best_theta_to_current_joints(
+                theta_to_joints_func,
+                20,
+                current_joints,
+                arm,
+            )
+            self.previous_theta[arm] = best_prev_theta
+            # self.previous_theta[arm] = self.prefered_theta[arm]
             self.last_call_t[arm] = 0.0
-            self.print_log("laaaa")
 
     def symbolic_inverse_kinematics(  # noqa: C901
         self,
@@ -135,10 +146,10 @@ class ControlIK:
         elif control_type == "discrete":
             if len(interval_limit) == 0:
                 # if interval_limit.size == 0:
-                self.print_log(f"{name} No interval limit provided. Using default [-pi, pi]")
+                # self.print_log(f"{name} No interval limit provided. Using default [-pi, pi]")
                 interval_limit = np.array([-np.pi, np.pi])
             if name.startswith("l"):
-                self.print_log(f"{name} interval_limit: {interval_limit}")
+                # self.print_log(f"{name} interval_limit: {interval_limit}")
                 interval_limit = np.array([-np.pi - interval_limit[1], -np.pi - interval_limit[0]])
             ik_joints, is_reachable, state = self.symbolic_inverse_kinematics_discrete(
                 name, goal_pose, interval_limit, current_joints
@@ -150,14 +161,16 @@ class ControlIK:
 
         ik_joints_raw = ik_joints
         ik_joints = limit_orbita3d_joints_wrist(ik_joints_raw, self.orbita3D_max_angle)
-        if not np.allclose(ik_joints, ik_joints_raw):
-            self.print_log(f"{name} Wrist joint limit reached. \nRaw joints: {ik_joints_raw}\nLimited joints: {ik_joints}")
+        #TODO add throttle_duration_sec=0.1
+        # if not np.allclose(ik_joints, ik_joints_raw):
+        #     self.print_log(f"{name} Wrist joint limit reached. \nRaw joints: {ik_joints_raw}\nLimited joints: {ik_joints}")
 
         ik_joints_allowed = allow_multiturn(ik_joints, self.previous_sol[name], name)
-        if not np.allclose(ik_joints_allowed, ik_joints):
-            self.print_log(
-                f"{name} Multiturn joint limit reached. \nRaw joints: {ik_joints}\nLimited joints: {ik_joints_allowed}"
-            )
+        #TODO add throttle_duration_sec=0.1
+        # if not np.allclose(ik_joints_allowed, ik_joints):
+        #     self.print_log(
+        #         f"{name} Multiturn joint limit reached. \nRaw joints: {ik_joints}\nLimited joints: {ik_joints_allowed}"
+        #     )
         ik_joints = ik_joints_allowed
         # self.logger.info(f"{name} ik={ik_joints}")
         self.previous_sol[name] = copy.deepcopy(ik_joints)
@@ -271,7 +284,7 @@ class ControlIK:
             #     self.symbolic_ik_solver[name].arm,
             # )
             if not is_reachable:
-                self.print_log(f"{name} Pose not reachable. State: {state_theta}")
+                # self.print_log(f"{name} Pose not reachable. State: {state_theta}")
                 state = "limited by shoulder"
             # self.print_log(f"name: {name}, theta: {theta}")
             theta, state_interval = limit_theta_to_interval(theta, self.previous_theta[name], interval_limit)
@@ -286,7 +299,7 @@ class ControlIK:
             # )
 
         else:
-            self.print_log(f"{name} Pose not reachable before even reaching theta selection. State: {state_reachable}")
+            # self.print_log(f"{name} Pose not reachable before even reaching theta selection. State: {state_reachable}")
             is_reachable, interval, theta_to_joints_func = self.symbolic_ik_solver[name].is_reachable_no_limits(goal_pose)
             if is_reachable:
                 is_reachable, theta = tend_to_prefered_theta(
@@ -342,7 +355,7 @@ class ControlIK:
             )
 
             if not is_reachable:
-                self.print_log(f"{name} Pose not reachable. State: {state_theta}")
+                # self.print_log(f"{name} Pose not reachable. State: {state_theta}")
                 state = "limited by shoulder"
             # is_reachable, theta, state = get_best_discrete_theta_min_mouvement(
             #     self.previous_theta[name],
