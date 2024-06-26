@@ -58,7 +58,7 @@ class ControlIK:
 
         self.nb_search_points = 20
 
-        self.prefered_theta: Dict[str, float] = {}
+        self.preferred_theta: Dict[str, float] = {}
         self.previous_theta: Dict[str, float] = {}
         self.previous_sol: Dict[str, list[float]] = {}
         self.previous_pose: Dict[str, npt.NDArray[np.float64]] = {}
@@ -73,11 +73,11 @@ class ControlIK:
                 wrist_limit=np.rad2deg(self.orbita3D_max_angle),
             )
             if prefix == "r":
-                self.prefered_theta[arm] = -4 * np.pi / 6
+                self.preferred_theta[arm] = -4 * np.pi / 6
                 self.previous_sol[arm] = current_joints[0]
                 self.previous_pose[arm] = current_pose[0]
             else:
-                self.prefered_theta[arm] = -np.pi - self.prefered_theta["r_arm"]
+                self.preferred_theta[arm] = -np.pi - self.preferred_theta["r_arm"]
                 self.previous_sol[arm] = current_joints[1]
                 self.previous_pose[arm] = current_pose[1]
             current_goal_position, current_goal_orientation = get_euler_from_homogeneous_matrix(self.previous_pose[arm])
@@ -92,7 +92,7 @@ class ControlIK:
                 arm,
             )
             self.previous_theta[arm] = best_prev_theta
-            # self.previous_theta[arm] = self.prefered_theta[arm]
+            # self.previous_theta[arm] = self.preferred_theta[arm]
             self.last_call_t[arm] = 0.0
 
     def symbolic_inverse_kinematics(  # noqa: C901
@@ -101,57 +101,50 @@ class ControlIK:
         M: npt.NDArray[np.float64],
         control_type: str,
         current_joints: list[float] = [],
-        interval_limit: npt.NDArray[np.float64] = np.array([]),
+        # interval_limit: npt.NDArray[np.float64] = np.array([]),
+        constrained_mode: str = "unconstrained",
         current_pose: npt.NDArray[np.float64] = np.array([]),
+        d_theta_max: float = 0.01,
+        preferred_theta: float = -4 * np.pi / 6,
+
     ) -> Tuple[list[float], bool, str]:
         goal_position, goal_orientation = get_euler_from_homogeneous_matrix(M)
         goal_pose = np.array([goal_position, goal_orientation])
         # self.print_log(f"{name} goal_position: {goal_position}")
         # self.print_log(f" controle_type: {control_type}")
+        if constrained_mode == "unconstrained":
+            interval_limit = np.array([-np.pi, np.pi])
+        elif constrained_mode == "low_elbow":
+            interval_limit = np.array([-4 * np.pi / 5, 0])
 
         if len(current_pose) == 0:
             current_pose = self.previous_pose[name]
-            # if name.startswith("r"):
-
-            #     # current_pose = np.array(
-            #     #     [
-            #     #         [1, 0, 0, 0],
-            #     #         [0, 1, 0, -0.2],
-            #     #         [0, 0, 1, -0.66],
-            #     #         [0, 0, 0, 1],
-            #     #     ]
-            #     # )
-            # else:
-            #     current_pose = np.array(
-            #         [
-            #             [1, 0, 0, 0],
-            #             [0, 1, 0, 0.2],
-            #             [0, 0, 1, -0.66],
-            #             [0, 0, 0, 1],
-            #         ]
-            #     )
 
         if current_joints == []:
             current_joints = self.previous_sol[name]
 
+        if name.startswith("l"):
+            interval_limit = np.array([-np.pi - interval_limit[1], -np.pi - interval_limit[0]])
+            preferred_theta = -np.pi - preferred_theta
+
         if control_type == "continuous":
-            if len(interval_limit) == 0:
-                interval_limit = np.array([-4 * np.pi / 5, 0])
-            if name.startswith("l"):
-                interval_limit = np.array([-np.pi - interval_limit[1], -np.pi - interval_limit[0]])
+            # if len(interval_limit) == 0:
+            #     interval_limit = np.array([-4 * np.pi / 5, 0])
+            # self.print_log(f"controle_type: {control_type} arm: {name}")
             ik_joints, is_reachable, state = self.symbolic_inverse_kinematics_continuous(
-                name, goal_pose, interval_limit, current_joints, current_pose
+                name, goal_pose, interval_limit, current_joints, current_pose, preferred_theta, d_theta_max
             )
         elif control_type == "discrete":
-            if len(interval_limit) == 0:
-                # if interval_limit.size == 0:
-                # self.print_log(f"{name} No interval limit provided. Using default [-pi, pi]")
-                interval_limit = np.array([-np.pi, np.pi])
-            if name.startswith("l"):
-                # self.print_log(f"{name} interval_limit: {interval_limit}")
-                interval_limit = np.array([-np.pi - interval_limit[1], -np.pi - interval_limit[0]])
+            # self.print_log(f"controle_type: {control_type}, arm: {name}")
+            # if len(interval_limit) == 0:
+            # if interval_limit.size == 0:
+            # self.print_log(f"{name} No interval limit provided. Using default [-pi, pi]")
+            # interval_limit = np.array([-np.pi, np.pi])
+            # if name.startswith("l"):
+            # self.print_log(f"{name} interval_limit: {interval_limit}")
+            # interval_limit = np.array([-np.pi - interval_limit[1], -np.pi - interval_limit[0]])
             ik_joints, is_reachable, state = self.symbolic_inverse_kinematics_discrete(
-                name, goal_pose, interval_limit, current_joints
+                name, goal_pose, interval_limit, current_joints, preferred_theta
             )
         else:
             raise ValueError(f"Unknown type {control_type}")
@@ -191,6 +184,8 @@ class ControlIK:
         interval_limit: npt.NDArray[np.float64],
         current_joints: list[float],
         current_pose: npt.NDArray[np.float64],
+        preferred_theta: float,
+        d_theta_max: float,
     ) -> Tuple[list[float], bool, str]:
         # self.print_log("continuous")
         t = time.time()
@@ -206,10 +201,10 @@ class ControlIK:
         self.last_call_t[name] = t
         print(f" last_call_t: {self.last_call_t[name]}")
         print(f" last_call_t: {self.last_call_t}")
-        d_theta_max = 0.01
+        # d_theta_max = 0.01
 
         # if self.previous_theta[name] is None:
-        #     self.previous_theta[name] = self.prefered_theta[name]
+        #     self.previous_theta[name] = self.preferred_theta[name]
 
         if self.previous_sol[name] == []:
             # if the arm moved since last call, we need to update the previous_sol
@@ -253,7 +248,7 @@ class ControlIK:
             # self.print_log(f"state: {state}. Computation time: {(t1-t0)*1000:.2f}ms")
 
         # self.logger.warning(
-        #     f"{name} prefered_theta: {prefered_theta}, previous_theta: {self.previous_theta[name]}"
+        #     f"{name} preferred_theta: {preferred_theta}, previous_theta: {self.previous_theta[name]}"
         # )
         (
             is_reachable,
@@ -270,7 +265,8 @@ class ControlIK:
                 theta_to_joints_func,
                 # 10,
                 d_theta_max,
-                self.prefered_theta[name],
+                preferred_theta,
+                # self.preferred_theta[name],
                 self.symbolic_ik_solver[name].arm,
             )
             # is_reachable, theta, state_theta = get_best_continuous_theta2(
@@ -279,7 +275,7 @@ class ControlIK:
             #     theta_to_joints_func,
             #     10,
             #     d_theta_max,
-            #     self.prefered_theta[name],
+            #     self.preferred_theta[name],
             #     self.symbolic_ik_solver[name].arm,
             # )
             if not is_reachable:
@@ -306,7 +302,8 @@ class ControlIK:
                     interval,
                     theta_to_joints_func,
                     d_theta_max,
-                    goal_theta=self.prefered_theta[name],
+                    goal_theta=preferred_theta,
+                    # goal_theta=self.preferred_theta[name],
                 )
                 theta, state = limit_theta_to_interval(theta, self.previous_theta[name], interval_limit)
                 # self.print_log(
@@ -330,6 +327,7 @@ class ControlIK:
         goal_pose: npt.NDArray[np.float64],
         interval_limit: npt.NDArray[np.float64],
         current_joints: list[float],
+        preferred_theta: float,
     ) -> Tuple[list[float], bool, str]:
         # self.print_log("discrete")
         # Checks if an interval exists that handles the wrist limits and the elbow limits
@@ -349,7 +347,8 @@ class ControlIK:
                 interval,
                 theta_to_joints_func,
                 self.nb_search_points,
-                self.prefered_theta[name],
+                preferred_theta,
+                # self.preferred_theta[name],
                 self.symbolic_ik_solver[name].arm,
             )
 
@@ -361,7 +360,7 @@ class ControlIK:
             #     interval,
             #     theta_to_joints_func,
             #     self.nb_search_points,
-            #     prefered_theta,
+            #     preferred_theta,
             #     self.symbolic_ik_solver[name].arm,
             #     np.array(self.get_current_joints(self.chain[name]))
             # )

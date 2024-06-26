@@ -4,17 +4,20 @@ from typing import Tuple
 import numpy as np
 import numpy.typing as npt
 from reachy2_sdk import ReachySDK
-from reachy2_sdk_api.arm_pb2 import ArmCartesianGoal
+from reachy2_sdk_api.arm_pb2 import ArmCartesianGoal, IKContinuousMode, IKConstrainedMode
 from reachy2_sdk_api.kinematics_pb2 import Matrix4x4
 from scipy.spatial.transform import Rotation
 
 from reachy2_symbolic_ik.control_ik import ControlIK
 from reachy2_symbolic_ik.utils import distance_from_singularity
 
+from google.protobuf.wrappers_pb2 import FloatValue, Int32Value
+
+
 # CONTROLE_TYPE = "local_discrete"
 # CONTROLE_TYPE = "local_continuous"
-# CONTROLE_TYPE = "sdk_discrete"
-CONTROLE_TYPE = "sdk_continuous"
+CONTROLE_TYPE = "sdk_discrete"
+# CONTROLE_TYPE = "sdk_continuous"
 
 
 def get_homogeneous_matrix_msg_from_euler(
@@ -70,6 +73,11 @@ def get_ik(
             request = ArmCartesianGoal(
                 id=reachy.r_arm._part_id,
                 goal_pose=Matrix4x4(data=M.flatten().tolist()),
+                continuous_mode=IKContinuousMode.CONTINUOUS,
+                constrained_mode=IKConstrainedMode.UNCONSTRAINED,
+                preferred_theta=FloatValue(value=-3 * np.pi / 6,),
+                d_theta_max=FloatValue(value=0.1),
+                order_id=Int32Value(value=5),
             )
             reachy.r_arm._arm_stub.SendArmCartesianGoal(request)
             # print(reachy.r_arm.shoulder.pitch.present_position)
@@ -77,6 +85,11 @@ def get_ik(
             request = ArmCartesianGoal(
                 id=reachy.l_arm._part_id,
                 goal_pose=Matrix4x4(data=M.flatten().tolist()),
+                continuous_mode=IKContinuousMode.DISCRETE,
+                constrained_mode=IKConstrainedMode.LOW_ELBOW,
+                preferred_theta=FloatValue(value=-5 * np.pi / 6,),
+                d_theta_max=FloatValue(value=0.1),
+                order_id=Int32Value(value=5),
             )
             reachy.l_arm._arm_stub.SendArmCartesianGoal(request)
     return joints, elbow_position
