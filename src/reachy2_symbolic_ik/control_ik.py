@@ -106,7 +106,6 @@ class ControlIK:
         current_pose: npt.NDArray[np.float64] = np.array([]),
         d_theta_max: float = 0.01,
         preferred_theta: float = -4 * np.pi / 6,
-
     ) -> Tuple[list[float], bool, str]:
         goal_position, goal_orientation = get_euler_from_homogeneous_matrix(M)
         goal_pose = np.array([goal_position, goal_orientation])
