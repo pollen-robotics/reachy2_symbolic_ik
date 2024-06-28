@@ -14,7 +14,7 @@ from reachy2_symbolic_ik.utils import (  # get_best_continuous_theta2,; distance
     get_euler_from_homogeneous_matrix,
     limit_orbita3d_joints_wrist,
     limit_theta_to_interval,
-    tend_to_prefered_theta,
+    tend_to_preferred_theta,
 )
 
 SHOW_GRAPH = False
@@ -25,12 +25,9 @@ class ControlIK:
         # TODO : default current position depends of the shoulder offset
         self,
         current_joints: list[list[float]] = [
+            # arms along the body
             [0.0, -0.17453292519943295, -0.2617993877991494, 0.0, 0.0, 0.0, 0.0],
             [0.0, 0.17453292519943295, 0.2617993877991494, 0.0, 0.0, 0.0, 0.0],
-            # [6.44728404e-01, -2.95532788e-01,  1.06260987e-01, -1.27504976e+00,
-            #   1.38270728e-10,  6.37524882e-01, -5.23598776e-01],
-            # [6.44728404e-01,  2.95532788e-01, -1.06260987e-01, -1.27504976e+00,
-            #  -1.38271616e-10,  6.37524882e-01,  5.23598776e-01]
         ],
         current_pose: list[npt.NDArray[np.float64]] = [
             np.array(
@@ -101,7 +98,6 @@ class ControlIK:
         M: npt.NDArray[np.float64],
         control_type: str,
         current_joints: list[float] = [],
-        # interval_limit: npt.NDArray[np.float64] = np.array([]),
         constrained_mode: str = "unconstrained",
         current_pose: npt.NDArray[np.float64] = np.array([]),
         d_theta_max: float = 0.01,
@@ -127,21 +123,12 @@ class ControlIK:
             preferred_theta = -np.pi - preferred_theta
 
         if control_type == "continuous":
-            # if len(interval_limit) == 0:
-            #     interval_limit = np.array([-4 * np.pi / 5, 0])
             # self.print_log(f"controle_type: {control_type} arm: {name}")
             ik_joints, is_reachable, state = self.symbolic_inverse_kinematics_continuous(
                 name, goal_pose, interval_limit, current_joints, current_pose, preferred_theta, d_theta_max
             )
         elif control_type == "discrete":
             # self.print_log(f"controle_type: {control_type}, arm: {name}")
-            # if len(interval_limit) == 0:
-            # if interval_limit.size == 0:
-            # self.print_log(f"{name} No interval limit provided. Using default [-pi, pi]")
-            # interval_limit = np.array([-np.pi, np.pi])
-            # if name.startswith("l"):
-            # self.print_log(f"{name} interval_limit: {interval_limit}")
-            # interval_limit = np.array([-np.pi - interval_limit[1], -np.pi - interval_limit[0]])
             ik_joints, is_reachable, state = self.symbolic_inverse_kinematics_discrete(
                 name, goal_pose, interval_limit, current_joints, preferred_theta
             )
@@ -188,8 +175,8 @@ class ControlIK:
     ) -> Tuple[list[float], bool, str]:
         # self.print_log("continuous")
         t = time.time()
-        print(f" last_call_t: {self.last_call_t}")
-        print(f" last_call_t: {self.last_call_t[name]}")
+        # print(f" last_call_t: {self.last_call_t}")
+        # print(f" last_call_t: {self.last_call_t[name]}")
         state = ""
         if abs(t - self.last_call_t[name]) > self.call_timeout:
             # self.logger.warning(
@@ -198,12 +185,8 @@ class ControlIK:
             self.previous_sol[name] = []
             self.print_log(f"{name} Timeout reached. Resetting previous_sol {t},  {self.last_call_t[name]}")
         self.last_call_t[name] = t
-        print(f" last_call_t: {self.last_call_t[name]}")
-        print(f" last_call_t: {self.last_call_t}")
-        # d_theta_max = 0.01
-
-        # if self.previous_theta[name] is None:
-        #     self.previous_theta[name] = self.preferred_theta[name]
+        # print(f" last_call_t: {self.last_call_t[name]}")
+        # print(f" last_call_t: {self.last_call_t}")
 
         if self.previous_sol[name] == []:
             # if the arm moved since last call, we need to update the previous_sol
@@ -212,39 +195,19 @@ class ControlIK:
             # Otherwise, when there is no call for more than call_timeout, the joints will be cast between -pi and pi
             # -> If you pause a rosbag during a multiturn and restart it, the previous_sol will be wrong by 2pi
             self.previous_sol[name] = current_joints
-
-            # Finding the current pose and estimating the best theta to match that pose
-            # error, current_pose = forward_kinematics(
-            #     self.fk_solver[name],
-            #     current_joints,
-            #     self.chain[name].getNrOfJoints(),
-            # )
-
             current_goal_position, current_goal_orientation = get_euler_from_homogeneous_matrix(current_pose)
-            # self.print_log(f"current_goal_position: {current_goal_position}")
-            # self.print_log(f"current_goal_orientation: {current_goal_orientation}")
-            # current_pose_tuple = np.array(goal_pose)
             current_pose_tuple = np.array([current_goal_position, current_goal_orientation])
-            # t0 = time.time()
             is_reachable, interval, theta_to_joints_func = self.symbolic_ik_solver[name].is_reachable_no_limits(
                 current_pose_tuple,
             )
-            # self.print_log(f"current_pose: {current_pose_tuple}, arm: {name}")
-
-            # self.print_log(f"current_joints: {current_joints}, arm: {name}")
             best_prev_theta, state = get_best_theta_to_current_joints(
                 theta_to_joints_func,
                 20,
                 current_joints,
                 name,
             )
-            # t1 = time.time()
             self.previous_theta[name] = best_prev_theta
-            # self.print_log(f"{name} previous_sol is None. Setting it to current position : {self.previous_sol[name]}")
-            # self.print_log(
-            #     f"{name} estimating previous_theta from current position. Best previous theta: {self.previous_theta[name]}"
-            # )
-            # self.print_log(f"state: {state}. Computation time: {(t1-t0)*1000:.2f}ms")
+            self.print_log(f"{name}, previous_theta: {self.previous_theta[name]}")
 
         # self.logger.warning(
         #     f"{name} preferred_theta: {preferred_theta}, previous_theta: {self.previous_theta[name]}"
@@ -296,13 +259,12 @@ class ControlIK:
             # self.print_log(f"{name} Pose not reachable before even reaching theta selection. State: {state_reachable}")
             is_reachable, interval, theta_to_joints_func = self.symbolic_ik_solver[name].is_reachable_no_limits(goal_pose)
             if is_reachable:
-                is_reachable, theta = tend_to_prefered_theta(
+                is_reachable, theta = tend_to_preferred_theta(
                     self.previous_theta[name],
                     interval,
                     theta_to_joints_func,
                     d_theta_max,
                     goal_theta=preferred_theta,
-                    # goal_theta=self.preferred_theta[name],
                 )
                 theta, state = limit_theta_to_interval(theta, self.previous_theta[name], interval_limit)
                 # self.print_log(
@@ -347,27 +309,12 @@ class ControlIK:
                 theta_to_joints_func,
                 self.nb_search_points,
                 preferred_theta,
-                # self.preferred_theta[name],
                 self.symbolic_ik_solver[name].arm,
             )
 
             if not is_reachable:
                 # self.print_log(f"{name} Pose not reachable. State: {state_theta}")
                 state = "limited by shoulder"
-            # is_reachable, theta, state = get_best_discrete_theta_min_mouvement(
-            #     self.previous_theta[name],
-            #     interval,
-            #     theta_to_joints_func,
-            #     self.nb_search_points,
-            #     preferred_theta,
-            #     self.symbolic_ik_solver[name].arm,
-            #     np.array(self.get_current_joints(self.chain[name]))
-            # )
-            # self.logger.info(f"state get_best_discrete_theta: {state}")
-            # self.logger.info(f"Best theta: {theta}")
-        # else:
-        #     self.logger.error(f"{name} Pose not reachable before even reaching theta selection. State: {state_reachable}")
-        # self.print_log(f"State: {is_reachable}")
 
         if is_reachable:
             ik_joints, elbow_position = theta_to_joints_func(theta, previous_joints=self.previous_sol[name])

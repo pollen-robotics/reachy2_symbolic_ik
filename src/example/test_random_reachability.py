@@ -18,8 +18,8 @@ from reachy2_symbolic_ik.utils import distance_from_singularity
 
 # CONTROLE_TYPE = "local_discrete"
 # CONTROLE_TYPE = "local_continuous"
-CONTROLE_TYPE = "sdk_discrete"
-# CONTROLE_TYPE = "sdk_continuous"
+# CONTROLE_TYPE = "sdk_discrete"
+CONTROLE_TYPE = "sdk_continuous"
 
 
 def get_homogeneous_matrix_msg_from_euler(
@@ -64,6 +64,7 @@ def get_ik(
         joints, is_reachable, state = control_ik.symbolic_inverse_kinematics(arm, M, "continuous")
         joints = list(np.degrees(joints))
         elbow_position = (control_ik.symbolic_ik_solver[arm].elbow_position)[:3]
+        print(f"joint angles: {joints}")
         # print(f"is_reachable: {is_reachable}, state: {state}")
     elif CONTROLE_TYPE == "sdk_discrete":
         if arm == "r_arm":
