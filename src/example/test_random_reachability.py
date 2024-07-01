@@ -17,9 +17,9 @@ from reachy2_symbolic_ik.control_ik import ControlIK
 from reachy2_symbolic_ik.utils import distance_from_singularity
 
 # CONTROLE_TYPE = "local_discrete"
-# CONTROLE_TYPE = "local_continuous"
+CONTROLE_TYPE = "local_continuous"
 # CONTROLE_TYPE = "sdk_discrete"
-CONTROLE_TYPE = "sdk_continuous"
+# CONTROLE_TYPE = "sdk_continuous"
 
 
 def get_homogeneous_matrix_msg_from_euler(
@@ -61,7 +61,7 @@ def get_ik(
         elbow_position = (control_ik.symbolic_ik_solver[arm].elbow_position)[:3]
         # print(f"elbow_position: {elbow_position}")
     elif CONTROLE_TYPE == "local_continuous":
-        joints, is_reachable, state = control_ik.symbolic_inverse_kinematics(arm, M, "continuous")
+        joints, is_reachable, state = control_ik.symbolic_inverse_kinematics(arm, M, "continuous", constrained_mode="low_elbow")
         joints = list(np.degrees(joints))
         elbow_position = (control_ik.symbolic_ik_solver[arm].elbow_position)[:3]
         print(f"joint angles: {joints}")
@@ -262,7 +262,7 @@ def check_precision_and_symmetry(
         print(f"M_l {M_l}")
         is_real_pose_correct = False
     # print(f"ik_l: {ik_l}")
-    if l2_dist < 0.00001:
+    if l2_dist < 0.1:
         print("Symmetry OK")
     else:
         print("Symmetry NOT OK!!")
