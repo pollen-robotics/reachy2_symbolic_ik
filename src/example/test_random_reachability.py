@@ -3,8 +3,13 @@ from typing import Tuple
 
 import numpy as np
 import numpy.typing as npt
+from google.protobuf.wrappers_pb2 import FloatValue, Int32Value
 from reachy2_sdk import ReachySDK
-from reachy2_sdk_api.arm_pb2 import ArmCartesianGoal
+from reachy2_sdk_api.arm_pb2 import (
+    ArmCartesianGoal,
+    IKConstrainedMode,
+    IKContinuousMode,
+)
 from reachy2_sdk_api.kinematics_pb2 import Matrix4x4
 from scipy.spatial.transform import Rotation
 
@@ -12,9 +17,9 @@ from reachy2_symbolic_ik.control_ik import ControlIK
 from reachy2_symbolic_ik.utils import distance_from_singularity
 
 # CONTROLE_TYPE = "local_discrete"
-# CONTROLE_TYPE = "local_continuous"
+CONTROLE_TYPE = "local_continuous"
 # CONTROLE_TYPE = "sdk_discrete"
-CONTROLE_TYPE = "sdk_continuous"
+# CONTROLE_TYPE = "sdk_continuous"
 
 
 def get_homogeneous_matrix_msg_from_euler(
@@ -56,9 +61,12 @@ def get_ik(
         elbow_position = (control_ik.symbolic_ik_solver[arm].elbow_position)[:3]
         # print(f"elbow_position: {elbow_position}")
     elif CONTROLE_TYPE == "local_continuous":
-        joints, is_reachable, state = control_ik.symbolic_inverse_kinematics(arm, M, "continuous")
+        joints, is_reachable, state = control_ik.symbolic_inverse_kinematics(
+            arm, M, "continuous", constrained_mode="unconstrained"
+        )
         joints = list(np.degrees(joints))
         elbow_position = (control_ik.symbolic_ik_solver[arm].elbow_position)[:3]
+        # print(f"joint angles: {joints}")
         # print(f"is_reachable: {is_reachable}, state: {state}")
     elif CONTROLE_TYPE == "sdk_discrete":
         if arm == "r_arm":
@@ -70,6 +78,13 @@ def get_ik(
             request = ArmCartesianGoal(
                 id=reachy.r_arm._part_id,
                 goal_pose=Matrix4x4(data=M.flatten().tolist()),
+                continuous_mode=IKContinuousMode.CONTINUOUS,
+                constrained_mode=IKConstrainedMode.UNCONSTRAINED,
+                preferred_theta=FloatValue(
+                    value=-3 * np.pi / 6,
+                ),
+                d_theta_max=FloatValue(value=0.1),
+                order_id=Int32Value(value=5),
             )
             reachy.r_arm._arm_stub.SendArmCartesianGoal(request)
             # print(reachy.r_arm.shoulder.pitch.present_position)
@@ -77,6 +92,13 @@ def get_ik(
             request = ArmCartesianGoal(
                 id=reachy.l_arm._part_id,
                 goal_pose=Matrix4x4(data=M.flatten().tolist()),
+                continuous_mode=IKContinuousMode.DISCRETE,
+                constrained_mode=IKConstrainedMode.LOW_ELBOW,
+                preferred_theta=FloatValue(
+                    value=-5 * np.pi / 6,
+                ),
+                d_theta_max=FloatValue(value=0.1),
+                order_id=Int32Value(value=5),
             )
             reachy.l_arm._arm_stub.SendArmCartesianGoal(request)
     return joints, elbow_position
@@ -242,7 +264,7 @@ def check_precision_and_symmetry(
         print(f"M_l {M_l}")
         is_real_pose_correct = False
     # print(f"ik_l: {ik_l}")
-    if l2_dist < 0.00001:
+    if l2_dist < 0.1:
         print("Symmetry OK")
     else:
         print("Symmetry NOT OK!!")

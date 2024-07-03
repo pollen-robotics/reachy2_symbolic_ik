@@ -95,14 +95,14 @@ def limit_theta_to_interval(theta: float, previous_theta: float, interval: npt.N
     return interval[0], "theta not in interval"
 
 
-def tend_to_prefered_theta(
+def tend_to_preferred_theta(
     previous_theta: float,
     interval: npt.NDArray[np.float64],
     get_joints: Any,
     d_theta_max: float,
     goal_theta: float = -np.pi * 5 / 4,
 ) -> Tuple[bool, float]:
-    """Tend to the prefered theta, if the goal_theta is not reachable, return the closest reachable theta"""
+    """Tend to the preferred theta, if the goal_theta is not reachable, return the closest reachable theta"""
     if abs(angle_diff(goal_theta, previous_theta)) < d_theta_max:
         return True, goal_theta
 
@@ -115,16 +115,16 @@ def get_best_continuous_theta(
     interval: npt.NDArray[np.float64],
     get_joints: Any,
     d_theta_max: float,
-    prefered_theta: float,
+    preferred_theta: float,
     arm: str,
 ) -> Tuple[bool, float, str]:
     """Get the best continuous theta,
-    if the entire circle is possible, return the prefered_theta
+    if the entire circle is possible, return the preferred_theta
     theta_middle = the middle of the interval
     if theta_middle is reachable and close to the previous_theta, return theta_middle
     if theta_middle is reachable but far from the previous_theta, return the closest theta to the previous_theta
     if theta_middle is not reachable and previous_theta is okay return previous_theta
-    if theta_middle is not reachable and previous_theta is not okay, return the closest theta to the prefered_theta"""
+    if theta_middle is not reachable and previous_theta is not okay, return the closest theta to the preferred_theta"""
     side = 1
     if arm == "l_arm":
         side = -1
@@ -133,9 +133,9 @@ def get_best_continuous_theta(
     state += "\n" + f"interval: {interval}"
     epsilon = 0.00001
     if (abs(abs(interval[0]) + abs(interval[1]) - 2 * np.pi)) < epsilon:
-        # The entire circle is possible, we'll aim for prefered_theta
+        # The entire circle is possible, we'll aim for preferred_theta
         state += "\n" + "All the circle is possible."
-        theta_middle = prefered_theta
+        theta_middle = preferred_theta
     else:
         if interval[0] > interval[1]:
             theta_middle = (interval[0] + interval[1]) / 2 - np.pi
@@ -175,12 +175,12 @@ def get_best_continuous_theta(
             return True, previous_theta, state
         else:
             # middle theta is not reachable and previous theta is not okay
-            if abs(angle_diff(prefered_theta, previous_theta)) < d_theta_max:
-                # prefered theta is close to previous theta
+            if abs(angle_diff(preferred_theta, previous_theta)) < d_theta_max:
+                # preferred theta is close to previous theta
                 state += "\n" + "theta milieu pas ok et moi pas ok - proche de theta pref"
-                return False, prefered_theta, state
-            # prefered theta is far from previous theta
-            sign = angle_diff(prefered_theta, previous_theta) / np.abs(angle_diff(prefered_theta, previous_theta))
+                return False, preferred_theta, state
+            # preferred theta is far from previous theta
+            sign = angle_diff(preferred_theta, previous_theta) / np.abs(angle_diff(preferred_theta, previous_theta))
             state += "\n" + "theta milieu pas ok et moi pas ok - bouge vers theta pref"
             return False, previous_theta + sign * d_theta_max, state
 
@@ -191,15 +191,15 @@ def get_best_continuous_theta2(
     get_joints: Any,
     nb_search_points: int,
     d_theta_max: float,
-    prefered_theta: float,
+    preferred_theta: float,
     arm: str,
 ) -> Tuple[bool, float, str]:
     """Get the best theta to aim for,
-    tend to the closest reachable theta (sampled with nb_search_points) to prefered_theta"""
+    tend to the closest reachable theta (sampled with nb_search_points) to preferred_theta"""
     state = f"{arm}"
     state += "\n" + f"interval: {interval}"
     is_reachable, theta_goal, state = get_best_discrete_theta(
-        previous_theta, interval, get_joints, nb_search_points, prefered_theta, arm
+        previous_theta, interval, get_joints, nb_search_points, preferred_theta, arm
     )
     if not is_reachable:
         # No solution was found
@@ -221,10 +221,7 @@ def get_best_continuous_theta2(
 
 
 def get_best_theta_to_current_joints(
-    get_joints: Any,
-    nb_search_points: int,
-    current_joints: list[float],
-    arm: str,
+    get_joints: Any, nb_search_points: int, current_joints: list[float], arm: str, preferred_theta: float
 ) -> Tuple[float, str]:
     """Searches all theta in the entire circle that minimises the distance to the current joints."""
     best_theta = None
@@ -246,11 +243,12 @@ def get_best_theta_to_current_joints(
     # Dichotomic search to find the best theta instead
     low = -np.pi
     high = np.pi
-    if arm == "l_arm":
-        low = 0
-        high = 2 * np.pi
-
     tolerance = 0.001
+
+    joints, elbow_position = get_joints(preferred_theta)
+    diff = np.linalg.norm([angle_diff(joints[i], current_joints[i]) for i in range(len(current_joints))])
+    if diff < 0.001:
+        return preferred_theta, f"preferred_theta worked! \n joints = {joints} \n current_joints = {current_joints}"
 
     while (high - low) > tolerance:
         mid1 = low + (high - low) / 3
@@ -259,16 +257,18 @@ def get_best_theta_to_current_joints(
         joints2, elbow_position2 = get_joints(mid2)
         diff1 = [angle_diff(joints1[i], current_joints[i]) for i in range(len(current_joints))]
         diff2 = [angle_diff(joints2[i], current_joints[i]) for i in range(len(current_joints))]
-
         f_mid1 = np.linalg.norm(diff1)
         f_mid2 = np.linalg.norm(diff2)
 
         # mid = (low + high) / 2
+        # state += f" \n mid1 = {mid1}, mid2 = {mid2}"
+        # state += f" \n f_mid1 = {f_mid1}, f_mid2 = {f_mid2}"
 
         if f_mid1 < f_mid2:
             high = mid2
         else:
             low = mid1
+
     state += f" \n low = {low}, high = {high}"
 
     best_theta = (low + high) / 2
@@ -286,28 +286,28 @@ def get_best_discrete_theta(
     interval: npt.NDArray[np.float64],
     get_joints: Any,
     nb_search_points: int,
-    prefered_theta: float,
+    preferred_theta: float,
     arm: str,
 ) -> Tuple[bool, float, str]:
-    """Searches a valid theta in the interval that is the closest to prefered_theta.
+    """Searches a valid theta in the interval that is the closest to preferred_theta.
     A valid theta is a theta that is reachable and does not make the elbow touch the robot body."""
     side = 1
     if arm == "l_arm":
         side = -1
 
     state = f"{arm}"
-    state += "\n" + f"interval: {interval}, prefered_theta: {prefered_theta}"
+    state += "\n" + f"interval: {interval}, preferred_theta: {preferred_theta}"
     epsilon = 0.00001
     best_theta = None
     best_distance = np.inf
 
-    if is_valid_angle(prefered_theta, interval):
-        # if prefered_theta is in the interval, test it first
-        joints, elbow_position = get_joints(prefered_theta)
+    if is_valid_angle(preferred_theta, interval):
+        # if preferred_theta is in the interval, test it first
+        joints, elbow_position = get_joints(preferred_theta)
         if is_elbow_ok(elbow_position, side):
-            best_theta = prefered_theta
+            best_theta = preferred_theta
             best_distance = 0
-            state += "\n" + "prefered_theta worked!"
+            state += "\n" + "preferred_theta worked!"
             return True, best_theta, state
 
     if (abs(abs(interval[0]) + abs(interval[1]) - 2 * np.pi)) < epsilon:
@@ -324,11 +324,11 @@ def get_best_discrete_theta(
     state += "\n" + f"theta_points: {theta_points}"
     debug_dict = {}
 
-    # test all theta points and choose the closest to prefered_theta
+    # test all theta points and choose the closest to preferred_theta
     for theta in theta_points:
         joints, elbow_position = get_joints(theta)
         if is_elbow_ok(elbow_position, side):
-            distance = abs(angle_diff(theta, prefered_theta))
+            distance = abs(angle_diff(theta, preferred_theta))
             debug_dict[theta] = distance
             if distance < best_distance:
                 best_theta = theta
@@ -349,7 +349,7 @@ def get_best_discrete_theta(
 #     interval: npt.NDArray[np.float64],
 #     get_joints: Any,
 #     nb_search_points: int,
-#     prefered_theta: float,
+#     preferred_theta: float,
 #     arm: str,
 #     current_joints: npt.NDArray[np.float64],
 # ) -> Tuple[bool, float, str]:
