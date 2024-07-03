@@ -40,7 +40,7 @@ def get_ik(reachy: ReachySDK, control_ik: ControlIK, M: npt.NDArray[np.float64],
         request = ArmCartesianGoal(
             id=reachy.r_arm._part_id,
             goal_pose=Matrix4x4(data=M.flatten().tolist()),
-            continuous_mode=IKContinuousMode.DISCRETE,
+            # continuous_mode=IKContinuousMode.DISCRETE,
             constrained_mode=IKConstrainedMode.LOW_ELBOW,
             # constrained_mode=IKConstrainedMode.UNCONSTRAINED,
             preferred_theta=FloatValue(

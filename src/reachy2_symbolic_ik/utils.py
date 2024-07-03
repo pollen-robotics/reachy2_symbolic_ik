@@ -221,10 +221,7 @@ def get_best_continuous_theta2(
 
 
 def get_best_theta_to_current_joints(
-    get_joints: Any,
-    nb_search_points: int,
-    current_joints: list[float],
-    arm: str,
+    get_joints: Any, nb_search_points: int, current_joints: list[float], arm: str, preferred_theta: float
 ) -> Tuple[float, str]:
     """Searches all theta in the entire circle that minimises the distance to the current joints."""
     best_theta = None
@@ -246,11 +243,12 @@ def get_best_theta_to_current_joints(
     # Dichotomic search to find the best theta instead
     low = -np.pi
     high = np.pi
-    if arm == "l_arm":
-        low = 0
-        high = 2 * np.pi
-
     tolerance = 0.001
+
+    joints, elbow_position = get_joints(preferred_theta)
+    diff = np.linalg.norm([angle_diff(joints[i], current_joints[i]) for i in range(len(current_joints))])
+    if diff < 0.001:
+        return preferred_theta, f"preferred_theta worked! \n joints = {joints} \n current_joints = {current_joints}"
 
     while (high - low) > tolerance:
         mid1 = low + (high - low) / 3
@@ -259,16 +257,18 @@ def get_best_theta_to_current_joints(
         joints2, elbow_position2 = get_joints(mid2)
         diff1 = [angle_diff(joints1[i], current_joints[i]) for i in range(len(current_joints))]
         diff2 = [angle_diff(joints2[i], current_joints[i]) for i in range(len(current_joints))]
-
         f_mid1 = np.linalg.norm(diff1)
         f_mid2 = np.linalg.norm(diff2)
 
         # mid = (low + high) / 2
+        # state += f" \n mid1 = {mid1}, mid2 = {mid2}"
+        # state += f" \n f_mid1 = {f_mid1}, f_mid2 = {f_mid2}"
 
         if f_mid1 < f_mid2:
             high = mid2
         else:
             low = mid1
+
     state += f" \n low = {low}, high = {high}"
 
     best_theta = (low + high) / 2

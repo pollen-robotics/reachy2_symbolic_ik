@@ -87,6 +87,7 @@ class ControlIK:
                 20,
                 current_joints,
                 arm,
+                self.preferred_theta[arm],
             )
             self.previous_theta[arm] = best_prev_theta
             # self.previous_theta[arm] = self.preferred_theta[arm]
@@ -141,7 +142,7 @@ class ControlIK:
         ik_joints = limit_orbita3d_joints_wrist(ik_joints_raw, self.orbita3D_max_angle)
         # TODO add throttle_duration_sec=0.1
         # if not np.allclose(ik_joints, ik_joints_raw):
-        #     self.print_log(f"{name} Wrist joint limit reached. \nRaw joints: {ik_joints_raw}\nLimited joints: {ik_joints}")
+        # self.print_log(f"{name} Wrist joint limit reached. \nRaw joints: {ik_joints_raw}\nLimited joints: {ik_joints}")
 
         ik_joints_allowed = allow_multiturn(ik_joints, self.previous_sol[name], name)
         # TODO add throttle_duration_sec=0.1
@@ -201,12 +202,10 @@ class ControlIK:
                 current_pose_tuple,
             )
             best_prev_theta, state = get_best_theta_to_current_joints(
-                theta_to_joints_func,
-                20,
-                current_joints,
-                name,
+                theta_to_joints_func, 20, current_joints, name, preferred_theta
             )
             self.previous_theta[name] = best_prev_theta
+            # self.print_log(f"{name} state preivous theta : {state}")
             self.print_log(f"{name}, previous_theta: {self.previous_theta[name]}")
 
         # self.logger.warning(
@@ -249,6 +248,7 @@ class ControlIK:
             # self.print_log(
             #    f"name: {name}, theta: {theta}, previous_theta: {self.previous_theta[name]}, state: {state_theta}"
             # )
+            # self.print_log(f"{name} theta={theta}")
             self.previous_theta[name] = theta
             ik_joints, elbow_position = theta_to_joints_func(theta, previous_joints=self.previous_sol[name])
             # self.print_log(
@@ -270,6 +270,7 @@ class ControlIK:
                 # self.print_log(
                 #    f"name: {name}, theta: {theta}, previous_theta: {self.previous_theta[name]}"
                 # )
+                # self.print_log(f"{name} theta={theta}")
                 self.previous_theta[name] = theta
                 ik_joints, elbow_position = theta_to_joints_func(theta, previous_joints=self.previous_sol[name])
             else:

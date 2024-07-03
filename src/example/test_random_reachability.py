@@ -61,10 +61,12 @@ def get_ik(
         elbow_position = (control_ik.symbolic_ik_solver[arm].elbow_position)[:3]
         # print(f"elbow_position: {elbow_position}")
     elif CONTROLE_TYPE == "local_continuous":
-        joints, is_reachable, state = control_ik.symbolic_inverse_kinematics(arm, M, "continuous", constrained_mode="low_elbow")
+        joints, is_reachable, state = control_ik.symbolic_inverse_kinematics(
+            arm, M, "continuous", constrained_mode="unconstrained"
+        )
         joints = list(np.degrees(joints))
         elbow_position = (control_ik.symbolic_ik_solver[arm].elbow_position)[:3]
-        print(f"joint angles: {joints}")
+        # print(f"joint angles: {joints}")
         # print(f"is_reachable: {is_reachable}, state: {state}")
     elif CONTROLE_TYPE == "sdk_discrete":
         if arm == "r_arm":
