@@ -245,7 +245,7 @@ def get_best_theta_to_current_joints(
     high = np.pi
     if arm == "l_arm":
         low = 0
-        high = 2*np.pi
+        high = 2 * np.pi
 
     tolerance = 0.001
 
