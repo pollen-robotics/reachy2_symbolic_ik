@@ -104,6 +104,22 @@ class ControlIK:
         d_theta_max: float = 0.01,
         preferred_theta: float = -4 * np.pi / 6,
     ) -> Tuple[list[float], bool, str]:
+        '''
+        Compute the inverse kinematics of the goal pose M.
+        Args:
+            name: r_arm or l_arm
+            M: 4x4 homogeneous matrix of the goal pose
+            control_type: continuous or discrete
+            current_joints: current joints of the arm
+            constrained_mode: unconstrained or low_elbow
+            current_pose: current pose of the arm
+            d_theta_max: maximum angle difference between two consecutive theta
+            preferred_theta: preferred theta of the right arm
+        Returns:
+            ik_joints: list of the joints angles
+            is_reachable: True if the goal pose is reachable
+            state: if not reachable, the reason why
+        '''
         goal_position, goal_orientation = get_euler_from_homogeneous_matrix(M)
         goal_pose = np.array([goal_position, goal_orientation])
         # self.print_log(f"{name} goal_position: {goal_position}")
@@ -174,6 +190,17 @@ class ControlIK:
         preferred_theta: float,
         d_theta_max: float,
     ) -> Tuple[list[float], bool, str]:
+        ''' Compute the inverse kinematics of the goal pose M with continuous control.
+        Args:
+            name: r_arm or l_arm
+            goal_pose: position and euler angles of the goal pose
+            interval_limit
+            current_joints
+            current_pose
+            preferred_theta
+            d_theta_max: maximum angle difference between two consecutive theta
+        '''
+
         # self.print_log("continuous")
         t = time.time()
         # print(f" last_call_t: {self.last_call_t}")
@@ -291,6 +318,15 @@ class ControlIK:
         current_joints: list[float],
         preferred_theta: float,
     ) -> Tuple[list[float], bool, str]:
+        '''
+        Compute the inverse kinematics of the goal pose M with discrete control.
+        Args:
+            name: r_arm or l_arm
+            goal_pose: position and euler angles of the goal pose
+            interval_limit
+            current_joints
+            preferred_theta
+        '''
         # self.print_log("discrete")
         # Checks if an interval exists that handles the wrist limits and the elbow limits
         (
