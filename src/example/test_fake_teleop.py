@@ -3,7 +3,9 @@ import time
 import numpy as np
 import numpy.typing as npt
 from google.protobuf.wrappers_pb2 import FloatValue, Int32Value
+from pyquaternion import Quaternion
 from reachy2_sdk import ReachySDK
+from reachy2_sdk.utils.utils import decompose_matrix, recompose_matrix
 from reachy2_sdk_api.arm_pb2 import (
     ArmCartesianGoal,
     IKConstrainedMode,
@@ -13,8 +15,6 @@ from reachy2_sdk_api.kinematics_pb2 import Matrix4x4
 from scipy.spatial.transform import Rotation
 
 from reachy2_symbolic_ik.control_ik import ControlIK
-from reachy2_sdk.utils.utils import recompose_matrix, decompose_matrix
-from pyquaternion import Quaternion
 
 
 def get_homogeneous_matrix_msg_from_euler(
@@ -136,18 +136,16 @@ def get_ik(reachy: ReachySDK, control_ik: ControlIK, M: npt.NDArray[np.float64],
 
 
 def make_movement(reachy: ReachySDK) -> None:
-    pose1 = [[0.38, -0.2, -0.28], [0.0, -np.pi/2, -np.pi/8]]
-    pose2 = [[0.38, -0.2, -0.28], [0.0, -np.pi/4, -np.pi/8]]
-    pose3 = [[0.38, -0.2, -0.28], [0.0, -np.pi/2, -np.pi/8]]
-    pose4 = [[0.2, 0.3, -0.1], [0.0, -np.pi/4, np.pi/2]]
-    pose5 = [[0.38, -0.2, -0.28], [0.0, -np.pi/2, -np.pi/8]]
-    pose6 = [[0.5, -0.2, -0.15], [0.0, -np.pi/2, -np.pi/16]]
-    pose7 = [[0.5, -0.2, -0.15], [0.0, -np.pi/4, -np.pi/16]]
+    pose1 = [[0.38, -0.2, -0.28], [0.0, -np.pi / 2, -np.pi / 8]]
+    pose2 = [[0.38, -0.2, -0.28], [0.0, -np.pi / 4, -np.pi / 8]]
+    pose3 = [[0.38, -0.2, -0.28], [0.0, -np.pi / 2, -np.pi / 8]]
+    pose4 = [[0.2, 0.3, -0.1], [0.0, -np.pi / 4, np.pi / 2]]
+    pose5 = [[0.38, -0.2, -0.28], [0.0, -np.pi / 2, -np.pi / 8]]
+    pose6 = [[0.5, -0.2, -0.15], [0.0, -np.pi / 2, -np.pi / 16]]
+    pose7 = [[0.5, -0.2, -0.15], [0.0, -np.pi / 4, -np.pi / 16]]
 
-
-
-    pose1_l = [[0.38, 0.2, -0.28], [0.0, -np.pi/2, np.pi/8]]
-    pose2_l = [[0.38, 0.2, -0.28], [0.0, -np.pi/4, np.pi/8]]
+    pose1_l = [[0.38, 0.2, -0.28], [0.0, -np.pi / 2, np.pi / 8]]
+    pose2_l = [[0.38, 0.2, -0.28], [0.0, -np.pi / 4, np.pi / 8]]
     m1 = get_homogeneous_matrix_msg_from_euler(pose1[0], pose1[1])
     m2 = get_homogeneous_matrix_msg_from_euler(pose2[0], pose2[1])
     m3 = get_homogeneous_matrix_msg_from_euler(pose3[0], pose3[1])
