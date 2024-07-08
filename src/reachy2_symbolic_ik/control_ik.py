@@ -107,11 +107,12 @@ class ControlIK:
         goal_position, goal_orientation = get_euler_from_homogeneous_matrix(M)
         goal_pose = np.array([goal_position, goal_orientation])
         # self.print_log(f"{name} goal_position: {goal_position}")
-        # self.print_log(f" controle_type: {control_type}")
+        # self.print_log(f" constrained_mode: {constrained_mode}")
         if constrained_mode == "unconstrained":
             interval_limit = np.array([-np.pi, np.pi])
         elif constrained_mode == "low_elbow":
             interval_limit = np.array([-4 * np.pi / 5, 0])
+            # interval_limit = np.array([-4 * np.pi / 5, -np.pi / 2])
 
         if len(current_pose) == 0:
             current_pose = self.previous_pose[name]

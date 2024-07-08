@@ -6,7 +6,6 @@ import numpy.typing as npt
 from google.protobuf.wrappers_pb2 import FloatValue, Int32Value
 from pyquaternion import Quaternion
 from reachy2_sdk import ReachySDK
-from reachy2_sdk.utils.utils import decompose_matrix, recompose_matrix
 from reachy2_sdk_api.arm_pb2 import (
     ArmCartesianGoal,
     IKConstrainedMode,
@@ -14,8 +13,27 @@ from reachy2_sdk_api.arm_pb2 import (
 )
 from reachy2_sdk_api.kinematics_pb2 import Matrix4x4
 from scipy.spatial.transform import Rotation
+from scipy.spatial.transform import Rotation as R
 
 from reachy2_symbolic_ik.control_ik import ControlIK
+
+# from reachy2_sdk.utils.utils import decompose_matrix, recompose_matrix
+
+
+def decompose_matrix(matrix: npt.NDArray[np.float64]) -> Any:
+    """Decompose a homogeneous 4x4 matrix into rotation (quaternion) and translation components."""
+    rotation_matrix = matrix[:3, :3]
+    translation = matrix[:3, 3]
+    rotation = R.from_matrix(rotation_matrix)
+    return rotation, translation
+
+
+def recompose_matrix(rotation: npt.NDArray[np.float64], translation: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+    """Recompose a homogeneous 4x4 matrix from rotation (quaternion) and translation components."""
+    matrix = np.eye(4)
+    matrix[:3, :3] = rotation  # .as_matrix()
+    matrix[:3, 3] = translation
+    return matrix
 
 
 def get_homogeneous_matrix_msg_from_euler(
@@ -34,19 +52,21 @@ def interpolate_matrices(
     matrix1: npt.NDArray[np.float64], matrix2: npt.NDArray[np.float64], t: float
 ) -> npt.NDArray[np.float64]:
     """Interpolate between two 4x4 matrices at time t [0, 1]."""
-    q1, trans1 = decompose_matrix(matrix1)
-    q2, trans2 = decompose_matrix(matrix2)
+    rot1, trans1 = decompose_matrix(matrix1)
+    rot2, trans2 = decompose_matrix(matrix2)
 
     # Linear interpolation for translation
     trans_interpolated = (1 - t) * trans1 + t * trans2
 
     # SLERP for rotation interpolation
+    q1 = Quaternion(matrix=rot1.as_matrix())
+    q2 = Quaternion(matrix=rot2.as_matrix())
     q_interpolated = Quaternion.slerp(q1, q2, t)
     rot_interpolated = q_interpolated.rotation_matrix
 
     # Recompose the interpolated matrix
     interpolated_matrix = recompose_matrix(rot_interpolated, trans_interpolated)
-    return np.array(interpolated_matrix)
+    return interpolated_matrix
 
 
 def task_space_interpolation_goto(reachy_arm: Any, target_pose: npt.NDArray[np.float64]) -> None:
@@ -74,6 +94,8 @@ def task_space_interpolation_goto(reachy_arm: Any, target_pose: npt.NDArray[np.f
         request = ArmCartesianGoal(
             id=reachy_arm._part_id,
             goal_pose=Matrix4x4(data=interpolated_matrix.flatten().tolist()),
+            continuous_mode=IKContinuousMode.CONTINUOUS,
+            constrained_mode=IKConstrainedMode.LOW_ELBOW,
         )
         reachy_arm._arm_stub.SendArmCartesianGoal(request)
         time.sleep(1 / freq)
@@ -88,6 +110,8 @@ def task_space_interpolation_goto(reachy_arm: Any, target_pose: npt.NDArray[np.f
             request = ArmCartesianGoal(
                 id=reachy_arm._part_id,
                 goal_pose=Matrix4x4(data=mat2.flatten().tolist()),
+                continuous_mode=IKContinuousMode.CONTINUOUS,
+                constrained_mode=IKConstrainedMode.LOW_ELBOW,
             )
             reachy_arm._arm_stub.SendArmCartesianGoal(request)
             time.sleep(1 / freq)
@@ -112,10 +136,11 @@ def get_ik(reachy: ReachySDK, control_ik: ControlIK, M: npt.NDArray[np.float64],
             id=reachy.r_arm._part_id,
             goal_pose=Matrix4x4(data=M.flatten().tolist()),
             # continuous_mode=IKContinuousMode.DISCRETE,
-            constrained_mode=IKConstrainedMode.LOW_ELBOW,
-            # constrained_mode=IKConstrainedMode.UNCONSTRAINED,
+            continuous_mode=IKContinuousMode.CONTINUOUS,
+            # constrained_mode=IKConstrainedMode.LOW_ELBOW,
+            constrained_mode=IKConstrainedMode.UNCONSTRAINED,
             preferred_theta=FloatValue(
-                value=-5 * np.pi / 6,
+                value=-4 * np.pi / 6,
             ),
             d_theta_max=FloatValue(value=0.1),
             order_id=Int32Value(value=order_id),
@@ -130,7 +155,7 @@ def get_ik(reachy: ReachySDK, control_ik: ControlIK, M: npt.NDArray[np.float64],
             constrained_mode=IKConstrainedMode.LOW_ELBOW,
             # constrained_mode=IKConstrainedMode.UNCONSTRAINED,
             preferred_theta=FloatValue(
-                value=-3 * np.pi / 6,
+                value=-4 * np.pi / 6,
             ),
             d_theta_max=FloatValue(value=0.1),
             order_id=Int32Value(value=(order_id + 1)),
@@ -147,8 +172,8 @@ def make_movement(reachy: ReachySDK) -> None:
     pose6 = np.array([[0.5, -0.2, -0.15], [0.0, -np.pi / 2, -np.pi / 16]])
     pose7 = np.array([[0.5, -0.2, -0.15], [0.0, -np.pi / 4, -np.pi / 16]])
 
-    pose1_l = np.array([[0.38, 0.2, -0.28], [0.0, -np.pi / 2, np.pi / 8]])
-    pose2_l = np.array([[0.38, 0.2, -0.28], [0.0, -np.pi / 4, np.pi / 8]])
+    # pose1_l = np.array([[0.38, 0.2, -0.28], [0.0, -np.pi / 2, np.pi / 8]])
+    # pose2_l = np.array([[0.38, 0.2, -0.28], [0.0, -np.pi / 4, np.pi / 8]])
     m1 = get_homogeneous_matrix_msg_from_euler(pose1[0], pose1[1])
     m2 = get_homogeneous_matrix_msg_from_euler(pose2[0], pose2[1])
     m3 = get_homogeneous_matrix_msg_from_euler(pose3[0], pose3[1])
@@ -156,8 +181,8 @@ def make_movement(reachy: ReachySDK) -> None:
     m5 = get_homogeneous_matrix_msg_from_euler(pose5[0], pose5[1])
     m6 = get_homogeneous_matrix_msg_from_euler(pose6[0], pose6[1])
     m7 = get_homogeneous_matrix_msg_from_euler(pose7[0], pose7[1])
-    m1_l = get_homogeneous_matrix_msg_from_euler(pose1_l[0], pose1_l[1])
-    m2_l = get_homogeneous_matrix_msg_from_euler(pose2_l[0], pose2_l[1])
+    # m1_l = get_homogeneous_matrix_msg_from_euler(pose1_l[0], pose1_l[1])
+    # m2_l = get_homogeneous_matrix_msg_from_euler(pose2_l[0], pose2_l[1])
     while True:
         task_space_interpolation_goto(reachy.r_arm, m1)
         task_space_interpolation_goto(reachy.r_arm, m2)
@@ -167,9 +192,9 @@ def make_movement(reachy: ReachySDK) -> None:
         task_space_interpolation_goto(reachy.r_arm, m6)
         task_space_interpolation_goto(reachy.r_arm, m7)
 
-        time.sleep(5)
-        task_space_interpolation_goto(reachy.l_arm, m1_l)
-        task_space_interpolation_goto(reachy.l_arm, m2_l)
+        # time.sleep(5)
+        # task_space_interpolation_goto(reachy.l_arm, m1_l)
+        # task_space_interpolation_goto(reachy.l_arm, m2_l)
 
 
 def spam_pose(reachy: ReachySDK, control_ik: ControlIK, pose: npt.NDArray[np.float64]) -> None:
