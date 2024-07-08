@@ -1,4 +1,5 @@
 import time
+from typing import Any
 
 import numpy as np
 import numpy.typing as npt
@@ -29,7 +30,9 @@ def get_homogeneous_matrix_msg_from_euler(
     return homogeneous_matrix
 
 
-def interpolate_matrices(matrix1, matrix2, t):
+def interpolate_matrices(
+    matrix1: npt.NDArray[np.float64], matrix2: npt.NDArray[np.float64], t: float
+) -> npt.NDArray[np.float64]:
     """Interpolate between two 4x4 matrices at time t [0, 1]."""
     q1, trans1 = decompose_matrix(matrix1)
     q2, trans2 = decompose_matrix(matrix2)
@@ -43,14 +46,14 @@ def interpolate_matrices(matrix1, matrix2, t):
 
     # Recompose the interpolated matrix
     interpolated_matrix = recompose_matrix(rot_interpolated, trans_interpolated)
-    return interpolated_matrix
+    return np.array(interpolated_matrix)
 
 
-def task_space_interpolation_goto(reachy_arm, target_pose) -> None:
+def task_space_interpolation_goto(reachy_arm: Any, target_pose: npt.NDArray[np.float64]) -> None:
     mat1 = reachy_arm.forward_kinematics()
     mat2 = target_pose
     # l2 distance between the two matrices in x, y, z only
-    l2_distance_xyz = np.linalg.norm(mat1[:3, 3] - mat2[:3, 3])
+    # l2_distance_xyz = np.linalg.norm(mat1[:3, 3] - mat2[:3, 3])
     # distance in orientation TODO
     # speed = 0.1
     # nb_points = 20
@@ -58,13 +61,13 @@ def task_space_interpolation_goto(reachy_arm, target_pose) -> None:
     freq = 120
     total_duration = 3.0
     nb_points = int(total_duration * freq)
-    nb_points_final = int(1.0 * freq)
+    # nb_points_final = int(1.0 * freq)
     try:
         l_ik_sol = reachy_arm.inverse_kinematics(mat2)
         goal_pose = reachy_arm.forward_kinematics(l_ik_sol)
         precision_distance_xyz_to_sol = np.linalg.norm(goal_pose[:3, 3] - mat2[:3, 3])
         print(f"l2 xyz distance Ik SOL vs goal pose: {precision_distance_xyz_to_sol}")
-    except:
+    except ValueError:
         print("Goal pose is not reachable!")
     for t in np.linspace(0, 1, nb_points):
         interpolated_matrix = interpolate_matrices(mat1, mat2, t)
@@ -136,16 +139,16 @@ def get_ik(reachy: ReachySDK, control_ik: ControlIK, M: npt.NDArray[np.float64],
 
 
 def make_movement(reachy: ReachySDK) -> None:
-    pose1 = [[0.38, -0.2, -0.28], [0.0, -np.pi / 2, -np.pi / 8]]
-    pose2 = [[0.38, -0.2, -0.28], [0.0, -np.pi / 4, -np.pi / 8]]
-    pose3 = [[0.38, -0.2, -0.28], [0.0, -np.pi / 2, -np.pi / 8]]
-    pose4 = [[0.2, 0.3, -0.1], [0.0, -np.pi / 4, np.pi / 2]]
-    pose5 = [[0.38, -0.2, -0.28], [0.0, -np.pi / 2, -np.pi / 8]]
-    pose6 = [[0.5, -0.2, -0.15], [0.0, -np.pi / 2, -np.pi / 16]]
-    pose7 = [[0.5, -0.2, -0.15], [0.0, -np.pi / 4, -np.pi / 16]]
+    pose1 = np.array([[0.38, -0.2, -0.28], [0.0, -np.pi / 2, -np.pi / 8]])
+    pose2 = np.array([[0.38, -0.2, -0.28], [0.0, -np.pi / 4, -np.pi / 8]])
+    pose3 = np.array([[0.38, -0.2, -0.28], [0.0, -np.pi / 2, -np.pi / 8]])
+    pose4 = np.array([[0.2, 0.3, -0.1], [0.0, -np.pi / 4, np.pi / 2]])
+    pose5 = np.array([[0.38, -0.2, -0.28], [0.0, -np.pi / 2, -np.pi / 8]])
+    pose6 = np.array([[0.5, -0.2, -0.15], [0.0, -np.pi / 2, -np.pi / 16]])
+    pose7 = np.array([[0.5, -0.2, -0.15], [0.0, -np.pi / 4, -np.pi / 16]])
 
-    pose1_l = [[0.38, 0.2, -0.28], [0.0, -np.pi / 2, np.pi / 8]]
-    pose2_l = [[0.38, 0.2, -0.28], [0.0, -np.pi / 4, np.pi / 8]]
+    pose1_l = np.array([[0.38, 0.2, -0.28], [0.0, -np.pi / 2, np.pi / 8]])
+    pose2_l = np.array([[0.38, 0.2, -0.28], [0.0, -np.pi / 4, np.pi / 8]])
     m1 = get_homogeneous_matrix_msg_from_euler(pose1[0], pose1[1])
     m2 = get_homogeneous_matrix_msg_from_euler(pose2[0], pose2[1])
     m3 = get_homogeneous_matrix_msg_from_euler(pose3[0], pose3[1])
@@ -159,14 +162,14 @@ def make_movement(reachy: ReachySDK) -> None:
         task_space_interpolation_goto(reachy.r_arm, m1)
         task_space_interpolation_goto(reachy.r_arm, m2)
         task_space_interpolation_goto(reachy.r_arm, m3)
-        # task_space_interpolation_goto(reachy.r_arm, m4)
-        # task_space_interpolation_goto(reachy.r_arm, m5)
+        task_space_interpolation_goto(reachy.r_arm, m4)
+        task_space_interpolation_goto(reachy.r_arm, m5)
         task_space_interpolation_goto(reachy.r_arm, m6)
         task_space_interpolation_goto(reachy.r_arm, m7)
 
-        # time.sleep(5)
-        # task_space_interpolation_goto(reachy.l_arm, m1_l)
-        # task_space_interpolation_goto(reachy.l_arm, m2_l)
+        time.sleep(5)
+        task_space_interpolation_goto(reachy.l_arm, m1_l)
+        task_space_interpolation_goto(reachy.l_arm, m2_l)
 
 
 def spam_pose(reachy: ReachySDK, control_ik: ControlIK, pose: npt.NDArray[np.float64]) -> None:
@@ -183,7 +186,7 @@ def spam_pose(reachy: ReachySDK, control_ik: ControlIK, pose: npt.NDArray[np.flo
 
 
 def main() -> None:
-    control_ik = ControlIK()
+    # control_ik = ControlIK()
     reachy = ReachySDK(host="localhost")
 
     if reachy._grpc_status == "disconnected":
