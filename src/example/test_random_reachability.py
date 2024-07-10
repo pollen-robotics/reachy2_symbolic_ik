@@ -17,9 +17,9 @@ from reachy2_symbolic_ik.control_ik import ControlIK
 from reachy2_symbolic_ik.utils import distance_from_singularity
 
 # CONTROLE_TYPE = "local_discrete"
-CONTROLE_TYPE = "local_continuous"
+# CONTROLE_TYPE = "local_continuous"
 # CONTROLE_TYPE = "sdk_discrete"
-# CONTROLE_TYPE = "sdk_continuous"
+CONTROLE_TYPE = "sdk_continuous"
 
 
 def get_homogeneous_matrix_msg_from_euler(
@@ -81,9 +81,9 @@ def get_ik(
                 continuous_mode=IKContinuousMode.CONTINUOUS,
                 constrained_mode=IKConstrainedMode.UNCONSTRAINED,
                 preferred_theta=FloatValue(
-                    value=-3 * np.pi / 6,
+                    value=-4 * np.pi / 6,
                 ),
-                d_theta_max=FloatValue(value=0.1),
+                d_theta_max=FloatValue(value=0.01),
                 order_id=Int32Value(value=5),
             )
             reachy.r_arm._arm_stub.SendArmCartesianGoal(request)
@@ -92,12 +92,12 @@ def get_ik(
             request = ArmCartesianGoal(
                 id=reachy.l_arm._part_id,
                 goal_pose=Matrix4x4(data=M.flatten().tolist()),
-                continuous_mode=IKContinuousMode.DISCRETE,
+                continuous_mode=IKContinuousMode.CONTINUOUS,
                 constrained_mode=IKConstrainedMode.LOW_ELBOW,
                 preferred_theta=FloatValue(
-                    value=-5 * np.pi / 6,
+                    value=-4 * np.pi / 6,
                 ),
-                d_theta_max=FloatValue(value=0.1),
+                d_theta_max=FloatValue(value=0.01),
                 order_id=Int32Value(value=5),
             )
             reachy.l_arm._arm_stub.SendArmCartesianGoal(request)
