@@ -29,7 +29,7 @@ def go_to_pose_with_all_theta(
     print(f"interval {interval}")
     if interval[0] > interval[1]:
         interval = [interval[0], interval[1] + 2 * np.pi]
-    print(interval)
+    # print(interval)
     if is_reachable:
         for i in range(nbr_points):
             theta = interval[0] + i * (interval[1] - interval[0]) / nbr_points
@@ -45,10 +45,10 @@ def go_to_pose_with_all_theta(
                     pose[0], R.from_euler("xyz", pose[1]).as_matrix()
                 )
                 # print(f"pose by kdl {real_pose}")
-                goal_diff = np.linalg.norm(goal_pose_matrix - real_pose)
-                print(f"goal diff {goal_diff}")
-                diff = np.linalg.norm(pose[0] - real_pose[:3, 3])
-                print(f"goal diff xyz only {diff}m")
+                # goal_diff = np.linalg.norm(goal_pose_matrix - real_pose)
+                # print(f"goal diff {goal_diff}")
+                # diff = np.linalg.norm(pose[0] - real_pose[:3, 3])
+                # print(f"goal diff xyz only {diff}m")
                 for joint, goal_pos in zip(reachy.r_arm.joints.values(), np.degrees(joints)):
                     joint.goal_position = goal_pos
                 time.sleep(0.1)
@@ -62,11 +62,11 @@ def go_to_pose_with_all_theta(
                     pose[0], R.from_euler("xyz", pose[1]).as_matrix()
                 )
                 # print(f"pose by kdl {real_pose}")
-                goal_diff = np.linalg.norm(goal_pose_matrix - real_pose)
+                # goal_diff = np.linalg.norm(goal_pose_matrix - real_pose)
                 # print(f"goal diff {goal_diff}")
                 # goal diff xyz only
-                diff = np.linalg.norm(pose[0] - real_pose[:3, 3])
-                print(f"goal diff xyz only {diff}m")
+                # diff = np.linalg.norm(pose[0] - real_pose[:3, 3])
+                # print(f"goal diff xyz only {diff}m")
                 for joint, goal_pos in zip(reachy.l_arm.joints.values(), np.degrees(joints)):
                     joint.goal_position = goal_pos
                 time.sleep(0.1)
@@ -108,39 +108,48 @@ def go_to_pose(
     pose: npt.NDArray[np.float64],
     arm: str,
     controle_type: str = "discrete",
-    interval_limit: npt.NDArray[np.float64] = np.array([-np.pi, np.pi]),
+    constrained_mode: str = "unconstrained",
+    verbose: bool = True,
 ) -> None:
     controle_ik = ControlIK()
     if arm == "r_arm":
-        # ik = reachy.r_arm.inverse_kinematics(pose)
         ik, is_reachable, state = controle_ik.symbolic_inverse_kinematics(
-            "r_arm", pose, controle_type, interval_limit=interval_limit
+            "r_arm", pose, controle_type, constrained_mode=constrained_mode
         )
         ik = np.degrees(ik)
-        print(f"Is reachable {is_reachable}")
-        print(f"State {state}")
         real_pose = reachy.r_arm.forward_kinematics(ik)
-        # print(f"pose by kdl {real_pose}")
         pose_diff = np.linalg.norm(pose - real_pose)
-        print(f"pose diff {pose_diff}")
-        if pose_diff > 0.0015:
-            print(f"pose by kdl {real_pose}")
+        if verbose:
+            if is_reachable:
+                print("\033[92m" + "Pose reachable" + "\033[0m")
+            else:
+                print("\033[91m" + "Pose not reachable" + "\033[0m")
+            print(f"State {state}")
+            print(f"pose diff {pose_diff}")
+            # if pose_diff > 0.0015:
+            #     print(f"fk {real_pose}")
         for joint, goal_pos in zip(reachy.r_arm.joints.values(), ik):
             joint.goal_position = goal_pos
+
     elif arm == "l_arm":
-        # ik = reachy.l_arm.inverse_kinematics(pose)
         ik, is_reachable, state = controle_ik.symbolic_inverse_kinematics(
-            "l_arm", pose, controle_type, interval_limit=interval_limit
+            "l_arm", pose, controle_type, constrained_mode=constrained_mode
         )
         ik = np.degrees(ik)
         real_pose = reachy.l_arm.forward_kinematics(ik)
-        # print(f"pose by kdl {poreal_posese}")
         pose_diff = np.linalg.norm(pose - real_pose)
-        print(f"pose diff {pose_diff}")
-        if pose_diff > 0.005:
-            print(f"pose by kdl {real_pose}")
+        if verbose:
+            if is_reachable:
+                print("\033[92m" + "Pose reachable" + "\033[0m")
+            else:
+                print("\033[91m" + "Pose not reachable" + "\033[0m")
+            print(f"State {state}")
+            print(f"pose diff {pose_diff}")
+            # if pose_diff > 0.005:
+            #     print(f"pose by kdl {real_pose}")
         for joint, goal_pos in zip(reachy.l_arm.joints.values(), ik):
             joint.goal_position = goal_pos
+    print("")
 
 
 def test_poses(
@@ -148,29 +157,56 @@ def test_poses(
     r_symbolic_ik: SymbolicIK,
     l_symbolic_ik: SymbolicIK,
     controle_type: str = "discrete",
-    interval_limit: npt.NDArray[np.float64] = np.array([-np.pi, np.pi]),
+    constrained_mode: str = "unconstrained",
 ) -> None:
     r_goal_poses = np.array(
         [
-            [[0.0000, -0.2, -0.65], [0, 0, 0]],
-            [[0.000, -0.85, -0.0], [-np.pi / 2, 0, 0]],
-            [[0.0, -0.58, -0.28], [-np.pi / 2, -np.pi / 2, 0]],
+            # reachable poses
+            [[0.0001, -0.2, -0.6599], [0, 0, 0]],
             [[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]],
             [[0.66, -0.2, -0.0], [0, -np.pi / 2, 0]],
-            [[0.0, -0.2, -0.66], [0, 0, 0]],
-            # [[0.2, 0.20, -0.18], [np.pi / 2, -np.pi / 2, 0]],
-            # [[0.10, 0.20, -0.22], [np.pi / 3, -np.pi / 2, 0]],
-            # [[0.10, 0.25, -0.22], [np.pi / 3, -np.pi / 2, 0]],
+
+            # reachable poses with unconstrained mode
+            [[0.30, -0.2, -0.28], [0.0, 0.0, np.pi / 3]],  # top grasp
+
+            # unreachable poses
+            [[0.0, -0.85, -0.0], [-np.pi / 2, 0, 0]],  # backwards limit
+            [[0.0, -0.58, -0.28], [-np.pi / 2, -np.pi / 2, 0]],  # backwards limit
+            [[0.15, 0.35, -0.10], [np.pi / 3, -np.pi / 2, 0]],  # shoulder limit
+            [[0.10, 0.20, -0.22], [np.pi / 3, -np.pi / 2, 0]],  # shoulder limit
+            [[0.0, -0.2, -0.66], [0.0, 0.0, -np.pi / 3]],  # backwards limit
+            [[0.001, -0.2, -0.68], [0.0, 0.0, -np.pi / 3]],  # pose out of reach
+            [[0.001, -0.2, -0.659], [0.0, np.pi / 2, 0.0]],  # wrist out of reach
+            [[0.38, -0.2, -0.28], [0.0, np.pi / 2, 0.0]],  # wrist limit
+            [[0.1, -0.2, 0.0], [0.0, np.pi, 0.0]],  # elbow limit
+            [[0.38, -0.2, -0.28], [0.0, 0.0, 0.0]],  # shoulder limit?
+            [[0.1, 0.2, -0.1], [0.0, -np.pi / 2, np.pi / 2]],  # shoulder limit
+            [[0.0, -0.2, -0.66], [0, 0, 0]],  # backwards limit
         ]
     )
     l_goal_poses = np.array(
         [
-            [[0.0, 0.2, -0.66], [0, 0, 0]],
-            [[0.0, 0.86, -0.0], [np.pi / 2, 0, 0]],
-            [[0.0, 0.58, -0.28], [np.pi / 2, -np.pi / 2, 0]],
+            # reachable poses
+            [[0.0001, 0.2, -0.6599], [0, 0, 0]],
             [[0.38, 0.2, -0.28], [0, -np.pi / 2, 0]],
             [[0.66, 0.2, -0.0], [0, -np.pi / 2, 0]],
-            [[0.0, 0.2, -0.66], [0, 0, 0]],
+
+            # reachable poses with unconstrained mode
+            [[0.30, 0.2, -0.28], [0.0, 0.0, -np.pi / 3]],  # top grasp
+
+            # unreachable poses
+            [[0.0, 0.85, -0.0], [np.pi / 2, 0, 0]],  # backwards limit
+            [[0.0, 0.58, -0.28], [np.pi / 2, -np.pi / 2, 0]],  # backwards limit
+            [[0.15, -0.35, -0.10], [-np.pi / 3, -np.pi / 2, 0]],  # shoulder limit
+            [[0.10, -0.20, -0.22], [-np.pi / 3, -np.pi / 2, 0]],  # shoulder limit
+            [[0.0, 0.2, -0.66], [0.0, 0.0, np.pi / 3]],  # backwards limit
+            [[0.001, 0.2, -0.68], [0.0, 0.0, np.pi / 3]],  # pose out of reach
+            [[0.001, 0.2, -0.659], [0.0, np.pi / 2, 0.0]],  # wrist out of reach
+            [[0.38, 0.2, -0.28], [0.0, np.pi / 2, 0.0]],  # wrist limit
+            [[0.1, 0.2, 0.0], [0.0, np.pi, 0.0]],  # elbow limit
+            [[0.38, 0.2, -0.28], [0.0, 0.0, 0.0]],  # shoulder limit?
+            [[0.1, -0.2, -0.1], [0.0, -np.pi / 2, -np.pi / 2]],  # shoulder limit
+            [[0.0, 0.2, -0.66], [0, 0, 0]],  # backwards limit
         ]
     )
 
@@ -178,18 +214,19 @@ def test_poses(
         # print(f"Goal pose {r_goal_pose}")
         # is_reachable, interval, get_joints, _ = r_symbolic_ik.is_reachable(r_goal_pose)
         # print(f"Is reachable {is_reachable}")
-        # print(f"Goal pose {r_goal_pose}")
+        print(f"Goal pose {r_goal_pose}")
         rotation_matrix = R.from_euler("xyz", r_goal_pose[1]).as_matrix()
         goal_pose = make_homogenous_matrix_from_rotation_matrix(r_goal_pose[0], rotation_matrix)
-        go_to_pose(reachy, goal_pose, "r_arm", controle_type=controle_type, interval_limit=interval_limit)
+        go_to_pose(reachy, goal_pose, "r_arm", controle_type=controle_type, constrained_mode=constrained_mode)
         time.sleep(2.0)
 
     for l_goal_pose in l_goal_poses:
         # is_reachable, interval, get_joints, _ = l_symbolic_ik.is_reachable(l_goal_pose)
         # print(f"Is reachable {is_reachable}")
+        print(f"Goal pose {r_goal_pose}")
         rotation_matrix = R.from_euler("xyz", l_goal_pose[1]).as_matrix()
         goal_pose = make_homogenous_matrix_from_rotation_matrix(l_goal_pose[0], rotation_matrix)
-        go_to_pose(reachy, goal_pose, "l_arm", controle_type=controle_type, interval_limit=interval_limit)
+        go_to_pose(reachy, goal_pose, "l_arm", controle_type=controle_type, constrained_mode=constrained_mode)
         time.sleep(2.0)
 
 
@@ -241,71 +278,55 @@ def main_test() -> None:
     symbolic_ik_r = SymbolicIK(shoulder_orientation_offset=[10, 0, 15], elbow_orientation_offset=[0, 0, 0])
     symbolic_ik_l = SymbolicIK(arm="l_arm", shoulder_orientation_offset=[10, 0, 15], elbow_orientation_offset=[0, 0, 0])
 
-    test_poses(reachy, symbolic_ik_r, symbolic_ik_l, controle_type="discrete", interval_limit=np.array([-np.pi, np.pi]))
-    test_poses(reachy, symbolic_ik_r, symbolic_ik_l, controle_type="continuous", interval_limit=np.array([-4 * np.pi / 5, 0]))
+    # --------------- Test poses ---------------
 
-    # mat2 = np.array(
-    #     [
-    #         [-0.83356, -0.2197, -0.50686, 0.35384],
-    #         [0.21478, -0.97422, 0.06905, 0.2214],
-    #         [-0.50896, -0.051306, 0.85926, -0.2526],
-    #         [0, 0, 0, 1],
-    #     ]
-    # )
+    print(" ----- Testing poses ----- \n")
 
-    # go_to_pose(reachy, mat2, "r_arm")
+    print("Testing continuous control")
+    test_poses(reachy, symbolic_ik_r, symbolic_ik_l, controle_type="continuous", constrained_mode="low_elbow")
+    time.sleep(3.0)
 
-    # go_to_joint_positions(reachy, [0, 0, 0, 0, 0, 0, 0], "r_arm")
-    # go_to_joint_positions(reachy, [0, 0, 0, 0, 0, 0, 0], "l_arm")
-    # time.sleep(1.0)
-    # while True:
-    #     go_to_joint_positions(reachy, [0, 0, 0, 0, 20, 0, 0], "r_arm")
-    #     go_to_joint_positions(reachy, [0, 0, 0, 0, 20, 0, 0], "l_arm")
-    #     print("+20")
-    #     time.sleep(1.0)
-    #     go_to_joint_positions(reachy, [0, 0, 0, 0, -20, 0, 0], "r_arm")
-    #     go_to_joint_positions(reachy, [0, 0, 0, 0, -20, 0, 0], "l_arm")
-    #     print("-20")
-    #     time.sleep(1.0)
+    print("Testing discrete control")
+    test_poses(reachy, symbolic_ik_r, symbolic_ik_l, controle_type="discrete", constrained_mode="unconstrained")
+    time.sleep(3.0)
 
-    time.sleep(10.0)
+    # --------------- Go to pose ---------------
 
-    # # Rigth arm
-    # # Go to a specific pose with the right arm
-    # # goal_position = [0.0, -0.86, -0.0]
-    # # goal_position = [0.0, -0.58, -0.28]
-    # # goal_orientation = [-np.pi / 2, 0, 0]
-    # # goal_position = [0.58, -0.2, -0.0]
-    # # goal_position = [0.37, -0.2, -0.28]
+    print("----- Go to pose ----- \n")
+    r_goal_pose = np.array([[0.0, -0.2, -0.65], [0, 0, 0]])
+    l_goal_pose = np.array([[0.0, 0.2, -0.65], [0, 0, 0]])
+    r_M = make_homogenous_matrix_from_rotation_matrix(r_goal_pose[0], R.from_euler("xyz", r_goal_pose[1]).as_matrix())
+    l_M = make_homogenous_matrix_from_rotation_matrix(l_goal_pose[0], R.from_euler("xyz", l_goal_pose[1]).as_matrix())
+    go_to_pose(reachy, r_M, "r_arm")
+    go_to_pose(reachy, l_M, "l_arm")
+    time.sleep(5.0)
 
-    # # goal_position = [0.0, -0.2, -0.68]
-    # # goal_orientation = [0, -np.pi / 2, 0]
-    # # goal_position = [0.0, -0.86, -0.0]
-    # goal_position = [0.0, -0.8, -0.24]
-    # goal_orientation = [-np.pi / 2, -np.pi / 2, 0]
-    # # goal_position = [0.0, -0.2, -0.66]
-    # # goal_orientation = [0, 0, np.radians(120)]
+    # ------ Go to pose with choosen theta -----
 
-    # goal_pose = np.array([goal_position, goal_orientation])
-    # theta = -4 * np.pi / 5
-    # go_to_pose_with_choosen_theta(reachy, symbolic_ik_r, goal_pose, theta, "r_arm")
-    # time.sleep(2.0)
-    # go_to_pose_with_all_theta(reachy, symbolic_ik_r, goal_pose, "r_arm")
-    # time.sleep(1.0)
+    print("----- Go to pose with choosen theta ----- \n")
+    r_goal_pose = np.array([[0.55, -0.2, 0.0], [0, -np.pi/2, 0]])
+    l_goal_pose = np.array([[0.55, 0.2, 0.0], [0, -np.pi/2, 0]])
+    go_to_pose_with_choosen_theta(reachy, symbolic_ik_r, r_goal_pose, -4 * np.pi / 6, "r_arm")
+    go_to_pose_with_choosen_theta(reachy, symbolic_ik_l, l_goal_pose, -2 * np.pi / 6, "l_arm")
+    time.sleep(5.0)
 
-    # # Left arm
+    # ------ Go to pose with all theta -----
 
-    # # goal_position = [0.0, 0.86, -0.0]
-    # goal_position = [0.0, 0.55, -0.28]
-    # goal_orientation = [np.pi / 2, 0, 0]
-    # # goal_position = [0.0, -0.2, -0.66]
-    # # goal_orientation = [0, 0, np.radians(120)]
-    # goal_pose = np.array([goal_position, goal_orientation])
-    # theta = -4 * np.pi / 5
-    # go_to_pose_with_choosen_theta(reachy, symbolic_ik_l, goal_pose, theta, "l_arm")
-    # time.sleep(2.0)
-    # go_to_pose_with_all_theta(reachy, symbolic_ik_l, goal_pose, "l_arm")
-    # time.sleep(1.0)
+    print("----- Go to pose with all theta ----- \n")
+    goal_pose = np.array([[0.55, -0.2, -0.0], [0, -np.pi/2, 0]])
+    go_to_pose_with_all_theta(reachy, symbolic_ik_r, goal_pose, "r_arm")
+    time.sleep(5.0)
+
+    # ------ Go to joints positions --------
+
+    print("----- Go to joints positions ----- \n")
+    r_joints = np.array([0, -10, -15, 0, 0, 0, 0])
+    l_joints = np.array([0, 10, 15, 0, 0, 0, 0])
+    go_to_joint_positions(reachy, r_joints, "r_arm")
+    go_to_joint_positions(reachy, l_joints, "l_arm")
+    time.sleep(5.0)
+
+    # --------------------------------------
 
     print("Finished testing, disconnecting from Reachy...")
     time.sleep(0.5)
