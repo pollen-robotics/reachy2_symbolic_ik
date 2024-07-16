@@ -40,10 +40,10 @@ def go_to_pose_with_all_theta(
                     print("Elbow is ok")
                 else:
                     print("Elbow is not ok")
-                real_pose = reachy.r_arm.forward_kinematics(np.degrees(joints))
-                goal_pose_matrix = make_homogenous_matrix_from_rotation_matrix(
-                    pose[0], R.from_euler("xyz", pose[1]).as_matrix()
-                )
+                # real_pose = reachy.r_arm.forward_kinematics(np.degrees(joints))
+                # goal_pose_matrix = make_homogenous_matrix_from_rotation_matrix(
+                #     pose[0], R.from_euler("xyz", pose[1]).as_matrix()
+                # )
                 # print(f"pose by kdl {real_pose}")
                 # goal_diff = np.linalg.norm(goal_pose_matrix - real_pose)
                 # print(f"goal diff {goal_diff}")
@@ -57,10 +57,10 @@ def go_to_pose_with_all_theta(
                     print("Elbow is ok")
                 else:
                     print("Elbow is not ok")
-                real_pose = reachy.l_arm.forward_kinematics(np.degrees(joints))
-                goal_pose_matrix = make_homogenous_matrix_from_rotation_matrix(
-                    pose[0], R.from_euler("xyz", pose[1]).as_matrix()
-                )
+                # real_pose = reachy.l_arm.forward_kinematics(np.degrees(joints))
+                # goal_pose_matrix = make_homogenous_matrix_from_rotation_matrix(
+                #     pose[0], R.from_euler("xyz", pose[1]).as_matrix()
+                # )
                 # print(f"pose by kdl {real_pose}")
                 # goal_diff = np.linalg.norm(goal_pose_matrix - real_pose)
                 # print(f"goal diff {goal_diff}")
@@ -165,10 +165,8 @@ def test_poses(
             [[0.0001, -0.2, -0.6599], [0, 0, 0]],
             [[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]],
             [[0.66, -0.2, -0.0], [0, -np.pi / 2, 0]],
-
             # reachable poses with unconstrained mode
             [[0.30, -0.2, -0.28], [0.0, 0.0, np.pi / 3]],  # top grasp
-
             # unreachable poses
             [[0.0, -0.85, -0.0], [-np.pi / 2, 0, 0]],  # backwards limit
             [[0.0, -0.58, -0.28], [-np.pi / 2, -np.pi / 2, 0]],  # backwards limit
@@ -190,10 +188,8 @@ def test_poses(
             [[0.0001, 0.2, -0.6599], [0, 0, 0]],
             [[0.38, 0.2, -0.28], [0, -np.pi / 2, 0]],
             [[0.66, 0.2, -0.0], [0, -np.pi / 2, 0]],
-
             # reachable poses with unconstrained mode
             [[0.30, 0.2, -0.28], [0.0, 0.0, -np.pi / 3]],  # top grasp
-
             # unreachable poses
             [[0.0, 0.85, -0.0], [np.pi / 2, 0, 0]],  # backwards limit
             [[0.0, 0.58, -0.28], [np.pi / 2, -np.pi / 2, 0]],  # backwards limit
@@ -304,8 +300,8 @@ def main_test() -> None:
     # ------ Go to pose with choosen theta -----
 
     print("----- Go to pose with choosen theta ----- \n")
-    r_goal_pose = np.array([[0.55, -0.2, 0.0], [0, -np.pi/2, 0]])
-    l_goal_pose = np.array([[0.55, 0.2, 0.0], [0, -np.pi/2, 0]])
+    r_goal_pose = np.array([[0.55, -0.2, 0.0], [0, -np.pi / 2, 0]])
+    l_goal_pose = np.array([[0.55, 0.2, 0.0], [0, -np.pi / 2, 0]])
     go_to_pose_with_choosen_theta(reachy, symbolic_ik_r, r_goal_pose, -4 * np.pi / 6, "r_arm")
     go_to_pose_with_choosen_theta(reachy, symbolic_ik_l, l_goal_pose, -2 * np.pi / 6, "l_arm")
     time.sleep(5.0)
@@ -313,7 +309,7 @@ def main_test() -> None:
     # ------ Go to pose with all theta -----
 
     print("----- Go to pose with all theta ----- \n")
-    goal_pose = np.array([[0.55, -0.2, -0.0], [0, -np.pi/2, 0]])
+    goal_pose = np.array([[0.55, -0.2, -0.0], [0, -np.pi / 2, 0]])
     go_to_pose_with_all_theta(reachy, symbolic_ik_r, goal_pose, "r_arm")
     time.sleep(5.0)
 
