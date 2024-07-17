@@ -48,7 +48,9 @@ class SymbolicIK:
         self.backward_limit = backward_limit
         self.elbow_offset = 0.03
         self.fake_upper_arm_size = np.sqrt(self.upper_arm_size**2 + self.elbow_offset**2)
-        self.max_arm_length = self.fake_upper_arm_size + self.forearm_size + self.gripper_size
+        self.wrist_offset = 0.03
+        self.fake_forearm_size = np.sqrt(self.forearm_size**2 + self.wrist_offset**2)
+        self.max_arm_length = self.fake_upper_arm_size + self.fake_forearm_size + self.gripper_size
 
         if self.arm == "r_arm":
             self.shoulder_position = shoulder_position
@@ -72,9 +74,9 @@ class SymbolicIK:
 
         # Check if the wrist is in the arm range and reduce the goal pose if not
         d_shoulder_wrist = np.linalg.norm(self.wrist_position - self.shoulder_position)
-        if d_shoulder_wrist > self.fake_upper_arm_size + self.forearm_size:
+        if d_shoulder_wrist > self.fake_upper_arm_size + self.fake_forearm_size:
             self.goal_pose = self.reduce_goal_pose_no_limits(
-                goal_pose, d_shoulder_wrist, self.fake_upper_arm_size + self.forearm_size
+                goal_pose, d_shoulder_wrist, self.fake_upper_arm_size + self.fake_forearm_size
             )
 
         # Get the intersection circle -> with the previous condition we should always find one
@@ -108,14 +110,14 @@ class SymbolicIK:
 
         # Test if the wrist is in the arm range
         d_shoulder_wrist = np.linalg.norm(self.wrist_position - self.shoulder_position)
-        if d_shoulder_wrist > self.fake_upper_arm_size + self.forearm_size:
+        if d_shoulder_wrist > self.fake_upper_arm_size + self.fake_forearm_size:
             state = "wrist out of range"
             # TODO check Trex arm
             return False, np.array([]), None, state
 
         # Test if the elbow is too much bent
         to_asin1 = d_shoulder_wrist / (2 * self.fake_upper_arm_size)
-        to_asin2 = d_shoulder_wrist / (2 * self.forearm_size)
+        to_asin2 = d_shoulder_wrist / (2 * self.fake_forearm_size)
         alpha = np.arcsin(to_asin1) + np.arcsin(to_asin2) - np.pi
         if alpha < np.radians(-self.elbow_limits) or alpha > np.radians(self.elbow_limits):
             state = "limited by elbow"
@@ -154,7 +156,7 @@ class SymbolicIK:
                     show_point(self.ax, self.wrist_position, "r")
                     show_point(self.ax, self.shoulder_position, "b")
                     show_point(self.ax, self.torso_pose, "y")
-                    show_sphere(self.ax, self.wrist_position, self.forearm_size, "r")
+                    show_sphere(self.ax, self.wrist_position, self.fake_forearm_size, "r")
                     show_sphere(self.ax, self.shoulder_position, self.fake_upper_arm_size, "b")
                     show_circle(
                         self.ax,
@@ -181,7 +183,7 @@ class SymbolicIK:
                 show_point(self.ax, self.wrist_position, "r")
                 show_point(self.ax, self.shoulder_position, "b")
                 show_point(self.ax, self.torso_pose, "y")
-                show_sphere(self.ax, self.wrist_position, self.forearm_size, "r")
+                show_sphere(self.ax, self.wrist_position, self.fake_forearm_size, "r")
                 show_sphere(self.ax, self.shoulder_position, self.fake_upper_arm_size, "b")
                 show_circle(
                     self.ax,
@@ -208,7 +210,7 @@ class SymbolicIK:
             show_point(self.ax, self.wrist_position, "r")
             show_point(self.ax, self.shoulder_position, "b")
             show_point(self.ax, self.torso_pose, "y")
-            show_sphere(self.ax, self.wrist_position, self.forearm_size, "r")
+            show_sphere(self.ax, self.wrist_position, self.fake_forearm_size, "r")
             show_sphere(self.ax, self.shoulder_position, self.fake_upper_arm_size, "b")
             show_circle(
                 self.ax,
@@ -269,7 +271,7 @@ class SymbolicIK:
 
         # Check if the two spheres are linked
         d = np.sqrt(P_shoulder_wrist[0] ** 2 + P_shoulder_wrist[1] ** 2 + P_shoulder_wrist[2] ** 2)
-        if d > self.fake_upper_arm_size + self.forearm_size:
+        if d > self.fake_upper_arm_size + self.fake_forearm_size:
             return None
         # Rotation matrix from the intersection frame (the x axe is the vector between the shoulder and the wrist)
         # to the torso frame
@@ -287,11 +289,13 @@ class SymbolicIK:
             / (2 * d)
             * np.sqrt(
                 4 * d**2 * self.fake_upper_arm_size**2
-                - (d**2 - self.forearm_size**2 + self.fake_upper_arm_size**2) ** 2
+                - (d**2 - self.fake_forearm_size**2 + self.fake_upper_arm_size**2) ** 2
             )
         )
         # Get the center of the intersection circle in the torso frame
-        P_intersection_center = np.array([(d**2 - self.forearm_size**2 + self.fake_upper_arm_size**2) / (2 * d), 0, 0])
+        P_intersection_center = np.array(
+            [(d**2 - self.fake_forearm_size**2 + self.fake_upper_arm_size**2) / (2 * d), 0, 0]
+        )
         P_shoulder_center = M_torso_intersection.apply(P_intersection_center)
         P_torso_center = P_shoulder_center + self.shoulder_position
         # Get the normal vector of the intersection circle in the torso frame
@@ -311,8 +315,8 @@ class SymbolicIK:
                 self.wrist_position[2] - goal_pose[0][2],
             ]
         )
-        radius = np.sin(np.radians(self.wrist_limit)) * self.forearm_size
-        vector = normal_vector / np.linalg.norm(normal_vector) * np.sqrt(self.forearm_size**2 - radius**2)
+        radius = np.sin(np.radians(self.wrist_limit)) * self.fake_forearm_size
+        vector = normal_vector / np.linalg.norm(normal_vector) * np.sqrt(self.fake_forearm_size**2 - radius**2)
         center = self.wrist_position + vector
         return center, radius, normal_vector
 
@@ -561,6 +565,7 @@ class SymbolicIK:
     def get_joints(
         self, theta: float, previous_joints: list[float] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+        # datas = []
         """Get the joints from the angle theta
         The previous joints is used to avoid the singularity of the elbow and the shoulder
         Return the joints cast between -pi and pi
@@ -651,12 +656,55 @@ class SymbolicIK:
         # print(f"dy: {dy}")
 
         P_elbow_elbowBis = np.array([-dx, -dy * side, 0.0, 1.0])
-        elbow_bis = np.dot(T_torso_elbow, P_elbow_elbowBis)
-        # elbow_bis = [0.0, -0.1, 0.0, 1.0]
+        self.elbow_bis = np.dot(T_torso_elbow, P_elbow_elbowBis)
+        # datas.append(self.elbow_bis)
+        # self.elbow_bis = [0.0, -0.1, 0.0, 1.0]
+
+        # --------------------- get wrist bis ---------------------
+
+        # P_elbow_wrist = np.dot(T_elbow_torso, P_torso_wrist)
+
+        # # print(f"elbow_wrist: {P_elbow_wrist}")
+        # # Same as the shoulder singularity but between the wrist and the elbow
+        # if P_elbow_wrist[1] == 0 and P_elbow_wrist[2] == 0:
+        #     # raise ValueError("Elbow singularity")
+        #     elbow_yaw = previous_joints[2]
+        # else:
+        #     elbow_yaw = -np.pi / 2 + math.atan2(P_elbow_wrist[2], -P_elbow_wrist[1])
+
+        # # ElbowYaw frame is the elbow frame with the elbow yaw rotation
+        # M_elbowYaw_elbow = R.from_euler("xyz", np.array([elbow_yaw, 0.0, 0.0])).as_matrix()
+        # T_elbowYaw_elbow = make_homogenous_matrix_from_rotation_matrix(np.array([0.0, 0.0, 0.0]), M_elbowYaw_elbow)
+        # T_elbowYaw_torso = np.dot(T_elbowYaw_elbow, T_elbow_torso)
+
+        # # The wrist position in the elbowYaw frame is used to find the elbow pitch joint
+        # P_elbowYaw_wrist = np.dot(T_elbowYaw_torso, P_torso_wrist)
+        # # TODO cas qui arrive probablement en meme temps que la singulartié du coude
+        # # -> dans ce cas on veut que elbowpitch = 0 -> à verifier
+        # elbow_pitch = -math.atan2(P_elbowYaw_wrist[2], P_elbowYaw_wrist[0])
+
+        # R_elbowPitch_elbowYaw = R.from_euler("xyz", [0.0, -elbow_pitch, 0.0]).as_matrix()
+        # T_elbowPitch_elbowYaw = make_homogenous_matrix_from_rotation_matrix(np.array([0.0, 0.0, 0.0]), R_elbowPitch_elbowYaw)
+        # T_elbowPitch_torso = np.dot(T_elbowPitch_elbowYaw, T_elbowYaw_torso)
+
+        # T_wrist_torso = T_elbowPitch_torso
+        # T_wrist_torso[0][3] -= self.fake_forearm_size
+
+        # T_torso_wrist = np.linalg.inv(T_wrist_torso)
+
+        # beta = np.arctan2(self.wrist_offset, self.forearm_size)
+        # dx = np.sin(beta) * self.wrist_offset
+        # dy = np.cos(beta) * self.wrist_offset
+        # print(f"dx: {dx}")
+        # print(f"dy: {dy}")
+
+        # P_wrist_wristBis = np.array([-dx,  0, dy, 1.0])
+        # wrist_bis = np.dot(T_torso_wrist, P_wrist_wristBis)
+        # datas.append(wrist_bis)
 
         # ___________________________________________________________
 
-        P_torso_elbowBis = [elbow_bis[0], elbow_bis[1], elbow_bis[2], 1]
+        P_torso_elbowBis = [self.elbow_bis[0], self.elbow_bis[1], self.elbow_bis[2], 1]
 
         # The elbow position in the shoulder frame is used to find the shoulder pitch joint
         P_shoulder_elbowBis = np.dot(T_shoulder_torso, P_torso_elbowBis)
@@ -707,10 +755,9 @@ class SymbolicIK:
         T_elbow_torso = np.linalg.inv(T_torso_elbow)
         # print(T_elbow_torso)
         # print(np.linalg.inv(T_elbow_torso))
-        # print(elbow_bis)
+        # print(self.elbow_bis)
         # ___________________________________________________________
 
-        # The wrist position in the elbow frame is used to find the elbow yaw joint
         P_elbow_wrist = np.dot(T_elbow_torso, P_torso_wrist)
 
         # print(f"elbow_wrist: {P_elbow_wrist}")
@@ -732,6 +779,54 @@ class SymbolicIK:
         # -> dans ce cas on veut que elbowpitch = 0 -> à verifier
         elbow_pitch = -math.atan2(P_elbowYaw_wrist[2], P_elbowYaw_wrist[0])
 
+        R_elbowPitch_elbowYaw = R.from_euler("xyz", [0.0, -elbow_pitch, 0.0]).as_matrix()
+        T_elbowPitch_elbowYaw = make_homogenous_matrix_from_rotation_matrix(np.array([0.0, 0.0, 0.0]), R_elbowPitch_elbowYaw)
+        T_elbowPitch_torso = np.dot(T_elbowPitch_elbowYaw, T_elbowYaw_torso)
+
+        T_wrist_torso = T_elbowPitch_torso
+        T_wrist_torso[0][3] -= self.fake_forearm_size
+
+        T_torso_wrist = np.linalg.inv(T_wrist_torso)
+
+        beta = np.arctan2(self.wrist_offset, self.forearm_size)
+        dx = np.sin(beta) * self.wrist_offset
+        dy = np.cos(beta) * self.wrist_offset
+        # print(f"dx: {dx}")
+        # print(f"dy: {dy}")
+
+        P_wrist_wristBis = np.array([-dx, 0, dy, 1.0])
+        self.wrist_bis = np.dot(T_torso_wrist, P_wrist_wristBis)
+        # datas.append(wrist_bis)
+
+        # ___________________________________________________________
+
+        # The wrist position in the elbow frame is used to find the elbow yaw joint
+        # TODO faire mieux
+        # print(f"p torse wrist: {P_torso_wrist}")
+        # P_torso_wrist = wrist_bis
+        # print(f"p torse wrist: {P_torso_wrist}")
+
+        P_elbow_wrist = np.dot(T_elbow_torso, self.wrist_bis)
+
+        # print(f"elbow_wrist: {P_elbow_wrist}")
+        # Same as the shoulder singularity but between the wrist and the elbow
+        if P_elbow_wrist[1] == 0 and P_elbow_wrist[2] == 0:
+            # raise ValueError("Elbow singularity")
+            elbow_yaw = previous_joints[2]
+        else:
+            elbow_yaw = -np.pi / 2 + math.atan2(P_elbow_wrist[2], -P_elbow_wrist[1])
+
+        # ElbowYaw frame is the elbow frame with the elbow yaw rotation
+        M_elbowYaw_elbow = R.from_euler("xyz", np.array([elbow_yaw, 0.0, 0.0])).as_matrix()
+        T_elbowYaw_elbow = make_homogenous_matrix_from_rotation_matrix(np.array([0.0, 0.0, 0.0]), M_elbowYaw_elbow)
+        T_elbowYaw_torso = np.dot(T_elbowYaw_elbow, T_elbow_torso)
+
+        # The wrist position in the elbowYaw frame is used to find the elbow pitch joint
+        P_elbowYaw_wrist = np.dot(T_elbowYaw_torso, self.wrist_bis)
+        # TODO cas qui arrive probablement en meme temps que la singulartié du coude
+        # -> dans ce cas on veut que elbowpitch = 0 -> à verifier
+        elbow_pitch = -math.atan2(P_elbowYaw_wrist[2], P_elbowYaw_wrist[0])
+
         # ElbowPitch frame is the elbowYaw frame with the elbow pitch rotation
         R_elbowPitch_elbowYaw = R.from_euler("xyz", [0.0, -elbow_pitch, 0.0]).as_matrix()
         T_elbowPitch_elbowYaw = make_homogenous_matrix_from_rotation_matrix(np.array([0.0, 0.0, 0.0]), R_elbowPitch_elbowYaw)
@@ -740,9 +835,16 @@ class SymbolicIK:
         # The wrist frame is the elbowPitch frame with the wrist position
         T_wrist_torso = T_elbowPitch_torso
         T_wrist_torso[0][3] -= self.forearm_size
+        T_torso_wrist = np.linalg.inv(T_wrist_torso)
+        # print(f"t wrist torso: {T_torso_wrist}")
+
+        T_torso_wrist[:3, 3] = P_torso_wrist[:3]
+        # print(f"p torse wrist: {T_torso_wrist}")
+        T_wrist_torso = np.linalg.inv(T_torso_wrist)
 
         # The goal position in the wrist frame is used to find the wrist roll joint
         P_wrist_tip = np.dot(T_wrist_torso, P_torso_goalPosition)
+        # print(f"p torse wrist: {P_wrist_tip}")
         wrist_roll = np.pi - math.atan2(P_wrist_tip[1], -P_wrist_tip[0])
         if wrist_roll > np.pi:
             wrist_roll = wrist_roll - 2 * np.pi
@@ -784,5 +886,6 @@ class SymbolicIK:
         # joints = np.array([shoulder_pitch, shoulder_roll, elbow_yaw, elbow_pitch, wrist_roll, -wrist_pitch, -wrist_yaw])
 
         joints = np.array([shoulder_pitch_bis, shoulder_roll_bis, elbow_yaw, elbow_pitch, wrist_roll, -wrist_pitch, -wrist_yaw])
+        # joints = np.array([shoulder_pitch_bis, shoulder_roll_bis, elbow_yaw, elbow_pitch, 0, -0, -0])
 
         return joints, self.elbow_position
