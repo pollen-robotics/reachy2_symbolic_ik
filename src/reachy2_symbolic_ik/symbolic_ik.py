@@ -25,7 +25,7 @@ class SymbolicIK:
         arm: str = "r_arm",
         upper_arm_size: np.float64 = np.float64(0.28),
         forearm_size: np.float64 = np.float64(0.28),
-        tip_position: npt.NDArray[np.float64] = np.array([0.0, 0.0, 0.10]),
+        tip_position: npt.NDArray[np.float64] = np.array([-0.0, 0.0, 0.10]),
         wrist_limit: np.float64 = np.float64(42.5),
         # shoulder orientation and shoulder position are for the rigth arm
         shoulder_orientation_offset: list[int] = [-15, 0, 10],
@@ -319,6 +319,9 @@ class SymbolicIK:
                 self.wrist_position[2] - goal_pose[0][2],
             ]
         )
+        wrist_offset_angle = np.arctan2(self.wrist_offset, self.forearm_size)
+        M_wirst_offset = R.from_euler("xyz", [0.0, wrist_offset_angle, 0.0]).as_matrix()
+        normal_vector = np.dot(M_wirst_offset, normal_vector)
         radius = np.sin(np.radians(self.wrist_limit)) * self.fake_forearm_size
         vector = normal_vector / np.linalg.norm(normal_vector) * np.sqrt(self.fake_forearm_size**2 - radius**2)
         center = self.wrist_position + vector

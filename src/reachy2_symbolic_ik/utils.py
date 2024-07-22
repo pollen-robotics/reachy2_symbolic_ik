@@ -28,7 +28,7 @@ def distance_from_singularity(elbow_position: npt.NDArray[np.float64], arm: str)
         side = 1
     else:
         side = -1
-    shoudler_offset = [10.0 * side, 0.0, 15.0 * side]
+    shoudler_offset = [-15.0 * side, 0.0, 10.0 * side]
     shoulder_position = np.array([0.0, -0.2 * side, 0.0])
     upper_arm_size = 0.28
     rotation_matrix = R.from_euler("xyz", shoudler_offset, degrees=True).as_matrix()
