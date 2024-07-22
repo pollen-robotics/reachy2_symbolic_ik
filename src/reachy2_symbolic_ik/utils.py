@@ -146,6 +146,7 @@ def get_best_continuous_theta(
     state += "\n" + f"angle diff {angle_diff(theta_middle, previous_theta)}"
 
     joints, elbow_position = get_joints(theta_middle)
+    # states = f"elbow_position: {elbow_position} : {is_elbow_ok(elbow_position, side)}"
 
     if is_elbow_ok(elbow_position, side):
         if abs(angle_diff(theta_middle, previous_theta)) < d_theta_max:
@@ -164,6 +165,10 @@ def get_best_continuous_theta(
             is_reachable = is_reachable and is_valid_angle(theta_side, interval)
             state += "\n" + f"previous_theta: {previous_theta}"
             state += "\n" + f"theta milieu ok mais loin - et moi je suis {is_reachable}"
+            # if not is_reachable:
+            #     state += "\n tend to preferred theta __________"
+            #     _, theta = tend_to_preferred_theta(previous_theta, interval, get_joints, d_theta_max, preferred_theta)
+            #     return False, theta, state
             return is_reachable, theta_side, state
 
     else:
@@ -399,6 +404,8 @@ def is_elbow_ok(elbow_position: npt.NDArray[np.float64], side: int) -> bool:
     if elbow_position[1] * side > -0.15:
         if elbow_position[0] < 0.15:
             is_ok = False
+    # ultra safe config
+    is_ok = elbow_position[1] * side < -0.2
     return is_ok
 
 

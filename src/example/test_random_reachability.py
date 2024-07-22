@@ -18,8 +18,8 @@ from reachy2_symbolic_ik.utils import distance_from_singularity
 
 # CONTROLE_TYPE = "local_discrete"
 # CONTROLE_TYPE = "local_continuous"
-# CONTROLE_TYPE = "sdk_discrete"
-CONTROLE_TYPE = "sdk_continuous"
+CONTROLE_TYPE = "sdk_discrete"
+# CONTROLE_TYPE = "sdk_continuous"
 
 
 def get_homogeneous_matrix_msg_from_euler(

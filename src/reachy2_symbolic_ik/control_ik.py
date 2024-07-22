@@ -132,6 +132,7 @@ class ControlIK:
             interval_limit = np.array([-np.pi, np.pi])
         elif constrained_mode == "low_elbow":
             interval_limit = np.array([-4 * np.pi / 5, 0])
+            # interval_limit = np.array([-4 * np.pi / 5, -np.pi / 2])
 
         if len(current_pose) == 0:
             current_pose = self.previous_pose[name]
@@ -312,6 +313,8 @@ class ControlIK:
             preferred_theta
         """
         # Checks if an interval exists that handles the wrist limits and the elbow limits
+        # self.print_log(f"{name} interval_limit: {interval_limit}")
+
         (
             is_reachable,
             interval,
@@ -336,6 +339,7 @@ class ControlIK:
                 state = "limited by shoulder"
 
         if is_reachable:
+            theta, state_interval = limit_theta_to_interval(theta, self.previous_theta[name], interval_limit)
             ik_joints, elbow_position = theta_to_joints_func(theta, previous_joints=self.previous_sol[name])
         else:
             ik_joints = current_joints
