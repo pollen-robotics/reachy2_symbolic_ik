@@ -107,11 +107,14 @@ class ControlIK:
         goal_position, goal_orientation = get_euler_from_homogeneous_matrix(M)
         goal_pose = np.array([goal_position, goal_orientation])
         # self.print_log(f"{name} goal_position: {goal_position}")
-        # self.print_log(f" controle_type: {control_type}")
+        # self.print_log(f" constrained_mode: {constrained_mode}")
+        # self.print_log(f" control_type: {control_type}")
+
         if constrained_mode == "unconstrained":
             interval_limit = np.array([-np.pi, np.pi])
         elif constrained_mode == "low_elbow":
             interval_limit = np.array([-4 * np.pi / 5, 0])
+            # interval_limit = np.array([-4 * np.pi / 5, -np.pi / 2])
 
         if len(current_pose) == 0:
             current_pose = self.previous_pose[name]
@@ -293,6 +296,8 @@ class ControlIK:
     ) -> Tuple[list[float], bool, str]:
         # self.print_log("discrete")
         # Checks if an interval exists that handles the wrist limits and the elbow limits
+        # self.print_log(f"{name} interval_limit: {interval_limit}")
+
         (
             is_reachable,
             interval,
@@ -318,6 +323,7 @@ class ControlIK:
                 state = "limited by shoulder"
 
         if is_reachable:
+            theta, state_interval = limit_theta_to_interval(theta, self.previous_theta[name], interval_limit)
             ik_joints, elbow_position = theta_to_joints_func(theta, previous_joints=self.previous_sol[name])
             # singularity_distance = distance_from_singularity(elbow_position[:3], arm=name)
             # self.print_log(f"{name} elbow_position: {elbow_position}")
