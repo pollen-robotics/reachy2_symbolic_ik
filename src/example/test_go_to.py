@@ -271,8 +271,8 @@ def main_test() -> None:
 
     reachy.turn_on()
 
-    symbolic_ik_r = SymbolicIK(shoulder_orientation_offset=[10, 0, 15], elbow_orientation_offset=[0, 0, 0])
-    symbolic_ik_l = SymbolicIK(arm="l_arm", shoulder_orientation_offset=[10, 0, 15], elbow_orientation_offset=[0, 0, 0])
+    symbolic_ik_r = SymbolicIK()
+    symbolic_ik_l = SymbolicIK(arm="l_arm")
 
     # --------------- Test poses ---------------
 
