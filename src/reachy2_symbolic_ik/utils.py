@@ -1,5 +1,7 @@
 import copy
 import math
+import xml.etree.ElementTree as ET
+from io import StringIO
 from typing import Any, Tuple
 
 import numpy as np
@@ -545,3 +547,41 @@ def show_frame(
 def show_point(ax: Any, point: npt.NDArray[np.float64], color: str) -> None:
     """Show a point in the 3D space"""
     ax.plot(point[0], point[1], point[2], "o", color=color)
+
+
+def get_ik_parameters_from_urdf(urdf_str: str, logger: Any) -> dict[str, Any]:
+    urdf_file = StringIO(urdf_str)
+    tree = ET.parse(urdf_file)
+    root = tree.getroot()
+    ik_parameters = {}
+
+    for joint in root.findall("joint"):
+        for name in ["r", "l"]:
+            if joint.attrib["name"] == f"{name}_shoulder_base_joint":
+                origin = joint.find("origin").attrib  # type: ignore
+                ik_parameters[f"{name}_shoulder_position"] = parse_vector(origin["xyz"])
+                orientation = parse_vector(origin["rpy"])
+                if name == "r":
+                    orientation[0] -= np.pi / 2
+                else:
+                    orientation[0] += np.pi / 2
+                ik_parameters[f"{name}_shoulder_orientation"] = np.degrees(orientation)
+            elif joint.attrib["name"] == f"{name}_elbow_base_joint":
+                origin = joint.find("origin").attrib  # type: ignore
+                position = parse_vector(origin["xyz"])
+                ik_parameters[f"{name}_upper_arm_size"] = position[2]
+                ik_parameters[f"{name}_elbow_roll_offset"] = -position[0]
+            elif joint.attrib["name"] == f"{name}_wrist_base_joint":
+                origin = joint.find("origin").attrib  # type: ignore
+                position = parse_vector(origin["xyz"])
+                ik_parameters[f"{name}_forearm_size"] = position[2]
+                ik_parameters[f"{name}_wrist_pitch_offset"] = -position[1]
+            elif joint.attrib["name"] == f"{name}_tip_joint":
+                origin = joint.find("origin").attrib  # type: ignore
+                ik_parameters[f"{name}_tip_position"] = parse_vector(origin["xyz"])
+    logger.info(f"ik_parameters: {ik_parameters}")
+    return ik_parameters
+
+
+def parse_vector(vector_str: str) -> npt.NDArray[np.float64]:
+    return np.array(map(float, vector_str.split()))

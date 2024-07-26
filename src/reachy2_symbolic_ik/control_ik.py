@@ -12,6 +12,7 @@ from reachy2_symbolic_ik.utils import (
     get_best_discrete_theta,
     get_best_theta_to_current_joints,
     get_euler_from_homogeneous_matrix,
+    get_ik_parameters_from_urdf,
     limit_orbita3d_joints_wrist,
     limit_theta_to_interval,
     tend_to_preferred_theta,
@@ -48,6 +49,7 @@ class ControlIK:
             ),
         ],
         logger: Any = None,
+        urdf: str = "",
     ) -> None:
         self.symbolic_ik_solver = {}
         self.last_call_t = {}
@@ -60,15 +62,35 @@ class ControlIK:
         self.previous_sol: Dict[str, list[float]] = {}
         self.previous_pose: Dict[str, npt.NDArray[np.float64]] = {}
         self.orbita3D_max_angle = np.deg2rad(42.5)
-
         self.logger = logger
+
+        ik_parameters = {}
+        if urdf != "":
+            ik_parameters = get_ik_parameters_from_urdf(urdf, logger)
 
         for prefix in ("r", "l"):
             arm = f"{prefix}_arm"
-            self.symbolic_ik_solver[arm] = SymbolicIK(
-                arm=arm,
-                wrist_limit=np.rad2deg(self.orbita3D_max_angle),
-            )
+
+            if ik_parameters != {}:
+                self.logger.info(f"Using URDF parameters for {arm}")
+                self.symbolic_ik_solver[arm] = SymbolicIK(
+                    arm=arm,
+                    wrist_limit=np.rad2deg(self.orbita3D_max_angle),
+                    upper_arm_size=ik_parameters["r_upper_arm_size"],
+                    forearm_size=ik_parameters["r_forearm_size"],
+                    tip_position=ik_parameters["r_tip_position"],
+                    shoulder_orientation_offset=ik_parameters["r_shoulder_orientation"],
+                    shoulder_position=ik_parameters["r_shoulder_position"],
+                )
+                shoulder_orientation_offset = (ik_parameters["r_shoulder_orientation"],)
+                self.logger.info(f" shoulder_position: {shoulder_orientation_offset}")
+                self.logger.info(f" shoulder_orientation_offset: {self.symbolic_ik_solver[arm].shoulder_orientation_offset}")
+            else:
+                self.symbolic_ik_solver[arm] = SymbolicIK(
+                    arm=arm,
+                    wrist_limit=np.rad2deg(self.orbita3D_max_angle),
+                )
+
             if prefix == "r":
                 self.preferred_theta[arm] = -4 * np.pi / 6
                 self.previous_sol[arm] = current_joints[0]
