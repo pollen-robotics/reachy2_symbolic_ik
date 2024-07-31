@@ -554,7 +554,6 @@ def get_ik_parameters_from_urdf(urdf_str: str, logger: Any) -> dict[str, Any]:
     tree = ET.parse(urdf_file)
     root = tree.getroot()
     ik_parameters = {}
-
     for joint in root.findall("joint"):
         for name in ["r", "l"]:
             if joint.attrib["name"] == f"{name}_shoulder_base_joint":
@@ -579,9 +578,8 @@ def get_ik_parameters_from_urdf(urdf_str: str, logger: Any) -> dict[str, Any]:
             elif joint.attrib["name"] == f"{name}_tip_joint":
                 origin = joint.find("origin").attrib  # type: ignore
                 ik_parameters[f"{name}_tip_position"] = parse_vector(origin["xyz"])
-    logger.info(f"ik_parameters: {ik_parameters}")
     return ik_parameters
 
 
 def parse_vector(vector_str: str) -> npt.NDArray[np.float64]:
-    return np.array(map(float, vector_str.split()))
+    return np.array(list(map(float, vector_str.split())))
