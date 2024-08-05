@@ -1,8 +1,8 @@
 import time
+from typing import Any, Tuple
 
 import numpy as np
 import numpy.typing as npt
-from typing import Tuple, Any
 from reachy2_sdk.reachy_sdk import ReachySDK
 from scipy.spatial.transform import Rotation as R
 
@@ -47,7 +47,9 @@ def dk(joints: npt.NDArray[np.float64]) -> Any:
     return T_torso_tip
 
 
-def get_distance_between_poses(goal_pose: npt.NDArray[np.float64], current_pose: npt.NDArray[np.float64]) -> Tuple[np.float64, np.float64]:
+def get_distance_between_poses(
+    goal_pose: npt.NDArray[np.float64], current_pose: npt.NDArray[np.float64]
+) -> Tuple[np.float64, np.float64]:
     l2 = np.linalg.norm(goal_pose[:3, 3] - current_pose[:3, 3])
     R_goal_pose = goal_pose[:3, :3]
     R_current_pose = current_pose[:3, :3]
