@@ -1,4 +1,5 @@
 import copy
+import os
 import time
 from typing import Any, Dict, Tuple
 
@@ -64,7 +65,14 @@ class ControlIK:
         self.orbita3D_max_angle = np.deg2rad(42.5)
         self.logger = logger
 
+        urdf_path = "../config_files/reachy2_beta.urdf"
+        urdf_path = os.path.join(os.path.dirname(__file__), urdf_path)
         ik_parameters = {}
+        if urdf == "":
+            if os.path.isfile(urdf_path) and os.path.getsize(urdf_path) > 0:
+                with open(urdf_path, "r") as fichier:
+                    urdf = fichier.read()
+
         if urdf != "":
             ik_parameters = get_ik_parameters_from_urdf(urdf, logger)
 
@@ -72,19 +80,12 @@ class ControlIK:
             arm = f"{prefix}_arm"
 
             if ik_parameters != {}:
-                self.logger.info(f"Using URDF parameters for {arm}")
+                if DEBUG:
+                    print(f"Using URDF parameters for {arm}")
                 self.symbolic_ik_solver[arm] = SymbolicIK(
                     arm=arm,
-                    wrist_limit=np.rad2deg(self.orbita3D_max_angle),
-                    upper_arm_size=ik_parameters["r_upper_arm_size"],
-                    forearm_size=ik_parameters["r_forearm_size"],
-                    tip_position=ik_parameters["r_tip_position"],
-                    shoulder_orientation_offset=ik_parameters["r_shoulder_orientation"],
-                    shoulder_position=ik_parameters["r_shoulder_position"],
+                    ik_parameters=ik_parameters,
                 )
-                shoulder_orientation_offset = (ik_parameters["r_shoulder_orientation"],)
-                self.logger.info(f" shoulder_position: {shoulder_orientation_offset}")
-                self.logger.info(f" shoulder_orientation_offset: {self.symbolic_ik_solver[arm].shoulder_orientation_offset}")
             else:
                 self.symbolic_ik_solver[arm] = SymbolicIK(
                     arm=arm,
