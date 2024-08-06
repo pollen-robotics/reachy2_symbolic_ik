@@ -47,6 +47,7 @@ def set_joints(reachy: ReachySDK, joints: list[float], arm: str) -> None:
     elif arm == "l_arm":
         for joint, goal_pos in zip(reachy.l_arm.joints.values(), joints):
             joint.goal_position = goal_pos
+    reachy.send_goal_positions()
 
 
 def get_ik(
@@ -297,6 +298,7 @@ def test_joints(reachy: ReachySDK) -> None:
 
     for joint, goal_pos in zip(reachy.l_arm.joints.values(), l_q):
         joint.goal_position = goal_pos
+    reachy.send_goal_positions()
 
 
 def main_test() -> None:

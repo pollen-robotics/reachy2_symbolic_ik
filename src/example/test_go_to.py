@@ -20,6 +20,7 @@ def go_to_joint_positions(reachy: ReachySDK, joint_positions: npt.NDArray[np.flo
     elif arm == "l_arm":
         for joint, goal_pos in zip(reachy.l_arm.joints.values(), joint_positions):
             joint.goal_position = goal_pos
+    reachy.send_goal_positions()
 
 
 def go_to_pose_with_all_theta(
@@ -51,6 +52,7 @@ def go_to_pose_with_all_theta(
                 # print(f"goal diff xyz only {diff}m")
                 for joint, goal_pos in zip(reachy.r_arm.joints.values(), np.degrees(joints)):
                     joint.goal_position = goal_pos
+                reachy.send_goal_positions()
                 time.sleep(0.1)
             elif arm == "l_arm":
                 if is_elbow_ok(elbow_position, -1):
@@ -69,6 +71,7 @@ def go_to_pose_with_all_theta(
                 # print(f"goal diff xyz only {diff}m")
                 for joint, goal_pos in zip(reachy.l_arm.joints.values(), np.degrees(joints)):
                     joint.goal_position = goal_pos
+                reachy.send_goal_positions()
                 time.sleep(0.1)
     else:
         print("Pose not reachable")
@@ -89,6 +92,7 @@ def go_to_pose_with_choosen_theta(
             print(f"goal diff {goal_diff}")
             for joint, goal_pos in zip(reachy.r_arm.joints.values(), np.degrees(joints)):
                 joint.goal_position = goal_pos
+            reachy.send_goal_positions()
             time.sleep(1)
         elif arm == "l_arm":
             real_pose = reachy.r_arm.forward_kinematics(np.degrees(joints))
@@ -98,6 +102,7 @@ def go_to_pose_with_choosen_theta(
             print(f"goal diff {goal_diff}")
             for joint, goal_pos in zip(reachy.l_arm.joints.values(), np.degrees(joints)):
                 joint.goal_position = goal_pos
+            reachy.send_goal_positions()
             time.sleep(1)
     else:
         print("Pose not reachable")
@@ -130,6 +135,7 @@ def go_to_pose(
             #     print(f"fk {real_pose}")
         for joint, goal_pos in zip(reachy.r_arm.joints.values(), ik):
             joint.goal_position = goal_pos
+        reachy.send_goal_positions()
 
     elif arm == "l_arm":
         ik, is_reachable, state = controle_ik.symbolic_inverse_kinematics(
@@ -149,6 +155,7 @@ def go_to_pose(
             #     print(f"pose by kdl {real_pose}")
         for joint, goal_pos in zip(reachy.l_arm.joints.values(), ik):
             joint.goal_position = goal_pos
+        reachy.send_goal_positions()
     print("")
 
 

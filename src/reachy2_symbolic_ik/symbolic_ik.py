@@ -35,6 +35,8 @@ class SymbolicIK:
         elbow_limits: int = 127,
         projection_margin: float = 1e-8,
         backward_limit: float = 1e-10,
+        elbow_offset: float = 0.03,
+        wrist_offset: float = 0.03,
     ) -> None:
         self.arm = arm
         self.upper_arm_size = upper_arm_size
@@ -48,9 +50,9 @@ class SymbolicIK:
         self.projection_margin = projection_margin
         self.normal_vector_margin = 0.0000001
         self.backward_limit = backward_limit
-        self.elbow_offset = 0.03
+        self.elbow_offset = elbow_offset
         self.fake_upper_arm_size = np.sqrt(self.upper_arm_size**2 + self.elbow_offset**2)
-        self.wrist_offset = 0.03
+        self.wrist_offset = wrist_offset
         self.fake_forearm_size = np.sqrt(self.forearm_size**2 + self.wrist_offset**2)
         self.max_arm_length = self.fake_upper_arm_size + self.fake_forearm_size + self.gripper_size
 
