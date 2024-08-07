@@ -243,7 +243,7 @@ def show_graph(symbolic_ik: SymbolicIK, goal_pose: npt.NDArray[np.float64]) -> N
     T_tip_torso = T_wristPitch_torso
     T_tip_torso[0][3] -= symbolic_ik.gripper_size
 
-    elbow_yaw -= np.radians(symbolic_ik.elbow_orientation_offset[2])
+    # elbow_yaw -= np.radians(symbolic_ik.elbow_orientation_offset[2])
 
     ####
 
@@ -399,9 +399,25 @@ def show_circle2(
 
 
 def main() -> None:
+    ik_parameters = {
+        "r_shoulder_position": np.array([0.0, -0.2, 0.0]),
+        "r_shoulder_orientation": [10, 0, 15],
+        "r_upper_arm_size": np.float64(0.28),
+        "r_forearm_size": np.float64(0.28),
+        "r_tip_position": np.array([-0.0, 0.0, 0.10]),
+        "r_elbow_roll_offset": 0.03,
+        "r_wrist_pitch_offset": 0.03,
+        "l_shoulder_position": np.array([0.0, 0.2, 0.0]),
+        "l_shoulder_orientation": [-10, 0, 15],
+        "l_upper_arm_size": np.float64(0.28),
+        "l_forearm_size": np.float64(0.28),
+        "l_tip_position": np.array([-0.0, 0.0, 0.10]),
+        "l_elbow_roll_offset": 0.03,
+        "l_wrist_pitch_offset": 0.03,
+    }
     symbolic_ik = SymbolicIK(
-        shoulder_orientation_offset=[10, 0, 15],
-        elbow_orientation_offset=[0, 0, 0],
+        arm="r_arm",
+        ik_parameters=ik_parameters,
     )
     # goal_position = [0.55, -0.3, -0.2]
     goal_position = [0.0001, -0.2, -0.65]

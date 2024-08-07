@@ -28,14 +28,6 @@ class SymbolicIK:
         projection_margin: float = 1e-8,
         backward_limit: float = 1e-10,
         normal_vector_margin: float = 1e-7,
-        upper_arm_size: np.float64 = np.float64(0.28),
-        forearm_size: np.float64 = np.float64(0.28),
-        tip_position: npt.NDArray[np.float64] = np.array([-0.0, 0.0, 0.10]),
-        # shoulder orientation and shoulder position are for the rigth arm
-        shoulder_orientation_offset: list[int] = [-15, 0, 10],
-        shoulder_position: npt.NDArray[np.float64] = np.array([0.0, -0.2, 0.0]),
-        elbow_offset: float = 0.03,
-        wrist_offset: float = 0.03,
     ) -> None:
         if ik_parameters == {}:
             print("Using default parameters")
