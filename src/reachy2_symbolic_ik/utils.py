@@ -549,13 +549,13 @@ def show_point(ax: Any, point: npt.NDArray[np.float64], color: str) -> None:
     ax.plot(point[0], point[1], point[2], "o", color=color)
 
 
-def get_ik_parameters_from_urdf(urdf_str: str, logger: Any) -> dict[str, Any]:
+def get_ik_parameters_from_urdf(urdf_str: str, arm: list[str]) -> dict[str, Any]:
     urdf_file = StringIO(urdf_str)
     tree = ET.parse(urdf_file)
     root = tree.getroot()
     ik_parameters = {}
     for joint in root.findall("joint"):
-        for name in ["r", "l"]:
+        for name in arm:
             if joint.attrib["name"] == f"{name}_shoulder_base_joint":
                 origin = joint.find("origin").attrib  # type: ignore
                 ik_parameters[f"{name}_shoulder_position"] = parse_vector(origin["xyz"])

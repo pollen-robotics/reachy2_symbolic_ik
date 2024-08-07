@@ -23,7 +23,7 @@ DEBUG = False
 
 
 class ControlIK:
-    def __init__(
+    def __init__(  # noqa: C901
         # TODO : default current position depends of the shoulder offset
         self,
         current_joints: list[list[float]] = [
@@ -51,6 +51,7 @@ class ControlIK:
         ],
         logger: Any = None,
         urdf: str = "",
+        reachy_model: str = "full_kit",
     ) -> None:
         self.symbolic_ik_solver = {}
         self.last_call_t = {}
@@ -65,7 +66,7 @@ class ControlIK:
         self.orbita3D_max_angle = np.deg2rad(42.5)
         self.logger = logger
 
-        urdf_path = "../config_files/reachy2_beta.urdf"
+        urdf_path = "../config_files/reachy2.urdf"
         urdf_path = os.path.join(os.path.dirname(__file__), urdf_path)
         ik_parameters = {}
         if urdf == "":
@@ -73,10 +74,24 @@ class ControlIK:
                 with open(urdf_path, "r") as fichier:
                     urdf = fichier.read()
 
-        if urdf != "":
-            ik_parameters = get_ik_parameters_from_urdf(urdf, logger)
+        if reachy_model == "full_kit" or reachy_model == "headless":
+            arms = ["r", "l"]
+        elif reachy_model == "starter_kit_right":
+            arms = ["r"]
+        elif reachy_model == "starter_kit_left":
+            arms = ["l"]
+        elif reachy_model == "mini":
+            arms = []
+        else:
+            raise ValueError(f"Unknown Reachy model {reachy_model}")
 
-        for prefix in ("r", "l"):
+        try:
+            if urdf != "":
+                ik_parameters = get_ik_parameters_from_urdf(urdf, arms)
+        except Exception as e:
+            raise ValueError(f"Error while parsing URDF: {e}")
+
+        for prefix in arms:
             arm = f"{prefix}_arm"
 
             if ik_parameters != {}:
@@ -92,12 +107,14 @@ class ControlIK:
                     wrist_limit=np.rad2deg(self.orbita3D_max_angle),
                 )
 
+            preferred_theta = -4 * np.pi / 6
+
             if prefix == "r":
-                self.preferred_theta[arm] = -4 * np.pi / 6
+                self.preferred_theta[arm] = preferred_theta
                 self.previous_sol[arm] = current_joints[0]
                 self.previous_pose[arm] = current_pose[0]
             else:
-                self.preferred_theta[arm] = -np.pi - self.preferred_theta["r_arm"]
+                self.preferred_theta[arm] = -np.pi - preferred_theta
                 self.previous_sol[arm] = current_joints[1]
                 self.previous_pose[arm] = current_pose[1]
             current_goal_position, current_goal_orientation = get_euler_from_homogeneous_matrix(self.previous_pose[arm])
