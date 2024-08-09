@@ -8,6 +8,7 @@ from scipy.spatial.transform import Rotation
 
 from reachy2_symbolic_ik.control_ik import ControlIK
 from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
+from reachy2_symbolic_ik.utils import limit_orbita3d_joints_wrist
 
 
 def get_homogeneous_matrix_msg_from_euler(
@@ -56,7 +57,7 @@ def test_joints_space(reachy: ReachySDK) -> None:
     ik_r = q
     ik_l = q
     q0 = [-45.0, -60.0, 0.0, -45.0, 0.0, 0.0, 0.0]  # ?? Shouldn't it be -90 for the wrist pitch? Why -45?
-    q_amps = [30.0, 30.0, 30.0, 45.0, 25.0, 25.0, 90.0]
+    q_amps = [30.0, 25.0, 30.0, 45.0, 45.0, 45.0, 90.0]
 
     control_ik = ControlIK()
     symbolik_r = SymbolicIK(arm="r_arm")
@@ -71,6 +72,7 @@ def test_joints_space(reachy: ReachySDK) -> None:
         t = time.time() - t_init + 11
 
         r_q = [q0[i] + q_amps[i] * np.sin(2 * np.pi * freq[i] * t) for i in range(7)]
+        r_q = np.degrees(limit_orbita3d_joints_wrist(np.radians(r_q), np.radians(42)))
 
         # l_q = [r_q[0], -r_q[1], -r_q[2], r_q[3], -r_q[4], r_q[5], -r_q[6]]
         M_r = reachy.r_arm.forward_kinematics(r_q)
@@ -94,14 +96,14 @@ def test_joints_space(reachy: ReachySDK) -> None:
 
         is_reachable_r, _, _, state = symbolik_r.is_reachable(r_goal_pose)
         is_reachable_l, _, _, state = symbolik_l.is_reachable(l_goal_pose)
-        if not is_reachable_r:
+        if not is_reachable_r and not state == "Backward pose":
             print(" ##### Target is not reachable by r arms #####")
             print(f"state: {state}")
             print(f"r_q: {r_q}")
             print(f"M_r: {M_r}")
             print(f"goal_pose: {r_goal_pose}")
             break
-        if not is_reachable_l:
+        if not is_reachable_l and not state == "Backward pose":
             print(" ##### Target is not reachable by l arms #####")
             print(f"state: {state}")
             print(f"r_q: {r_q}")
