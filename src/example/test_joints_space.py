@@ -7,6 +7,7 @@ from reachy2_sdk import ReachySDK
 from scipy.spatial.transform import Rotation
 
 from reachy2_symbolic_ik.control_ik import ControlIK
+from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
 
 
 def get_homogeneous_matrix_msg_from_euler(
@@ -50,7 +51,7 @@ def get_ik(
     return joints, elbow_position
 
 
-def test_joints_space(reachy: ReachySDK, debug_pose: bool = False, bypass: bool = False) -> None:
+def test_joints_space(reachy: ReachySDK) -> None:
     q = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     ik_r = q
     ik_l = q
@@ -58,6 +59,8 @@ def test_joints_space(reachy: ReachySDK, debug_pose: bool = False, bypass: bool 
     q_amps = [30.0, 30.0, 30.0, 45.0, 25.0, 25.0, 90.0]
 
     control_ik = ControlIK()
+    symbolik_r = SymbolicIK(arm="r_arm")
+    symbolik_l = SymbolicIK(arm="l_arm")
 
     freq_reductor = 2.0
     freq = [0.3 * freq_reductor, 0.17 * freq_reductor, 0.39 * freq_reductor, 0.18, 0.31, 0.47, 0.25]
@@ -80,6 +83,31 @@ def test_joints_space(reachy: ReachySDK, debug_pose: bool = False, bypass: bool 
                 [0, 0, 0, 1],
             ]
         )
+
+        r_goal_position = M_r[:3, 3]
+        r_goal_orientation = Rotation.from_matrix(M_r[:3, :3]).as_euler("xyz", degrees=False)
+        r_goal_pose = np.array([r_goal_position, r_goal_orientation])
+
+        l_goal_position = M_l[:3, 3]
+        l_goal_orientation = Rotation.from_matrix(M_l[:3, :3]).as_euler("xyz", degrees=False)
+        l_goal_pose = np.array([l_goal_position, l_goal_orientation])
+
+        is_reachable_r, _, _, state = symbolik_r.is_reachable(r_goal_pose)
+        is_reachable_l, _, _, state = symbolik_l.is_reachable(l_goal_pose)
+        if not is_reachable_r:
+            print(" ##### Target is not reachable by r arms #####")
+            print(f"state: {state}")
+            print(f"r_q: {r_q}")
+            print(f"M_r: {M_r}")
+            print(f"goal_pose: {r_goal_pose}")
+            break
+        if not is_reachable_l:
+            print(" ##### Target is not reachable by l arms #####")
+            print(f"state: {state}")
+            print(f"r_q: {r_q}")
+            print(f"M_r: {M_r}")
+            print(f"goal_pose: {l_goal_pose}")
+            break
 
         t0 = time.time()
         try:
