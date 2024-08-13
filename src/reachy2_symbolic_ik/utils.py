@@ -21,17 +21,17 @@ def make_homogenous_matrix_from_rotation_matrix(
     )
 
 
-def distance_from_singularity(elbow_position: npt.NDArray[np.float64], arm: str) -> float:
+def distance_from_singularity(elbow_position: npt.NDArray[np.float64], arm: str, shoulder_offset: list[float]) -> float:
     """Compute the distance from the singularity"""
     # TODO take robot dimensions in the urdf
     if arm == "r_arm":
         side = 1
     else:
         side = -1
-    shoudler_offset = [10.0 * side, 0.0, 15.0 * side]
+    # shoudler_offset = [10.0 * side, 0.0, 15.0 * side]
     shoulder_position = np.array([0.0, -0.2 * side, 0.0])
     upper_arm_size = 0.28
-    rotation_matrix = R.from_euler("xyz", shoudler_offset, degrees=True).as_matrix()
+    rotation_matrix = R.from_euler("xyz", shoulder_offset, degrees=True).as_matrix()
     T_torso_shoulder = make_homogenous_matrix_from_rotation_matrix(shoulder_position, rotation_matrix)
     singularity_position = np.array([0.0, -upper_arm_size * side, 0.0, 1.0])
     singularity_position = np.dot(T_torso_shoulder, singularity_position)[:3]

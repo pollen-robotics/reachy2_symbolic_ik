@@ -13,18 +13,19 @@ from reachy2_symbolic_ik.utils import make_homogenous_matrix_from_rotation_matri
 def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> None:
     if arm == "r_arm":
         ik = reachy.r_arm.inverse_kinematics(pose)
-        real_pose = reachy.r_arm.forward_kinematics(ik)
-        pose_diff = np.linalg.norm(pose - real_pose)
-        print(f"pose diff {pose_diff}")
+        # real_pose = reachy.r_arm.forward_kinematics(ik)
+        # pose_diff = np.linalg.norm(pose - real_pose)
+        # print(f"pose diff {pose_diff}")
         for joint, goal_pos in zip(reachy.r_arm.joints.values(), ik):
             joint.goal_position = goal_pos
     elif arm == "l_arm":
         ik = reachy.l_arm.inverse_kinematics(pose)
-        real_pose = reachy.l_arm.forward_kinematics(ik)
-        pose_diff = np.linalg.norm(pose - real_pose)
-        print(f"pose diff {pose_diff}")
+        # real_pose = reachy.l_arm.forward_kinematics(ik)
+        # pose_diff = np.linalg.norm(pose - real_pose)
+        # print(f"pose diff {pose_diff}")
         for joint, goal_pos in zip(reachy.l_arm.joints.values(), ik):
             joint.goal_position = goal_pos
+    reachy.send_goal_positions()
 
 
 def make_line(
@@ -91,7 +92,7 @@ def make_rectangle(
     B: npt.NDArray[np.float64],
     C: npt.NDArray[np.float64],
     D: npt.NDArray[np.float64],
-    nbr_points: int = 100,
+    nbr_points: int = 20,
     number_of_turns: int = 3,
 ) -> None:
     orientation = [0, -np.pi / 2, 0]
@@ -129,22 +130,22 @@ def main_test() -> None:
 
     reachy.turn_on()
 
-    print("Making a line")
-    start_pose = np.array([[0.55, -0.2, 0.0], [0, -np.pi / 2, 0]])
-    end_pose = np.array([[0.45, -0.4, -0.2], [0, -np.pi / 3, 0]])
-    make_line(reachy, start_pose, end_pose)
+    # print("Making a line")
+    # start_pose = np.array([[0.55, -0.2, 0.0], [0, -np.pi / 2, 0]])
+    # end_pose = np.array([[0.45, -0.4, -0.2], [0, -np.pi / 3, 0]])
+    # make_line(reachy, start_pose, end_pose)
 
-    time.sleep(1.0)
+    # time.sleep(1.0)
 
-    print("Turning the hand")
-    position = np.array([0.0, -0.2, -0.68])
-    orientation = np.array([0, 0, 0])
-    turn_hand(reachy, position, orientation)
+    # print("Turning the hand")
+    # position = np.array([0.001, -0.2, -0.6599])
+    # orientation = np.array([0, 0, 0])
+    # turn_hand(reachy, position, orientation)
 
-    time.sleep(1.0)
+    # time.sleep(1.0)
 
     print("Making a circle")
-    center = np.array([0.35, -0.3, -0.1])
+    center = np.array([0.4, -0.4, -0.2])
     orientation = np.array([0, -np.pi / 2, 0])
     radius = 0.15
     make_circle(reachy, center, orientation, radius)
@@ -152,10 +153,10 @@ def main_test() -> None:
     time.sleep(1.0)
 
     print("Making a rectangle")
-    A = np.array([0.4, -0.4, -0.3])
-    B = np.array([0.4, -0.4, 0.1])
-    C = np.array([0.4, -0.1, 0.1])
-    D = np.array([0.4, -0.1, -0.3])
+    A = np.array([0.4, -0.5, -0.3])
+    B = np.array([0.4, -0.5, -0.1])
+    C = np.array([0.4, -0.2, -0.1])
+    D = np.array([0.4, -0.2, -0.3])
     make_rectangle(reachy, A, B, C, D)
 
     time.sleep(1.0)
