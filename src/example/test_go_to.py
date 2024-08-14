@@ -283,35 +283,35 @@ def main_test() -> None:
 
     # --------------- Test poses ---------------
 
-    # print(" ----- Testing poses ----- \n")
+    print(" ----- Testing poses ----- \n")
 
-    # print("Testing continuous control")
-    # test_poses(reachy, symbolic_ik_r, symbolic_ik_l, controle_type="continuous", constrained_mode="low_elbow")
-    # time.sleep(3.0)
+    print("Testing continuous control")
+    test_poses(reachy, symbolic_ik_r, symbolic_ik_l, controle_type="continuous", constrained_mode="low_elbow")
+    time.sleep(3.0)
 
-    # print("Testing discrete control")
-    # test_poses(reachy, symbolic_ik_r, symbolic_ik_l, controle_type="discrete", constrained_mode="unconstrained")
-    # time.sleep(3.0)
+    print("Testing discrete control")
+    test_poses(reachy, symbolic_ik_r, symbolic_ik_l, controle_type="discrete", constrained_mode="unconstrained")
+    time.sleep(3.0)
 
-    # # --------------- Go to pose ---------------
+    # --------------- Go to pose ---------------
 
-    # print("----- Go to pose ----- \n")
-    # r_goal_pose = np.array([[0.0, -0.2, -0.65], [0, 0, 0]])
-    # l_goal_pose = np.array([[0.0, 0.2, -0.65], [0, 0, 0]])
-    # r_M = make_homogenous_matrix_from_rotation_matrix(r_goal_pose[0], R.from_euler("xyz", r_goal_pose[1]).as_matrix())
-    # l_M = make_homogenous_matrix_from_rotation_matrix(l_goal_pose[0], R.from_euler("xyz", l_goal_pose[1]).as_matrix())
-    # go_to_pose(reachy, r_M, "r_arm")
-    # go_to_pose(reachy, l_M, "l_arm")
-    # time.sleep(5.0)
+    print("----- Go to pose ----- \n")
+    r_goal_pose = np.array([[0.0, -0.2, -0.65], [0, 0, 0]])
+    l_goal_pose = np.array([[0.0, 0.2, -0.65], [0, 0, 0]])
+    r_M = make_homogenous_matrix_from_rotation_matrix(r_goal_pose[0], R.from_euler("xyz", r_goal_pose[1]).as_matrix())
+    l_M = make_homogenous_matrix_from_rotation_matrix(l_goal_pose[0], R.from_euler("xyz", l_goal_pose[1]).as_matrix())
+    go_to_pose(reachy, r_M, "r_arm")
+    go_to_pose(reachy, l_M, "l_arm")
+    time.sleep(5.0)
 
-    # # ------ Go to pose with choosen theta -----
+    # ------ Go to pose with choosen theta -----
 
-    # print("----- Go to pose with choosen theta ----- \n")
-    # r_goal_pose = np.array([[0.55, -0.2, 0.0], [0, -np.pi / 2, 0]])
-    # l_goal_pose = np.array([[0.55, 0.2, 0.0], [0, -np.pi / 2, 0]])
-    # go_to_pose_with_choosen_theta(reachy, symbolic_ik_r, r_goal_pose, -4 * np.pi / 6, "r_arm")
-    # go_to_pose_with_choosen_theta(reachy, symbolic_ik_l, l_goal_pose, -2 * np.pi / 6, "l_arm")
-    # time.sleep(5.0)
+    print("----- Go to pose with choosen theta ----- \n")
+    r_goal_pose = np.array([[0.55, -0.2, 0.0], [0, -np.pi / 2, 0]])
+    l_goal_pose = np.array([[0.55, 0.2, 0.0], [0, -np.pi / 2, 0]])
+    go_to_pose_with_choosen_theta(reachy, symbolic_ik_r, r_goal_pose, -4 * np.pi / 6, "r_arm")
+    go_to_pose_with_choosen_theta(reachy, symbolic_ik_l, l_goal_pose, -2 * np.pi / 6, "l_arm")
+    time.sleep(5.0)
 
     # ------ Go to pose with all theta -----
 
