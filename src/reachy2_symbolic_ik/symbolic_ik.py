@@ -35,7 +35,7 @@ class SymbolicIK:
         elbow_limits: int = 127,
         projection_margin: float = 1e-8,
         backward_limit: float = 1e-10,
-        tip_position: npt.NDArray[np.float64] = np.array([0.05, -.05, 0.15]),
+        tip_position: npt.NDArray[np.float64] = np.array([0.0, 0.0, 0.10]),
     ) -> None:
         self.arm = arm
         self.upper_arm_size = upper_arm_size
@@ -49,7 +49,6 @@ class SymbolicIK:
         self.projection_margin = projection_margin
         self.normal_vector_margin = 0.0000001
         self.backward_limit = backward_limit
-
 
         if self.arm == "r_arm":
             self.shoulder_position = shoulder_position
