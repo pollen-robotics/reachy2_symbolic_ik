@@ -35,11 +35,13 @@ class SymbolicIK:
         elbow_limits: int = 127,
         projection_margin: float = 1e-8,
         backward_limit: float = 1e-10,
+        tip_position: npt.NDArray[np.float64] = np.array([0.0, 0.0, 0.10]),
     ) -> None:
         self.arm = arm
         self.upper_arm_size = upper_arm_size
         self.forearm_size = forearm_size
-        self.gripper_size = gripper_size
+        self.tip_position = tip_position
+        self.gripper_size = np.linalg.norm(self.tip_position)
         self.wrist_limit = wrist_limit
         self.elbow_limits = elbow_limits
         self.torso_pose = np.array([0.0, 0.0, 0.0])
@@ -57,6 +59,7 @@ class SymbolicIK:
             self.shoulder_position = np.array([shoulder_position[0], -shoulder_position[1], shoulder_position[2]])
             self.shoulder_orientation_offset = [-x for x in shoulder_orientation_offset]
             self.elbow_orientation_offset = [-x for x in elbow_orientation_offset]
+            self.tip_position = np.array([tip_position[0], -tip_position[1], tip_position[2]])
 
     def is_reachable_no_limits(self, goal_pose: npt.NDArray[np.float64]) -> Tuple[bool, npt.NDArray[np.float64], Optional[Any]]:
         """Check if the goal pose is reachable without taking into account the limits of the wrist and the elbow
@@ -315,7 +318,9 @@ class SymbolicIK:
         """Get the wrist position from the goal pose"""
         M_torso_goalPosition = R.from_euler("xyz", goal_pose[1]).as_matrix()
         T_torso_goalPosition = make_homogenous_matrix_from_rotation_matrix(goal_pose[0], M_torso_goalPosition)
-        P_torso_wrist = np.array(np.dot(T_torso_goalPosition, np.array([0.0, 0.0, self.gripper_size, 1.0])))
+        P_goalPosition_wrist = np.array([-self.tip_position[0], self.tip_position[1], self.tip_position[2], 1.0])
+        P_torso_wrist = np.array(np.dot(T_torso_goalPosition, P_goalPosition_wrist))
+        # P_torso_wrist = np.array(np.dot(T_torso_goalPosition, np.array([0.0, 0.0, self.gripper_size, 1.0])))
         return P_torso_wrist[:3]
 
     def are_circles_linked(
@@ -650,8 +655,13 @@ class SymbolicIK:
         T_wrist_torso = T_elbowPitch_torso
         T_wrist_torso[0][3] -= self.forearm_size
 
+        M_goal_rotation = R.from_euler("xyz", goal_orientation)
+        T_torso_goalPose = make_homogenous_matrix_from_rotation_matrix(P_torso_goalPosition, M_goal_rotation.as_matrix())
+        P_goalPose_tip = np.array([-self.tip_position[0], self.tip_position[1], 0, 1.0])
+        P_torso_tip = np.dot(T_torso_goalPose, P_goalPose_tip)
+
         # The goal position in the wrist frame is used to find the wrist roll joint
-        P_wrist_tip = np.dot(T_wrist_torso, P_torso_goalPosition)
+        P_wrist_tip = np.dot(T_wrist_torso, P_torso_tip)
         wrist_roll = np.pi - math.atan2(P_wrist_tip[1], -P_wrist_tip[0])
         if wrist_roll > np.pi:
             wrist_roll = wrist_roll - 2 * np.pi
@@ -662,7 +672,7 @@ class SymbolicIK:
         T_wristRol_torso = np.dot(T_wristRoll_wrist, T_wrist_torso)
 
         # The goal position in the wristRoll frame is used to find the wrist pitch joint
-        P_wristRoll_tip = np.dot(T_wristRol_torso, P_torso_goalPosition)
+        P_wristRoll_tip = np.dot(T_wristRol_torso, P_torso_tip)
         wrist_pitch = math.atan2(P_wristRoll_tip[2], P_wristRoll_tip[0])
 
         # WristPitch frame is the wristRoll frame with the wrist pitch rotation
@@ -674,13 +684,13 @@ class SymbolicIK:
 
         # The tip frame is the wristPitch frame with the goal position
         T_tip_torso = T_wristPitch_torso
-        T_tip_torso[0][3] -= self.gripper_size
+        T_tip_torso[0][3] -= self.tip_position[2]
 
         M_torso_goal = R.from_euler("xyz", goal_orientation)
 
         # Take a point in the goal frame and find it in the torso frame
         P_goal_point = [0.1, 0.0, 0.0, 1.0]
-        T_torso_goal = make_homogenous_matrix_from_rotation_matrix(P_torso_goalPosition, M_torso_goal.as_matrix())
+        T_torso_goal = make_homogenous_matrix_from_rotation_matrix(P_torso_tip, M_torso_goal.as_matrix())
         P_torso_point = np.dot(T_torso_goal, P_goal_point)
 
         # Use the point in tip frame to find the wrist yaw joint
