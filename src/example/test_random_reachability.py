@@ -47,6 +47,7 @@ def set_joints(reachy: ReachySDK, joints: list[float], arm: str) -> None:
     elif arm == "l_arm":
         for joint, goal_pos in zip(reachy.l_arm.joints.values(), joints):
             joint.goal_position = goal_pos
+    reachy.send_goal_positions()
 
 
 def get_ik(
@@ -86,7 +87,7 @@ def get_ik(
                 d_theta_max=FloatValue(value=0.01),
                 order_id=Int32Value(value=5),
             )
-            reachy.r_arm._arm_stub.SendArmCartesianGoal(request)
+            reachy.r_arm._stub.SendArmCartesianGoal(request)
             # print(reachy.r_arm.shoulder.pitch.present_position)
         elif arm == "l_arm":
             request = ArmCartesianGoal(
@@ -100,7 +101,7 @@ def get_ik(
                 d_theta_max=FloatValue(value=0.01),
                 order_id=Int32Value(value=5),
             )
-            reachy.l_arm._arm_stub.SendArmCartesianGoal(request)
+            reachy.l_arm._stub.SendArmCartesianGoal(request)
     return joints, elbow_position
 
 
@@ -225,8 +226,8 @@ def check_precision_and_symmetry(
 
     if CONTROLE_TYPE == "local_continuous" or CONTROLE_TYPE == "local_discrete":
         # print(elbow_position_r)
-        distance_from_singularity_r = distance_from_singularity(elbow_position_r, "r_arm")
-        distance_from_singularity_l = distance_from_singularity(elbow_position_l, "l_arm")
+        distance_from_singularity_r = distance_from_singularity(elbow_position_r, "r_arm", [10, 0, 15])
+        distance_from_singularity_l = distance_from_singularity(elbow_position_l, "l_arm", [-10, 0, 15])
         print(f"distance_from_singularity_r: {distance_from_singularity_r:.5f}")
         print(f"distance_from_singularity_l: {distance_from_singularity_l:.5f}")
         if distance_from_singularity_r < 1e-4 or distance_from_singularity_l < 1e-4:
@@ -297,6 +298,7 @@ def test_joints(reachy: ReachySDK) -> None:
 
     for joint, goal_pos in zip(reachy.l_arm.joints.values(), l_q):
         joint.goal_position = goal_pos
+    reachy.send_goal_positions()
 
 
 def main_test() -> None:

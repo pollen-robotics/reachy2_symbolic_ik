@@ -230,7 +230,7 @@ class ControlIK:
             is_reachable, interval, theta_to_joints_func = self.symbolic_ik_solver[name].is_reachable_no_limits(
                 current_pose_tuple,
             )
-            best_prev_theta, state = get_best_theta_to_current_joints(
+            best_prev_theta, state_previous_theta = get_best_theta_to_current_joints(
                 theta_to_joints_func, 20, current_joints, name, preferred_theta
             )
             self.previous_theta[name] = best_prev_theta
@@ -246,6 +246,7 @@ class ControlIK:
         ) = self.symbolic_ik_solver[
             name
         ].is_reachable(goal_pose)
+        # self.print_log(f"{name} state_reachable: {state_reachable}")
         if is_reachable:
             is_reachable, theta, state_theta = get_best_continuous_theta(
                 self.previous_theta[name],
@@ -273,9 +274,11 @@ class ControlIK:
         else:
             if DEBUG:
                 print(f"{name} Pose not reachable before even reaching theta selection. State: {state_reachable}")
-            is_reachable, interval, theta_to_joints_func = self.symbolic_ik_solver[name].is_reachable_no_limits(goal_pose)
-            if is_reachable:
-                is_reachable, theta = tend_to_preferred_theta(
+            is_reachable_no_limits, interval, theta_to_joints_func = self.symbolic_ik_solver[name].is_reachable_no_limits(
+                goal_pose
+            )
+            if is_reachable_no_limits:
+                is_reachable_no_limits, theta = tend_to_preferred_theta(
                     self.previous_theta[name],
                     interval,
                     theta_to_joints_func,
