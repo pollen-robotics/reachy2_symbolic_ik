@@ -16,9 +16,9 @@ from scipy.spatial.transform import Rotation
 from reachy2_symbolic_ik.control_ik import ControlIK
 from reachy2_symbolic_ik.utils import distance_from_singularity
 
-CONTROLE_TYPE = "local_discrete"
+# CONTROLE_TYPE = "local_discrete"
 # CONTROLE_TYPE = "local_continuous"
-# CONTROLE_TYPE = "sdk_discrete"
+CONTROLE_TYPE = "sdk_discrete"
 # CONTROLE_TYPE = "sdk_continuous"
 
 
@@ -87,7 +87,7 @@ def get_ik(
                 d_theta_max=FloatValue(value=0.01),
                 order_id=Int32Value(value=5),
             )
-            reachy.r_arm._arm_stub.SendArmCartesianGoal(request)
+            reachy.r_arm._stub.SendArmCartesianGoal(request)
             # print(reachy.r_arm.shoulder.pitch.present_position)
         elif arm == "l_arm":
             request = ArmCartesianGoal(
@@ -101,7 +101,7 @@ def get_ik(
                 d_theta_max=FloatValue(value=0.01),
                 order_id=Int32Value(value=5),
             )
-            reachy.l_arm._arm_stub.SendArmCartesianGoal(request)
+            reachy.l_arm._stub.SendArmCartesianGoal(request)
     return joints, elbow_position
 
 
