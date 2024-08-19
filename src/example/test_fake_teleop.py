@@ -97,7 +97,7 @@ def task_space_interpolation_goto(reachy_arm: Any, target_pose: npt.NDArray[np.f
             continuous_mode=IKContinuousMode.CONTINUOUS,
             constrained_mode=IKConstrainedMode.LOW_ELBOW,
         )
-        reachy_arm._arm_stub.SendArmCartesianGoal(request)
+        reachy_arm._stub.SendArmCartesianGoal(request)
         time.sleep(1 / freq)
 
     time.sleep(0.1)
@@ -113,7 +113,7 @@ def task_space_interpolation_goto(reachy_arm: Any, target_pose: npt.NDArray[np.f
                 continuous_mode=IKContinuousMode.CONTINUOUS,
                 constrained_mode=IKConstrainedMode.LOW_ELBOW,
             )
-            reachy_arm._arm_stub.SendArmCartesianGoal(request)
+            reachy_arm._stub.SendArmCartesianGoal(request)
             time.sleep(1 / freq)
 
         time.sleep(0.1)
@@ -145,7 +145,7 @@ def get_ik(reachy: ReachySDK, control_ik: ControlIK, M: npt.NDArray[np.float64],
             d_theta_max=FloatValue(value=0.1),
             order_id=Int32Value(value=order_id),
         )
-        reachy.r_arm._arm_stub.SendArmCartesianGoal(request)
+        reachy.r_arm._stub.SendArmCartesianGoal(request)
         # print(reachy.r_arm.shoulder.pitch.present_position)
     elif arm == "l_arm":
         request = ArmCartesianGoal(
@@ -160,7 +160,7 @@ def get_ik(reachy: ReachySDK, control_ik: ControlIK, M: npt.NDArray[np.float64],
             d_theta_max=FloatValue(value=0.1),
             order_id=Int32Value(value=(order_id + 1)),
         )
-        reachy.l_arm._arm_stub.SendArmCartesianGoal(request)
+        reachy.l_arm._stub.SendArmCartesianGoal(request)
 
 
 def make_movement(reachy: ReachySDK) -> None:
