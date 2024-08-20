@@ -1,3 +1,4 @@
+import os
 import time
 
 import numpy as np
@@ -15,6 +16,7 @@ from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
 from reachy2_symbolic_ik.utils import (  # get_best_continuous_theta2,; distance_from_singularity,
     get_best_discrete_theta,
     get_euler_from_homogeneous_matrix,
+    get_ik_parameters_from_urdf,
     limit_orbita3d_joints_wrist,
 )
 
@@ -83,8 +85,22 @@ def create_arrow(xyz: npt.NDArray[np.float64], rpy: npt.NDArray[np.float64], col
     return msg
 
 
-def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str, markers: MarkerArray, marker_id: int) -> None:
-    symbolic_ik = SymbolicIK(arm)
+def go_to_pose(  # noqa: C901
+    reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str, markers: MarkerArray, marker_id: int
+) -> None:
+    ik_parameters = {}
+    urdf_path = "../config_files/reachy2.urdf"
+    urdf_path = os.path.join(os.path.dirname(__file__), urdf_path)
+    if os.path.isfile(urdf_path) and os.path.getsize(urdf_path) > 0:
+        with open(urdf_path, "r") as fichier:
+            urdf = fichier.read()
+    if urdf == "":
+        raise ValueError("Empty URDF file")
+    try:
+        ik_parameters = get_ik_parameters_from_urdf(urdf, ["r", "l"])
+    except Exception as e:
+        raise ValueError(f"Error while parsing URDF: {e}")
+    symbolic_ik = SymbolicIK(arm, ik_parameters)
     # symbolic_ik.tip_position = np.array([0.05, -0.05, 0.17])
 
     preferred_theta = -4 * np.pi / 6
