@@ -85,7 +85,7 @@ def create_arrow(xyz: npt.NDArray[np.float64], rpy: npt.NDArray[np.float64], col
 
 def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str, markers: MarkerArray, marker_id: int) -> None:
     symbolic_ik = SymbolicIK(arm)
-    symbolic_ik.tip_position = np.array([0.05, -0.05, 0.17])
+    # symbolic_ik.tip_position = np.array([0.05, -0.05, 0.17])
 
     preferred_theta = -4 * np.pi / 6
     if arm == "l_arm":

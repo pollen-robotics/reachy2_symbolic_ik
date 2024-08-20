@@ -34,12 +34,12 @@ class SymbolicIK:
             print("Using default parameters")
             ik_parameters = {
                 "r_shoulder_position": np.array([0.0, -0.2, 0.0]),
-                "r_shoulder_orientation": [-15, 0, 10],
+                "r_shoulder_orientation": [10, 0, 15],
                 "r_upper_arm_size": np.float64(0.28),
                 "r_forearm_size": np.float64(0.28),
                 "r_tip_position": np.array([-0.0, 0.0, 0.10]),
                 "l_shoulder_position": np.array([0.0, 0.2, 0.0]),
-                "l_shoulder_orientation": [15, 0, 10],
+                "l_shoulder_orientation": [-10, 0, -15],
                 "l_upper_arm_size": np.float64(0.28),
                 "l_forearm_size": np.float64(0.28),
                 "l_tip_position": np.array([-0.0, 0.0, 0.10]),

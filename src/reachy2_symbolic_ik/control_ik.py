@@ -51,6 +51,7 @@ class ControlIK:
         ],
         logger: Any = None,
         urdf: str = "",
+        urdf_path: str = "",
         reachy_model: str = "full_kit",
     ) -> None:
         self.symbolic_ik_solver = {}
@@ -66,13 +67,18 @@ class ControlIK:
         self.orbita3D_max_angle = np.deg2rad(42.5)
         self.logger = logger
 
+        if urdf_path == "" and urdf == "":
+            raise ValueError("No URDF provided")
+
         ik_parameters = {}
-        if urdf == "":
-            urdf_path = "../config_files/reachy2.urdf"
+
+        if urdf_path != "" and urdf == "":
             urdf_path = os.path.join(os.path.dirname(__file__), urdf_path)
             if os.path.isfile(urdf_path) and os.path.getsize(urdf_path) > 0:
                 with open(urdf_path, "r") as fichier:
                     urdf = fichier.read()
+            if urdf == "":
+                raise ValueError("Empty URDF file")
 
         if reachy_model == "full_kit" or reachy_model == "headless":
             arms = ["r", "l"]
@@ -86,8 +92,7 @@ class ControlIK:
             raise ValueError(f"Unknown Reachy model {reachy_model}")
 
         try:
-            if urdf != "":
-                ik_parameters = get_ik_parameters_from_urdf(urdf, arms)
+            ik_parameters = get_ik_parameters_from_urdf(urdf, arms)
         except Exception as e:
             raise ValueError(f"Error while parsing URDF: {e}")
 

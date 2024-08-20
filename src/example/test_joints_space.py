@@ -58,7 +58,7 @@ def test_joints_space(reachy: ReachySDK) -> None:
     q0 = [-45.0, -60.0, 0.0, -45.0, 0.0, 0.0, 0.0]  # ?? Shouldn't it be -90 for the wrist pitch? Why -45?
     q_amps = [30.0, 30.0, 30.0, 45.0, 25.0, 25.0, 90.0]
 
-    control_ik = ControlIK()
+    control_ik = ControlIK(urdf_path="../config_files/reachy2.urdf")
     symbolik_r = SymbolicIK(arm="r_arm")
     symbolik_l = SymbolicIK(arm="l_arm")
 

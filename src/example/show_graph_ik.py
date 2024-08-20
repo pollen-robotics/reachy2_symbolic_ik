@@ -399,10 +399,7 @@ def show_circle2(
 
 
 def main() -> None:
-    symbolic_ik = SymbolicIK(
-        shoulder_orientation_offset=[10, 0, 15],
-        elbow_orientation_offset=[0, 0, 0],
-    )
+    symbolic_ik = SymbolicIK()
     # goal_position = [0.55, -0.3, -0.2]
     goal_position = [0.0001, -0.2, -0.65]
     goal_orientation = [0, 0, 0]
