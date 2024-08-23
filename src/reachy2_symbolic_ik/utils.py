@@ -316,7 +316,7 @@ def get_best_discrete_theta(
     if is_valid_angle(preferred_theta, interval):
         # if preferred_theta is in the interval, test it first
         joints, elbow_position = get_joints(preferred_theta)
-        if is_elbow_ok(elbow_position, side):
+        if is_elbow_ok(elbow_position, side) and False:
             best_theta = preferred_theta
             best_distance = 0
             state += "\n" + "preferred_theta worked!"

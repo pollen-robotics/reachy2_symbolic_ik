@@ -197,6 +197,49 @@ def make_movement(reachy: ReachySDK) -> None:
         # task_space_interpolation_goto(reachy.l_arm, m2_l)
 
 
+def make_wrist_multiturn_movement(reachy: ReachySDK) -> None:
+    pose1 = np.array([[0.38, -0.2, -.28], [0, -np.pi / 2, 0]])
+    pose2 = np.array([[0.38, -0.2, 0.28], [0, -np.pi, 0]])
+    pose3 = np.array([[0.0001, -0.2, 0.6599], [0, -np.pi, 0]])
+    pose4 = np.array([[0.0001, -0.859, 0.0], [-np.pi / 2, 0, 0]])
+    pose5 = np.array([[0.38, -0.2, -.28], [0, -np.pi / 2, 0]])
+
+    m1 = get_homogeneous_matrix_msg_from_euler(pose1[0], pose1[1])
+    m2 = get_homogeneous_matrix_msg_from_euler(pose2[0], pose2[1])
+    m3 = get_homogeneous_matrix_msg_from_euler(pose3[0], pose3[1])
+    m4 = get_homogeneous_matrix_msg_from_euler(pose4[0], pose4[1])
+    m5 = get_homogeneous_matrix_msg_from_euler(pose5[0], pose5[1])
+
+    while True:
+        task_space_interpolation_goto(reachy.r_arm, m1)
+        task_space_interpolation_goto(reachy.r_arm, m2)
+        task_space_interpolation_goto(reachy.r_arm, m3)
+        task_space_interpolation_goto(reachy.r_arm, m4)
+        task_space_interpolation_goto(reachy.r_arm, m5)
+
+
+def make_multiturn_movement(reachy: ReachySDK) -> None:
+    pose1 = np.array([[0.38, -0.2, -.28], [0, -np.pi / 2, 0]])
+    pose2 = np.array([[0.38, -0.2, 0.28], [0, -np.pi, 0]])
+    pose3 = np.array([[0.0001, -0.2, 0.6599], [0, -np.pi, 0]])
+    pose4 = np.array([[0.0001, -0.859, 0.0], [-np.pi / 2, 0, 0]])
+    pose5 = np.array([[0.38, -0.2, -.28], [0, -np.pi / 2, 0]])
+
+    m1 = get_homogeneous_matrix_msg_from_euler(pose1[0], pose1[1])
+    m2 = get_homogeneous_matrix_msg_from_euler(pose2[0], pose2[1])
+    m3 = get_homogeneous_matrix_msg_from_euler(pose3[0], pose3[1])
+    m4 = get_homogeneous_matrix_msg_from_euler(pose4[0], pose4[1])
+    m5 = get_homogeneous_matrix_msg_from_euler(pose5[0], pose5[1])
+
+    while True:
+        task_space_interpolation_goto(reachy.r_arm, m1)
+        task_space_interpolation_goto(reachy.r_arm, m2)
+        task_space_interpolation_goto(reachy.r_arm, m3)
+        task_space_interpolation_goto(reachy.r_arm, m4)
+        task_space_interpolation_goto(reachy.r_arm, m5)
+
+
+
 def spam_pose(reachy: ReachySDK, control_ik: ControlIK, pose: npt.NDArray[np.float64]) -> None:
     order_id = 0
     start_time = time.time()
@@ -237,7 +280,8 @@ def main() -> None:
     #     spam_pose(reachy, control_ik, pose)
     #     # time.sleep(5)
 
-    make_movement(reachy)
+    # make_movement(reachy)
+    make_multiturn_movement(reachy)
 
 
 if __name__ == "__main__":

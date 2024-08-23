@@ -4,6 +4,14 @@ import numpy as np
 import numpy.typing as npt
 from reachy2_sdk import ReachySDK
 from scipy.spatial.transform import Rotation as R
+from google.protobuf.wrappers_pb2 import FloatValue, Int32Value
+from reachy2_sdk_api.arm_pb2 import (
+    ArmCartesianGoal,
+    IKConstrainedMode,
+    IKContinuousMode,
+)
+from reachy2_sdk_api.kinematics_pb2 import Matrix4x4
+
 
 from reachy2_symbolic_ik.utils import make_homogenous_matrix_from_rotation_matrix
 
@@ -11,21 +19,53 @@ from reachy2_symbolic_ik.utils import make_homogenous_matrix_from_rotation_matri
 
 
 def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> None:
+
     if arm == "r_arm":
-        ik = reachy.r_arm.inverse_kinematics(pose)
-        # real_pose = reachy.r_arm.forward_kinematics(ik)
-        # pose_diff = np.linalg.norm(pose - real_pose)
-        # print(f"pose diff {pose_diff}")
-        for joint, goal_pos in zip(reachy.r_arm.joints.values(), ik):
-            joint.goal_position = goal_pos
+        request = ArmCartesianGoal(
+            id=reachy.r_arm._part_id,
+            goal_pose=Matrix4x4(data=pose.flatten().tolist()),
+            continuous_mode=IKContinuousMode.CONTINUOUS,
+            constrained_mode=IKConstrainedMode.UNCONSTRAINED,
+            preferred_theta=FloatValue(
+                value=-4 * np.pi / 6,
+            ),
+            d_theta_max=FloatValue(value=0.01),
+            order_id=Int32Value(value=5),
+        )
+        reachy.r_arm._stub.SendArmCartesianGoal(request)
+        # print(reachy.r_arm.shoulder.pitch.present_position)
     elif arm == "l_arm":
-        ik = reachy.l_arm.inverse_kinematics(pose)
-        # real_pose = reachy.l_arm.forward_kinematics(ik)
-        # pose_diff = np.linalg.norm(pose - real_pose)
-        # print(f"pose diff {pose_diff}")
-        for joint, goal_pos in zip(reachy.l_arm.joints.values(), ik):
-            joint.goal_position = goal_pos
+        request = ArmCartesianGoal(
+            id=reachy.l_arm._part_id,
+            goal_pose=Matrix4x4(data=pose.flatten().tolist()),
+            continuous_mode=IKContinuousMode.CONTINUOUS,
+            constrained_mode=IKConstrainedMode.LOW_ELBOW,
+            preferred_theta=FloatValue(
+                value=-4 * np.pi / 6,
+            ),
+            d_theta_max=FloatValue(value=0.01),
+            order_id=Int32Value(value=5),
+        )
+        reachy.l_arm._stub.SendArmCartesianGoal(request)
+
+    # if arm == "r_arm":
+    #     ik = reachy.r_arm.inverse_kinematics(pose)
+    #     # real_pose = reachy.r_arm.forward_kinematics(ik)
+    #     # pose_diff = np.linalg.norm(pose - real_pose)
+    #     # print(f"pose diff {pose_diff}")
+    #     for joint, goal_pos in zip(reachy.r_arm.joints.values(), ik):
+    #         joint.goal_position = goal_pos
+    # elif arm == "l_arm":
+    #     ik = reachy.l_arm.inverse_kinematics(pose)
+    #     # real_pose = reachy.l_arm.forward_kinematics(ik)
+    #     # pose_diff = np.linalg.norm(pose - real_pose)
+    #     # print(f"pose diff {pose_diff}")
+    #     for joint, goal_pos in zip(reachy.l_arm.joints.values(), ik):
+    #         joint.goal_position = goal_pos
     reachy.send_goal_positions()
+
+
+
 
 
 def make_line(
@@ -55,7 +95,7 @@ def make_line(
         l_pose = make_homogenous_matrix_from_rotation_matrix(l_position, l_rotation_matrix)
         go_to_pose(reachy, l_pose, "l_arm")
 
-        time.sleep(0.01)
+        time.sleep(0.05)
 
 
 def make_circle(
@@ -130,12 +170,21 @@ def main_test() -> None:
 
     reachy.turn_on()
 
-    # print("Making a line")
-    # start_pose = np.array([[0.55, -0.2, 0.0], [0, -np.pi / 2, 0]])
-    # end_pose = np.array([[0.45, -0.4, -0.2], [0, -np.pi / 3, 0]])
-    # make_line(reachy, start_pose, end_pose)
+    print("Making a line")
+    start_pose = np.array([[0.38, -0.2, -.28], [0, -np.pi / 2, 0]])
+    end_pose = np.array([[0.38, -0.2, 0.28], [0, -np.pi, 0]])
+    make_line(reachy, start_pose, end_pose)
+    start_pose = np.array([[0.38, -0.2, 0.28], [0, -np.pi, 0]])
+    end_pose = np.array([[0.0001, -0.2, 0.6599], [0, -np.pi, 0]])
+    make_line(reachy, start_pose, end_pose)
+    start_pose = np.array([[0.0001, -0.2, 0.6599], [0, -np.pi, 0]])
+    end_pose = np.array([[0.0001, -0.859, 0.0], [-np.pi / 2, 0, 0]])
+    make_line(reachy, start_pose, end_pose)
+    start_pose = np.array([[0.0001, -0.859, 0.0], [-np.pi / 2, 0, 0]])
+    end_pose = np.array([[0.38, -0.2, -.28], [0, -np.pi / 2, 0]])
+    make_line(reachy, start_pose, end_pose)
 
-    # time.sleep(1.0)
+    time.sleep(10.0)
 
     # print("Turning the hand")
     # position = np.array([0.001, -0.2, -0.6599])
