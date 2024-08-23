@@ -11,7 +11,7 @@ from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
 
 @pytest.mark.cicd
 def test_class() -> None:
-    symbolic_ik = SymbolicIK(upper_arm_size=0.28, forearm_size=0.28, gripper_size=0.15)
+    symbolic_ik = SymbolicIK()
     assert symbolic_ik is not None
 
     goal_position = [0.4, 0.2, 0.1]
