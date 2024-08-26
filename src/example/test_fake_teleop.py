@@ -198,11 +198,11 @@ def make_movement(reachy: ReachySDK) -> None:
 
 
 def make_wrist_multiturn_movement(reachy: ReachySDK) -> None:
-    pose1 = np.array([[0.38, -0.2, -.28], [0, -np.pi / 2, 0]])
+    pose1 = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
     pose2 = np.array([[0.38, -0.2, 0.28], [0, -np.pi, 0]])
     pose3 = np.array([[0.0001, -0.2, 0.6599], [0, -np.pi, 0]])
     pose4 = np.array([[0.0001, -0.859, 0.0], [-np.pi / 2, 0, 0]])
-    pose5 = np.array([[0.38, -0.2, -.28], [0, -np.pi / 2, 0]])
+    pose5 = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
 
     m1 = get_homogeneous_matrix_msg_from_euler(pose1[0], pose1[1])
     m2 = get_homogeneous_matrix_msg_from_euler(pose2[0], pose2[1])
@@ -219,11 +219,11 @@ def make_wrist_multiturn_movement(reachy: ReachySDK) -> None:
 
 
 def make_multiturn_movement(reachy: ReachySDK) -> None:
-    pose1 = np.array([[0.38, -0.2, -.28], [0, -np.pi / 2, 0]])
+    pose1 = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
     pose2 = np.array([[0.38, -0.2, 0.28], [0, -np.pi, 0]])
     pose3 = np.array([[0.0001, -0.2, 0.6599], [0, -np.pi, 0]])
     pose4 = np.array([[0.0001, -0.859, 0.0], [-np.pi / 2, 0, 0]])
-    pose5 = np.array([[0.38, -0.2, -.28], [0, -np.pi / 2, 0]])
+    pose5 = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
 
     m1 = get_homogeneous_matrix_msg_from_euler(pose1[0], pose1[1])
     m2 = get_homogeneous_matrix_msg_from_euler(pose2[0], pose2[1])
@@ -237,7 +237,6 @@ def make_multiturn_movement(reachy: ReachySDK) -> None:
         task_space_interpolation_goto(reachy.r_arm, m3)
         task_space_interpolation_goto(reachy.r_arm, m4)
         task_space_interpolation_goto(reachy.r_arm, m5)
-
 
 
 def spam_pose(reachy: ReachySDK, control_ik: ControlIK, pose: npt.NDArray[np.float64]) -> None:

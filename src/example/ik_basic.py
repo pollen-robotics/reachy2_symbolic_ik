@@ -1,8 +1,14 @@
-import numpy as np
 import time
 
+import numpy as np
+
 from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
-from reachy2_symbolic_ik.utils import get_best_continuous_theta2, get_best_discrete_theta, get_best_theta_to_current_joints, get_best_continuous_theta
+from reachy2_symbolic_ik.utils import (
+    get_best_continuous_theta,
+    get_best_continuous_theta2,
+    get_best_discrete_theta,
+    get_best_theta_to_current_joints,
+)
 
 
 def main_test() -> None:
@@ -20,25 +26,23 @@ def main_test() -> None:
     is_reachable_r, interval_r, get_joints_r, _ = symbolic_ik_r.is_reachable(goal_pose)
 
     previous_theta = np.pi / 2
-    preferred_theta = -4*np.pi/6
+    preferred_theta = -4 * np.pi / 6
     t = time.time()
     for i in range(1000):
-        theta = get_best_continuous_theta(previous_theta, interval_r, get_joints_r, 0.1, preferred_theta, 'r_arm')
+        theta = get_best_continuous_theta(previous_theta, interval_r, get_joints_r, 0.1, preferred_theta, "r_arm")
     print(f" get_best_continuous_theta : {time.time() - t}, state : {theta[2]}")
-    t= time.time()
+    t = time.time()
     for i in range(1000):
-        theta = get_best_continuous_theta2(previous_theta, interval_r, get_joints_r, 10, 0.1, preferred_theta, 'r_arm')
+        theta = get_best_continuous_theta2(previous_theta, interval_r, get_joints_r, 10, 0.1, preferred_theta, "r_arm")
     print(f" get_best_continuous_theta2 : {time.time() - t}, state : {theta[2]}")
     t = time.time()
     for i in range(1000):
-        theta = get_best_discrete_theta(previous_theta, interval_r, get_joints_r, 10, preferred_theta, 'r_arm')
+        theta = get_best_discrete_theta(previous_theta, interval_r, get_joints_r, 10, preferred_theta, "r_arm")
     print(f" get_best_discrete_theta : {time.time() - t}, state : {theta[2]}")
     t = time.time()
     for i in range(1000):
-        theta = get_best_theta_to_current_joints(get_joints_r, 10, [0, 0, 0, 0, 0, 0, 0], 'r_arm', preferred_theta)
+        theta = get_best_theta_to_current_joints(get_joints_r, 10, [0, 0, 0, 0, 0, 0, 0], "r_arm", preferred_theta)
     print(f" get_best_theta_to_current_joints : {time.time() - t}, state : {theta}")
-    
-
 
     if is_reachable_r:
         print("Pose reachable")

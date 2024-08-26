@@ -2,16 +2,15 @@ import time
 
 import numpy as np
 import numpy.typing as npt
-from reachy2_sdk import ReachySDK
-from scipy.spatial.transform import Rotation as R
 from google.protobuf.wrappers_pb2 import FloatValue, Int32Value
+from reachy2_sdk import ReachySDK
 from reachy2_sdk_api.arm_pb2 import (
     ArmCartesianGoal,
     IKConstrainedMode,
     IKContinuousMode,
 )
 from reachy2_sdk_api.kinematics_pb2 import Matrix4x4
-
+from scipy.spatial.transform import Rotation as R
 
 from reachy2_symbolic_ik.utils import make_homogenous_matrix_from_rotation_matrix
 
@@ -19,7 +18,6 @@ from reachy2_symbolic_ik.utils import make_homogenous_matrix_from_rotation_matri
 
 
 def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> None:
-
     if arm == "r_arm":
         request = ArmCartesianGoal(
             id=reachy.r_arm._part_id,
@@ -63,9 +61,6 @@ def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> No
     #     for joint, goal_pos in zip(reachy.l_arm.joints.values(), ik):
     #         joint.goal_position = goal_pos
     reachy.send_goal_positions()
-
-
-
 
 
 def make_line(
@@ -171,7 +166,7 @@ def main_test() -> None:
     reachy.turn_on()
 
     print("Making a line")
-    start_pose = np.array([[0.38, -0.2, -.28], [0, -np.pi / 2, 0]])
+    start_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
     end_pose = np.array([[0.38, -0.2, 0.28], [0, -np.pi, 0]])
     make_line(reachy, start_pose, end_pose)
     start_pose = np.array([[0.38, -0.2, 0.28], [0, -np.pi, 0]])
@@ -181,7 +176,7 @@ def main_test() -> None:
     end_pose = np.array([[0.0001, -0.859, 0.0], [-np.pi / 2, 0, 0]])
     make_line(reachy, start_pose, end_pose)
     start_pose = np.array([[0.0001, -0.859, 0.0], [-np.pi / 2, 0, 0]])
-    end_pose = np.array([[0.38, -0.2, -.28], [0, -np.pi / 2, 0]])
+    end_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
     make_line(reachy, start_pose, end_pose)
 
     time.sleep(10.0)
