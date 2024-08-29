@@ -79,7 +79,7 @@ def test_go_to(ik: ControlIK, reachy: ReachySDK) -> None:
 
 
 def main_test() -> None:
-    ik_control = ControlIK()
+    ik_control = ControlIK(urdf_path="../config_files/reachy2.urdf")
     reachy = ReachySDK(host="localhost")
 
     time.sleep(1.0)

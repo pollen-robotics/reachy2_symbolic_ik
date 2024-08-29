@@ -17,8 +17,8 @@ from reachy2_symbolic_ik.control_ik import ControlIK
 from reachy2_symbolic_ik.utils import distance_from_singularity
 
 # CONTROLE_TYPE = "local_discrete"
-# CONTROLE_TYPE = "local_continuous"
-CONTROLE_TYPE = "sdk_discrete"
+CONTROLE_TYPE = "local_continuous"
+# CONTROLE_TYPE = "sdk_discrete"
 # CONTROLE_TYPE = "sdk_continuous"
 
 
@@ -112,7 +112,7 @@ def random_trajectoy(reachy: ReachySDK, debug_pose: bool = False, bypass: bool =
     q0 = [-45.0, -60.0, 0.0, -45.0, 0.0, 0.0, 0.0]  # ?? Shouldn't it be -90 for the wrist pitch? Why -45?
     q_amps = [30.0, 30.0, 30.0, 45.0, 25.0, 25.0, 90.0]
 
-    control_ik = ControlIK()
+    control_ik = ControlIK(urdf_path="../config_files/reachy2.urdf")
 
     freq_reductor = 2.0
     freq = [0.3 * freq_reductor, 0.17 * freq_reductor, 0.39 * freq_reductor, 0.18, 0.31, 0.47, 0.25]

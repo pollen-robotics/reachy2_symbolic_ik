@@ -1,4 +1,5 @@
 import copy
+import os
 import time
 from typing import Any, Dict, Tuple
 
@@ -12,6 +13,7 @@ from reachy2_symbolic_ik.utils import (
     get_best_discrete_theta,
     get_best_theta_to_current_joints,
     get_euler_from_homogeneous_matrix,
+    get_ik_parameters_from_urdf,
     limit_orbita3d_joints_wrist,
     limit_theta_to_interval,
     tend_to_preferred_theta,
@@ -21,7 +23,7 @@ DEBUG = False
 
 
 class ControlIK:
-    def __init__(
+    def __init__(  # noqa: C901
         # TODO : default current position depends of the shoulder offset
         self,
         current_joints: list[list[float]] = [
@@ -48,6 +50,9 @@ class ControlIK:
             ),
         ],
         logger: Any = None,
+        urdf: str = "",
+        urdf_path: str = "",
+        reachy_model: str = "full_kit",
     ) -> None:
         self.symbolic_ik_solver = {}
         self.last_call_t = {}
@@ -60,21 +65,63 @@ class ControlIK:
         self.previous_sol: Dict[str, list[float]] = {}
         self.previous_pose: Dict[str, npt.NDArray[np.float64]] = {}
         self.orbita3D_max_angle = np.deg2rad(42.5)
-
         self.logger = logger
 
-        for prefix in ("r", "l"):
+        if urdf_path == "" and urdf == "":
+            raise ValueError("No URDF provided")
+
+        ik_parameters = {}
+
+        if urdf_path != "" and urdf == "":
+            urdf_path = os.path.join(os.path.dirname(__file__), urdf_path)
+            if os.path.isfile(urdf_path) and os.path.getsize(urdf_path) > 0:
+                with open(urdf_path, "r") as fichier:
+                    urdf = fichier.read()
+            if urdf == "":
+                raise ValueError("Empty URDF file")
+
+        if reachy_model == "full_kit" or reachy_model == "headless":
+            arms = ["r", "l"]
+        elif reachy_model == "starter_kit_right":
+            arms = ["r"]
+        elif reachy_model == "starter_kit_left":
+            arms = ["l"]
+        elif reachy_model == "mini":
+            arms = []
+        else:
+            raise ValueError(f"Unknown Reachy model {reachy_model}")
+
+        try:
+            ik_parameters = get_ik_parameters_from_urdf(urdf, arms)
+        except Exception as e:
+            raise ValueError(f"Error while parsing URDF: {e}")
+
+        for prefix in arms:
             arm = f"{prefix}_arm"
-            self.symbolic_ik_solver[arm] = SymbolicIK(
-                arm=arm,
-                wrist_limit=np.rad2deg(self.orbita3D_max_angle),
-            )
+            # self.symbolic_ik_solver[arm] = SymbolicIK(
+            #     arm=arm,
+            #     wrist_limit=np.rad2deg(self.orbita3D_max_angle),
+            # )
+            if ik_parameters != {}:
+                if DEBUG:
+                    print(f"Using URDF parameters for {arm}")
+                self.symbolic_ik_solver[arm] = SymbolicIK(
+                    arm=arm,
+                    ik_parameters=ik_parameters,
+                )
+            else:
+                self.symbolic_ik_solver[arm] = SymbolicIK(
+                    arm=arm,
+                    wrist_limit=np.rad2deg(self.orbita3D_max_angle),
+                )
+
+            preferred_theta = -4 * np.pi / 6
             if prefix == "r":
-                self.preferred_theta[arm] = -4 * np.pi / 6
+                self.preferred_theta[arm] = preferred_theta
                 self.previous_sol[arm] = current_joints[0]
                 self.previous_pose[arm] = current_pose[0]
             else:
-                self.preferred_theta[arm] = -np.pi - self.preferred_theta["r_arm"]
+                self.preferred_theta[arm] = -np.pi - preferred_theta
                 self.previous_sol[arm] = current_joints[1]
                 self.previous_pose[arm] = current_pose[1]
             current_goal_position, current_goal_orientation = get_euler_from_homogeneous_matrix(self.previous_pose[arm])

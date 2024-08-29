@@ -36,4 +36,12 @@ Example :
 $ pytest -m cicd
 ```
 
+## URDF
 
+A URDF file is provided in 'src/config_files/reachy2.urdf'. This file is used if the user does not provide a URDF file when initializing the ControlIK class.
+
+To regenerate the URDF file, you can use the following command from the root of the repository in the Docker container:
+
+```console
+$ xacro ../../reachy_ws/src/reachy2_core/reachy_description/urdf/reachy.urdf.xacro "use_fake_hardware:=true" > src/config_files/reachy2.urdf
+```

@@ -21,9 +21,9 @@ def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> No
 
 
 def test_movement(reachy: ReachySDK) -> None:
-    go_to_pose(reachy, np.array([[0.0, 0.2, -0.66], [0.0, 0.0, 0.0]]), "l_arm")
-    go_to_pose(reachy, np.array([[0.0, -0.2, -0.66], [0.0, 0.0, 0.0]]), "r_arm")
-    time.sleep(5)
+    # go_to_pose(reachy, np.array([[0.0, 0.2, -0.66], [0.0, 0.0, 0.0]]), "l_arm")
+    # go_to_pose(reachy, np.array([[0.0, -0.2, -0.66], [0.0, 0.0, 0.0]]), "r_arm")
+    # time.sleep(5)
     go_to_pose(reachy, np.array([[0.38, -0.2, -0.28], [0.0, -np.pi / 2, 0.0]]), "r_arm")
     time.sleep(5)
     go_to_pose(reachy, np.array([[0.20, -0.025, -0.28], [0.0, -np.pi / 2, np.pi / 4]]), "r_arm")
@@ -62,7 +62,7 @@ def main() -> None:
 
     reachy.turn_on()
 
-    go_to_zero(reachy)
+    # go_to_zero(reachy)
 
     go_to_pose(reachy, np.array([[0.38, -0.2, -0.28], [0.0, -np.pi / 2, 0.0]]), "r_arm")
     time.sleep(10)

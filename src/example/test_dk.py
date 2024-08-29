@@ -66,12 +66,12 @@ def main() -> None:
 
     # goal_position = [0.38, -0.2, -0.28]
     # goal_orientation = [0, -np.pi/2, 0]
-    # goal_position = [0.001, -0.2, -0.6599]
-    # goal_orientation = [0, 0, 0]
+    goal_position = [0.001, -0.2, -0.6599]
+    goal_orientation = [0, 0, 0]
     # goal_position = [0.45, -0.2, -0.]
     # goal_orientation = [-np.pi/4, -np.pi/2, 0]
-    goal_position = [0.66, -0.2, -0.0]
-    goal_orientation = [0, -np.pi / 2, 0]
+    # goal_position = [0.66, -0.2, -0.0]
+    # goal_orientation = [0, -np.pi / 2, 0]
 
     target_pose = make_homogenous_matrix_from_rotation_matrix(goal_position, R.from_euler("xyz", goal_orientation).as_matrix())
     ik = reachy.r_arm.inverse_kinematics(target_pose)

@@ -23,43 +23,48 @@ class SymbolicIK:
     def __init__(
         self,
         arm: str = "r_arm",
-        upper_arm_size: np.float64 = np.float64(0.28),
-        forearm_size: np.float64 = np.float64(0.28),
-        gripper_size: np.float64 = np.float64(0.10),
+        ik_parameters: dict[str, Any] = {},
+        elbow_limit: int = 127,
         wrist_limit: np.float64 = np.float64(42.5),
-        # shoulder orientation and shoulder position are for the rigth arm
-        shoulder_orientation_offset: list[int] = [10, 0, 15],
-        shoulder_position: npt.NDArray[np.float64] = np.array([0.0, -0.2, 0.0]),
-        # TODO make sure it works with all 3 orientations
-        elbow_orientation_offset: list[int] = [0, 0, 0],
-        elbow_limits: int = 127,
         projection_margin: float = 1e-8,
         backward_limit: float = 1e-10,
-        tip_position: npt.NDArray[np.float64] = np.array([0.0, 0.0, 0.10]),
+        normal_vector_margin: float = 1e-7,
     ) -> None:
+        if ik_parameters == {}:
+            print("Using default parameters")
+            ik_parameters = {
+                "r_shoulder_position": np.array([0.0, -0.2, 0.0]),
+                "r_shoulder_orientation": [10, 0, 15],
+                "r_upper_arm_size": np.float64(0.28),
+                "r_forearm_size": np.float64(0.28),
+                "r_tip_position": np.array([-0.0, 0.0, 0.10]),
+                "l_shoulder_position": np.array([0.0, 0.2, 0.0]),
+                "l_shoulder_orientation": [-10, 0, -15],
+                "l_upper_arm_size": np.float64(0.28),
+                "l_forearm_size": np.float64(0.28),
+                "l_tip_position": np.array([-0.0, 0.0, 0.10]),
+            }
+
+        if arm not in ["r_arm", "l_arm"]:
+            raise ValueError("arm should be either 'r_arm' or 'l_arm'")
         self.arm = arm
-        self.upper_arm_size = upper_arm_size
-        self.forearm_size = forearm_size
-        self.tip_position = tip_position
-        self.gripper_size = np.linalg.norm(self.tip_position)
-        self.wrist_limit = wrist_limit
-        self.elbow_limits = elbow_limits
+
+        for name in ["r", "l"]:
+            if self.arm == f"{name}_arm":
+                self.shoulder_position = ik_parameters[f"{name}_shoulder_position"]
+                self.shoulder_orientation_offset = ik_parameters[f"{name}_shoulder_orientation"]
+                self.upper_arm_size = ik_parameters[f"{name}_upper_arm_size"]
+                self.forearm_size = ik_parameters[f"{name}_forearm_size"]
+                self.tip_position = ik_parameters[f"{name}_tip_position"]
+                self.gripper_size = np.linalg.norm(self.tip_position)
+                self.max_arm_length = self.upper_arm_size + self.forearm_size + self.gripper_size
+
         self.torso_pose = np.array([0.0, 0.0, 0.0])
-        self.max_arm_length = self.upper_arm_size + self.forearm_size + self.gripper_size
         self.projection_margin = projection_margin
-        self.normal_vector_margin = 0.0000001
+        self.normal_vector_margin = normal_vector_margin
         self.backward_limit = backward_limit
-
-        if self.arm == "r_arm":
-            self.shoulder_position = shoulder_position
-            self.shoulder_orientation_offset = shoulder_orientation_offset
-            self.elbow_orientation_offset = elbow_orientation_offset
-
-        else:
-            self.shoulder_position = np.array([shoulder_position[0], -shoulder_position[1], shoulder_position[2]])
-            self.shoulder_orientation_offset = [-x for x in shoulder_orientation_offset]
-            self.elbow_orientation_offset = [-x for x in elbow_orientation_offset]
-            self.tip_position = np.array([tip_position[0], -tip_position[1], tip_position[2]])
+        self.elbow_limit = elbow_limit
+        self.wrist_limit = wrist_limit
 
     def is_reachable_no_limits(self, goal_pose: npt.NDArray[np.float64]) -> Tuple[bool, npt.NDArray[np.float64], Optional[Any]]:
         """Check if the goal pose is reachable without taking into account the limits of the wrist and the elbow
@@ -118,7 +123,7 @@ class SymbolicIK:
         to_asin1 = d_shoulder_wrist / (2 * self.upper_arm_size)
         to_asin2 = d_shoulder_wrist / (2 * self.forearm_size)
         alpha = np.arcsin(to_asin1) + np.arcsin(to_asin2) - np.pi
-        if alpha < np.radians(-self.elbow_limits) or alpha > np.radians(self.elbow_limits):
+        if alpha < np.radians(-self.elbow_limit) or alpha > np.radians(self.elbow_limit):
             state = "limited by elbow"
             return False, np.array([]), None, state
 
@@ -696,9 +701,6 @@ class SymbolicIK:
         # Use the point in tip frame to find the wrist yaw joint
         P_tip_point = np.dot(T_tip_torso, P_torso_point)
         wrist_yaw = -math.atan2(P_tip_point[1], P_tip_point[2])
-
-        # Add the offset of the orientation of the elbow
-        elbow_yaw -= np.radians(self.elbow_orientation_offset[2])
 
         joints = np.array([shoulder_pitch, shoulder_roll, elbow_yaw, elbow_pitch, wrist_roll, -wrist_pitch, -wrist_yaw])
 
