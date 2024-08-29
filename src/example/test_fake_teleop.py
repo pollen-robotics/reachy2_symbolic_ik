@@ -100,26 +100,26 @@ def task_space_interpolation_goto(reachy_arm: Any, target_pose: npt.NDArray[np.f
         reachy_arm._stub.SendArmCartesianGoal(request)
         time.sleep(1 / freq)
 
-    time.sleep(0.1)
-    current_pose = reachy_arm.forward_kinematics()
-    precision_distance_xyz = np.linalg.norm(current_pose[:3, 3] - mat2[:3, 3])
-    if precision_distance_xyz > 0.003:
-        print("Precision is not good enough, spamming the goal position!")
-        for t in np.linspace(0, 1, nb_points):
-            # Spamming the goal position to make sure its reached
-            request = ArmCartesianGoal(
-                id=reachy_arm._part_id,
-                goal_pose=Matrix4x4(data=mat2.flatten().tolist()),
-                continuous_mode=IKContinuousMode.CONTINUOUS,
-                constrained_mode=IKConstrainedMode.LOW_ELBOW,
-            )
-            reachy_arm._stub.SendArmCartesianGoal(request)
-            time.sleep(1 / freq)
+    time.sleep(3)
+    # current_pose = reachy_arm.forward_kinematics()
+    # precision_distance_xyz = np.linalg.norm(current_pose[:3, 3] - mat2[:3, 3])
+    # if precision_distance_xyz > 0.003:
+    #     print("Precision is not good enough, spamming the goal position!")
+    #     for t in np.linspace(0, 1, nb_points):
+    #         # Spamming the goal position to make sure its reached
+    #         request = ArmCartesianGoal(
+    #             id=reachy_arm._part_id,
+    #             goal_pose=Matrix4x4(data=mat2.flatten().tolist()),
+    #             continuous_mode=IKContinuousMode.CONTINUOUS,
+    #             constrained_mode=IKConstrainedMode.LOW_ELBOW,
+    #         )
+    #         reachy_arm._stub.SendArmCartesianGoal(request)
+    #         time.sleep(1 / freq)
 
-        time.sleep(0.1)
-        current_pose = reachy_arm.forward_kinematics()
-        precision_distance_xyz = np.linalg.norm(current_pose[:3, 3] - mat2[:3, 3])
-    print(f"l2 xyz distance to goal: {precision_distance_xyz}")
+    #     time.sleep(0.1)
+    #     current_pose = reachy_arm.forward_kinematics()
+    #     precision_distance_xyz = np.linalg.norm(current_pose[:3, 3] - mat2[:3, 3])
+    # print(f"l2 xyz distance to goal: {precision_distance_xyz}")
 
 
 def angle_diff(a: float, b: float) -> float:
@@ -231,12 +231,17 @@ def make_multiturn_movement(reachy: ReachySDK) -> None:
     m4 = get_homogeneous_matrix_msg_from_euler(pose4[0], pose4[1])
     m5 = get_homogeneous_matrix_msg_from_euler(pose5[0], pose5[1])
 
-    while True:
-        task_space_interpolation_goto(reachy.r_arm, m1)
-        task_space_interpolation_goto(reachy.r_arm, m2)
-        task_space_interpolation_goto(reachy.r_arm, m3)
-        task_space_interpolation_goto(reachy.r_arm, m4)
-        task_space_interpolation_goto(reachy.r_arm, m5)
+    # while True:
+    task_space_interpolation_goto(reachy.r_arm, m1)
+    print("_______ m1 _______")
+    task_space_interpolation_goto(reachy.r_arm, m2)
+    print("_______ m2 _______")
+    task_space_interpolation_goto(reachy.r_arm, m3)
+    print("_______ m3 _______")
+    task_space_interpolation_goto(reachy.r_arm, m4)
+    print("_______ m4 _______")
+    task_space_interpolation_goto(reachy.r_arm, m5)
+    print("_______ m0 _______")
 
 
 def spam_pose(reachy: ReachySDK, control_ik: ControlIK, pose: npt.NDArray[np.float64]) -> None:
