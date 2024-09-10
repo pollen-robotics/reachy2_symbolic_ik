@@ -9,7 +9,7 @@ import numpy.typing as npt
 from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
 from reachy2_symbolic_ik.utils import (
     allow_multiturn,
-    get_best_continuous_theta2,
+    get_best_continuous_theta,
     get_best_discrete_theta,
     get_best_theta_to_current_joints,
     get_euler_from_homogeneous_matrix,
@@ -294,23 +294,23 @@ class ControlIK:
         ].is_reachable(goal_pose)
         # self.print_log(f"{name} state_reachable: {state_reachable}")
         if is_reachable:
-            # is_reachable, theta, state_theta = get_best_continuous_theta(
-            #     self.previous_theta[name],
-            #     interval,
-            #     theta_to_joints_func,
-            #     d_theta_max,
-            #     preferred_theta,
-            #     self.symbolic_ik_solver[name].arm,
-            # )
-            is_reachable, theta, state_theta = get_best_continuous_theta2(
+            is_reachable, theta, state_theta = get_best_continuous_theta(
                 self.previous_theta[name],
                 interval,
                 theta_to_joints_func,
-                10,
                 d_theta_max,
-                self.preferred_theta[name],
+                preferred_theta,
                 self.symbolic_ik_solver[name].arm,
             )
+            # is_reachable, theta, state_theta = get_best_continuous_theta2(
+            #     self.previous_theta[name],
+            #     interval,
+            #     theta_to_joints_func,
+            #     10,
+            #     d_theta_max,
+            #     self.preferred_theta[name],
+            #     self.symbolic_ik_solver[name].arm,
+            # )
             if not is_reachable:
                 state = "limited by shoulder"
             theta, state_interval = limit_theta_to_interval(theta, self.previous_theta[name], interval_limit)

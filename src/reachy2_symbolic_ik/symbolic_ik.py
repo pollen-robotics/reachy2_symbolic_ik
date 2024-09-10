@@ -703,5 +703,10 @@ class SymbolicIK:
         wrist_yaw = -math.atan2(P_tip_point[1], P_tip_point[2])
 
         joints = np.array([shoulder_pitch, shoulder_roll, elbow_yaw, elbow_pitch, wrist_roll, -wrist_pitch, -wrist_yaw])
+        # elbow_limit = np.radians(self.elbow_limit)
+        # if joints[3] > elbow_limit:
+        #     joints[3] = elbow_limit
+        # if joints[3] < -elbow_limit:
+        #     joints[3] = -elbow_limit
 
         return joints, self.elbow_position

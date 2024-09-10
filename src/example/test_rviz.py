@@ -81,6 +81,9 @@ if __name__ == "__main__":
     # add_sphere(markers, 0.56, ColorRGBA(r=1.0, g=0.0, b=0.0, a=0.3), np.array([0.45, -0.2, 0.0]), 10)
     # add_sphere(markers, 0.05, ColorRGBA(r=1.0, g=0.0, b=0.0, a=0.8), np.array([0.45, -0.2, 0.0]), 9)
 
+    singularity_position = singularity_position_by_offset(np.array([-15, 0, 10]))
+    print(singularity_position)
+
     add_sphere(markers, 0.1, ColorRGBA(r=0.0, g=0.0, b=1.0, a=0.3), singularity_position_by_offset(np.array([-15, 0, 10])), 1)
     add_sphere(markers, 0.01, ColorRGBA(r=0.0, g=0.0, b=1.0, a=1.0), singularity_position_by_offset(np.array([-15, 0, 10])), 5)
     add_sphere(

@@ -94,7 +94,7 @@ def get_ik(
                 id=reachy.l_arm._part_id,
                 goal_pose=Matrix4x4(data=M.flatten().tolist()),
                 continuous_mode=IKContinuousMode.CONTINUOUS,
-                constrained_mode=IKConstrainedMode.LOW_ELBOW,
+                constrained_mode=IKConstrainedMode.UNCONSTRAINED,
                 preferred_theta=FloatValue(
                     value=-4 * np.pi / 6,
                 ),
@@ -109,8 +109,8 @@ def random_trajectoy(reachy: ReachySDK, debug_pose: bool = False, bypass: bool =
     q = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     ik_r = q
     ik_l = q
-    q0 = [-45.0, -60.0, 0.0, -45.0, 0.0, 0.0, 0.0]  # ?? Shouldn't it be -90 for the wrist pitch? Why -45?
-    q_amps = [30.0, 30.0, 30.0, 45.0, 25.0, 25.0, 90.0]
+    q0 = [-25.0, -40.0, 0.0, -45.0, 0.0, 0.0, 0.0]  # ?? Shouldn't it be -90 for the wrist pitch? Why -45?
+    q_amps = [20.0, 20.0, 30.0, 45.0, 25.0, 25.0, 90.0]
 
     control_ik = ControlIK(urdf_path="../config_files/reachy2.urdf")
 
@@ -316,6 +316,7 @@ def main_test() -> None:
     time.sleep(0.5)
     for joint in reachy.joints.values():
         joint.goal_position = 0
+    reachy.send_goal_positions()
     time.sleep(1.0)
 
     random_trajectoy(reachy, debug_pose=False, bypass=False)

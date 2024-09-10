@@ -290,6 +290,7 @@ def get_best_theta_to_current_joints(
     state += f" \n joints = {joints}"
     state += f" \n current_joints = {current_joints}"
 
+    print(f"best_theta = {best_theta}")
     return best_theta, state
 
 
@@ -407,7 +408,7 @@ def is_elbow_ok(elbow_position: npt.NDArray[np.float64], side: int) -> bool:
         if elbow_position[0] < 0.15:
             is_ok = False
     # ultra safe config
-    is_ok = elbow_position[1] * side < -0.2
+    is_ok = (elbow_position[1] * side < -0.2) and elbow_position[2] < 0
     return is_ok
 
 
