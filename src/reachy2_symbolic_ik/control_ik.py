@@ -79,7 +79,6 @@ class ControlIK:
                     urdf = fichier.read()
             if urdf == "":
                 raise ValueError("Empty URDF file")
-
         if reachy_model == "full_kit" or reachy_model == "headless":
             arms = ["r", "l"]
         elif reachy_model == "starter_kit_right":
@@ -236,7 +235,7 @@ class ControlIK:
 
         return ik_joints, is_reachable, state
 
-    def symbolic_inverse_kinematics_continuous(
+    def symbolic_inverse_kinematics_continuous(  # noqa: C901
         self,
         name: str,
         goal_pose: npt.NDArray[np.float64],
@@ -295,23 +294,27 @@ class ControlIK:
         ].is_reachable(goal_pose)
         # self.print_log(f"{name} state_reachable: {state_reachable}")
         if is_reachable:
-            is_reachable, theta, state_theta = get_best_continuous_theta(
-                self.previous_theta[name],
-                interval,
-                theta_to_joints_func,
-                d_theta_max,
-                preferred_theta,
-                self.symbolic_ik_solver[name].arm,
-            )
-            # is_reachable, theta, state_theta = get_best_continuous_theta2(
-            #     self.previous_theta[name],
-            #     interval,
-            #     theta_to_joints_func,
-            #     10,
-            #     d_theta_max,
-            #     self.preferred_theta[name],
-            #     self.symbolic_ik_solver[name].arm,
-            # )
+            t = time.time()
+            for i in range(1000):
+                is_reachable, theta, state_theta = get_best_continuous_theta(
+                    self.previous_theta[name],
+                    interval,
+                    self.symbolic_ik_solver[name].get_elbow_position,
+                    d_theta_max,
+                    preferred_theta,
+                    self.symbolic_ik_solver[name].arm,
+                )
+                # is_reachable, theta, state_theta = get_best_continuous_theta2(
+                #     self.previous_theta[name],
+                #     interval,
+                #     self.symbolic_ik_solver[name].get_elbow_position,
+                #     10,
+                #     d_theta_max,
+                #     self.preferred_theta[name],
+                #     self.symbolic_ik_solver[name].arm,
+                # )
+            # self.logger.info(f"Time to get_best_continuous_theta: {time.time() - t}")
+
             if not is_reachable:
                 state = "limited by shoulder"
             theta, state_interval = limit_theta_to_interval(theta, self.previous_theta[name], interval_limit)
@@ -379,7 +382,7 @@ class ControlIK:
             is_reachable, theta, state_theta = get_best_discrete_theta(
                 self.previous_theta[name],
                 interval,
-                theta_to_joints_func,
+                self.symbolic_ik_solver[name].get_elbow_position,
                 self.nb_search_points,
                 preferred_theta,
                 self.symbolic_ik_solver[name].arm,
