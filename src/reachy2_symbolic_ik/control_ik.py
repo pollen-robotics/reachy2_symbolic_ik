@@ -294,26 +294,23 @@ class ControlIK:
         ].is_reachable(goal_pose)
         # self.print_log(f"{name} state_reachable: {state_reachable}")
         if is_reachable:
-            t = time.time()
-            for i in range(1000):
-                is_reachable, theta, state_theta = get_best_continuous_theta(
-                    self.previous_theta[name],
-                    interval,
-                    self.symbolic_ik_solver[name].get_elbow_position,
-                    d_theta_max,
-                    preferred_theta,
-                    self.symbolic_ik_solver[name].arm,
-                )
-                # is_reachable, theta, state_theta = get_best_continuous_theta2(
-                #     self.previous_theta[name],
-                #     interval,
-                #     self.symbolic_ik_solver[name].get_elbow_position,
-                #     10,
-                #     d_theta_max,
-                #     self.preferred_theta[name],
-                #     self.symbolic_ik_solver[name].arm,
-                # )
-            # self.logger.info(f"Time to get_best_continuous_theta: {time.time() - t}")
+            is_reachable, theta, state_theta = get_best_continuous_theta(
+                self.previous_theta[name],
+                interval,
+                self.symbolic_ik_solver[name].get_elbow_position,
+                d_theta_max,
+                preferred_theta,
+                self.symbolic_ik_solver[name].arm,
+            )
+            # is_reachable, theta, state_theta = get_best_continuous_theta2(
+            #     self.previous_theta[name],
+            #     interval,
+            #     self.symbolic_ik_solver[name].get_elbow_position,
+            #     10,
+            #     d_theta_max,
+            #     self.preferred_theta[name],
+            #     self.symbolic_ik_solver[name].arm,
+            # )
 
             if not is_reachable:
                 state = "limited by shoulder"

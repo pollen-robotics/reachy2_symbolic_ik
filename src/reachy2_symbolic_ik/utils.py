@@ -255,12 +255,12 @@ def get_best_theta_to_current_joints(
         low = 0
         high = 2 * np.pi
 
-    tolerance = 0.001
+    tolerance = 0.01
 
     joints, elbow_position = get_joints(preferred_theta)
     diff = np.linalg.norm([angle_diff(joints[i], current_joints[i]) for i in range(len(current_joints))])
     # state += f" \n diff = {diff}"
-    if diff < 0.001:
+    if diff < tolerance:
         return preferred_theta, f"preferred_theta worked! \n joints = {joints} \n current_joints = {current_joints}"
 
     while (high - low) > tolerance:
