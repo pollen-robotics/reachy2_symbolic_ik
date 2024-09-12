@@ -28,8 +28,8 @@ class ControlIK:
         self,
         current_joints: list[list[float]] = [
             # arms along the body
-            [0.0, -0.17453292519943295, -0.2617993877991494, 0.0, 0.0, 0.0, 0.0],
-            [0.0, 0.17453292519943295, 0.2617993877991494, 0.0, 0.0, 0.0, 0.0],
+            [0.0, 0.2617993877991494, -0.17453292519943295, 0.0, 0.0, 0.0, 0.0],
+            [0.0, -0.2617993877991494, 0.17453292519943295, 0.0, 0.0, 0.0, 0.0],
         ],
         current_pose: list[npt.NDArray[np.float64]] = [
             np.array(
@@ -128,6 +128,7 @@ class ControlIK:
             is_reachable, interval, theta_to_joints_func = self.symbolic_ik_solver[arm].is_reachable_no_limits(
                 current_pose_tuple,
             )
+
             best_prev_theta, state = get_best_theta_to_current_joints(
                 theta_to_joints_func,
                 20,

@@ -655,8 +655,6 @@
   <!-- <!-\- Orbita3d config -\-> -->
   <!-- <xacro:arg name="orbita3d_wrist_config" default="$(find
     orbita3d_controller)/config/fake.yaml"/> -->
-  <!-- <xacro:property name="arm_offset_yaw" value="0.2617993877991494" /> 
-    <xacro:property name="arm_offset_roll" value="0.17453292519943295" />  -->
   <!-- ARM PARAMETERS -->
   <link name="r_shoulder_base_link">
     <inertial>
@@ -1667,8 +1665,6 @@
   <!-- <!-\- Orbita3d config -\-> -->
   <!-- <xacro:arg name="orbita3d_wrist_config" default="$(find
     orbita3d_controller)/config/fake.yaml"/> -->
-  <!-- <xacro:property name="arm_offset_yaw" value="0.2617993877991494" /> 
-    <xacro:property name="arm_offset_roll" value="0.17453292519943295" />  -->
   <!-- ARM PARAMETERS -->
   <link name="l_shoulder_base_link">
     <inertial>
