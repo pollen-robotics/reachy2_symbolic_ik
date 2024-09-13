@@ -205,14 +205,14 @@ class ControlIK:
         # Test wrist joint limits
         ik_joints_raw = ik_joints
         ik_joints = limit_orbita3d_joints_wrist(ik_joints_raw, self.orbita3D_max_angle)
-        if not np.allclose(ik_joints, ik_joints_raw):
-            if self.logger is not None:
-                self.logger.info(
-                    f"{name} Wrist joint limit reached. \nRaw joints: {ik_joints_raw}\nLimited joints: {ik_joints}",
-                    throttle_duration_sec=0.1,
-                )
-            elif DEBUG:
-                print(f"{name} Wrist joint limit reached. \nRaw joints: {ik_joints_raw}\nLimited joints: {ik_joints}")
+        # if not np.allclose(ik_joints, ik_joints_raw):
+        #     if self.logger is not None:
+        #         self.logger.info(
+        #             f"{name} Wrist joint limit reached. \nRaw joints: {ik_joints_raw}\nLimited joints: {ik_joints}",
+        #             throttle_duration_sec=0.1,
+        #         )
+        #     elif DEBUG:
+        #         print(f"{name} Wrist joint limit reached. \nRaw joints: {ik_joints_raw}\nLimited joints: {ik_joints}")
 
         # Detect multiturns
         ik_joints_allowed = allow_multiturn(ik_joints, self.previous_sol[name], name)

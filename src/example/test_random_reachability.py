@@ -16,8 +16,8 @@ from scipy.spatial.transform import Rotation
 from reachy2_symbolic_ik.control_ik import ControlIK
 from reachy2_symbolic_ik.utils import distance_from_singularity
 
-# CONTROLE_TYPE = "local_discrete"
-CONTROLE_TYPE = "local_continuous"
+CONTROLE_TYPE = "local_discrete"
+# CONTROLE_TYPE = "local_continuous"
 # CONTROLE_TYPE = "sdk_discrete"
 # CONTROLE_TYPE = "sdk_continuous"
 

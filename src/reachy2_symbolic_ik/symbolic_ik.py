@@ -76,6 +76,7 @@ class SymbolicIK:
         self.goal_pose = goal_pose
         self.wrist_position = self.get_wrist_position(goal_pose)
 
+        self.goal_pose, self.wrist_position = self.limit_wrist_pose(self.goal_pose, self.wrist_position, 0.14)
         # Check if the wrist is in the arm range and reduce the goal pose if not
         d_shoulder_wrist = np.linalg.norm(self.wrist_position - self.shoulder_position)
         if d_shoulder_wrist > self.upper_arm_size + self.forearm_size:
@@ -111,6 +112,8 @@ class SymbolicIK:
             self.ax.set_zlabel("Z")
         self.goal_pose = goal_pose
         self.wrist_position = self.get_wrist_position(goal_pose)
+
+        self.goal_pose, self.wrist_position = self.limit_wrist_pose(self.goal_pose, self.wrist_position, 0.14)
 
         # Test if the wrist is in the arm range
         d_shoulder_wrist = np.linalg.norm(self.wrist_position - self.shoulder_position)
@@ -252,6 +255,16 @@ class SymbolicIK:
             goal_position[0] = self.backward_limit
             state = "Backward pose"
         return is_reachable, np.array([goal_position, goal_pose[1]]), state
+
+    def limit_wrist_pose(
+        self, goal_pose: npt.NDArray[np.float64], wrist_position: npt.NDArray[np.float64], wrist_limit: float
+    ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+        diff = wrist_position[2] - wrist_limit
+        if diff > 0:
+            new_goal_position = goal_pose[0] - np.array([0, 0, diff])
+            new_wrist_position = wrist_position - np.array([0, 0, diff])
+            return np.array([new_goal_position, goal_pose[1]]), new_wrist_position
+        return goal_pose, wrist_position
 
     def reduce_goal_pose_no_limits(
         self, pose: npt.NDArray[np.float64], d_shoulder_wrist: np.float64, d_shoulder_wrist_max: np.float64
@@ -703,10 +716,10 @@ class SymbolicIK:
         wrist_yaw = -math.atan2(P_tip_point[1], P_tip_point[2])
 
         joints = np.array([shoulder_pitch, shoulder_roll, elbow_yaw, elbow_pitch, wrist_roll, -wrist_pitch, -wrist_yaw])
-        # elbow_limit = np.radians(self.elbow_limit)
-        # if joints[3] > elbow_limit:
-        #     joints[3] = elbow_limit
-        # if joints[3] < -elbow_limit:
-        #     joints[3] = -elbow_limit
+        elbow_limit = np.radians(self.elbow_limit)
+        if joints[3] > elbow_limit:
+            joints[3] = elbow_limit
+        if joints[3] < -elbow_limit:
+            joints[3] = -elbow_limit
 
         return joints, self.elbow_position

@@ -408,7 +408,7 @@ def is_elbow_ok(elbow_position: npt.NDArray[np.float64], side: int) -> bool:
         if elbow_position[0] < 0.15:
             is_ok = False
     # ultra safe config
-    is_ok = (elbow_position[1] * side < -0.2) and elbow_position[2] < 0
+    is_ok = elbow_position[1] * side < -0.2 and elbow_position[2] < 0.07
     return is_ok
 
 
