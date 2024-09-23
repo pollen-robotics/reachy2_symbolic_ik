@@ -23,21 +23,36 @@ def make_homogenous_matrix_from_rotation_matrix(
     )
 
 
-def distance_from_singularity(elbow_position: npt.NDArray[np.float64], arm: str, shoulder_offset: list[float]) -> float:
-    """Compute the distance from the singularity"""
-    # TODO take robot dimensions in the urdf
+def get_singularity_position(
+    arm: str,
+    shoulder_position: npt.NDArray[np.float64],
+    shoulder_offset: npt.NDArray[np.float64],
+    upper_arm_size: float,
+    forearm_size: float,
+) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     if arm == "r_arm":
         side = 1
     else:
         side = -1
-    # shoudler_offset = [10.0 * side, 0.0, 15.0 * side]
-    shoulder_position = np.array([0.0, -0.2 * side, 0.0])
-    upper_arm_size = 0.28
     rotation_matrix = R.from_euler("xyz", shoulder_offset, degrees=True).as_matrix()
     T_torso_shoulder = make_homogenous_matrix_from_rotation_matrix(shoulder_position, rotation_matrix)
-    singularity_position = np.array([0.0, -upper_arm_size * side, 0.0, 1.0])
-    singularity_position = np.dot(T_torso_shoulder, singularity_position)[:3]
-    # print(f"singularity position {singularity_position}")
+    elbow_position = np.array([0.0, -upper_arm_size * side, 0.0, 1.0])
+    elbow_singularity_position = np.dot(T_torso_shoulder, elbow_position)[:3]
+    wrist_position = np.array([0.0, -(upper_arm_size + forearm_size) * side, 0.0, 1.0])
+    wrist_singularity_position = np.dot(T_torso_shoulder, wrist_position)[:3]
+    return elbow_singularity_position, wrist_singularity_position
+
+
+def distance_from_singularity(
+    elbow_position: npt.NDArray[np.float64],
+    arm: str,
+    shoulder_position: npt.NDArray[np.float64],
+    shoulder_offset: npt.NDArray[np.float64],
+    upper_arm_size: float,
+    forearm_size: float,
+) -> float:
+    """Compute the distance from the singularity"""
+    singularity_position, _ = get_singularity_position(arm, shoulder_position, shoulder_offset, upper_arm_size, forearm_size)
     return float(np.linalg.norm(elbow_position - singularity_position))
 
 

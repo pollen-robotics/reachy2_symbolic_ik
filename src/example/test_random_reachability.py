@@ -226,8 +226,8 @@ def check_precision_and_symmetry(
 
     if CONTROLE_TYPE == "local_continuous" or CONTROLE_TYPE == "local_discrete":
         # print(elbow_position_r)
-        distance_from_singularity_r = distance_from_singularity(elbow_position_r, "r_arm", [10, 0, 15])
-        distance_from_singularity_l = distance_from_singularity(elbow_position_l, "l_arm", [-10, 0, 15])
+        distance_from_singularity_r = distance_from_singularity(elbow_position_r, "r_arm", [-15, 0, 10])
+        distance_from_singularity_l = distance_from_singularity(elbow_position_l, "l_arm", [15, 0, -10])
         print(f"distance_from_singularity_r: {distance_from_singularity_r:.5f}")
         print(f"distance_from_singularity_l: {distance_from_singularity_l:.5f}")
         if distance_from_singularity_r < 1e-4 or distance_from_singularity_l < 1e-4:
