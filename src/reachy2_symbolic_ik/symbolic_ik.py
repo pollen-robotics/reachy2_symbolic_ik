@@ -8,6 +8,7 @@ import numpy.typing as npt
 from scipy.spatial.transform import Rotation as R
 
 from reachy2_symbolic_ik.utils import (
+    get_singularity_position,
     make_homogenous_matrix_from_rotation_matrix,
     rotation_matrix_from_vector,
     show_circle,
@@ -19,7 +20,6 @@ SHOW_GRAPH = False
 
 
 class SymbolicIK:
-    # TODO get arm information from the urdf
     def __init__(
         self,
         arm: str = "r_arm",
@@ -29,6 +29,8 @@ class SymbolicIK:
         projection_margin: float = 1e-8,
         backward_limit: float = 1e-10,
         normal_vector_margin: float = 1e-7,
+        singularity_offset: float = 0.01,
+        singularity_limit_coeff: float = 1.0,
     ) -> None:
         if ik_parameters == {}:
             print("Using default parameters")
@@ -65,6 +67,11 @@ class SymbolicIK:
         self.backward_limit = backward_limit
         self.elbow_limit = elbow_limit
         self.wrist_limit = wrist_limit
+        self.singularity_offset = singularity_offset
+        self.singularity_limit_coeff = singularity_limit_coeff
+        self.elbow_singularity_position, self.wrist_singularity_position = get_singularity_position(
+            self.arm, self.shoulder_position, self.shoulder_orientation_offset, self.upper_arm_size, self.forearm_size
+        )
 
     def is_reachable_no_limits(self, goal_pose: npt.NDArray[np.float64]) -> Tuple[bool, npt.NDArray[np.float64], Optional[Any]]:
         """Check if the goal pose is reachable without taking into account the limits of the wrist and the elbow
@@ -76,7 +83,7 @@ class SymbolicIK:
         self.goal_pose = goal_pose
         self.wrist_position = self.get_wrist_position(goal_pose)
 
-        self.goal_pose, self.wrist_position = self.limit_wrist_pose(self.goal_pose, self.wrist_position, 0.14)
+        self.goal_pose, self.wrist_position = self.limit_wrist_pose(self.goal_pose, self.wrist_position)
         # Check if the wrist is in the arm range and reduce the goal pose if not
         d_shoulder_wrist = np.linalg.norm(self.wrist_position - self.shoulder_position)
         if d_shoulder_wrist > self.upper_arm_size + self.forearm_size:
@@ -113,7 +120,7 @@ class SymbolicIK:
         self.goal_pose = goal_pose
         self.wrist_position = self.get_wrist_position(goal_pose)
 
-        self.goal_pose, self.wrist_position = self.limit_wrist_pose(self.goal_pose, self.wrist_position, 0.14)
+        self.goal_pose, self.wrist_position = self.limit_wrist_pose(self.goal_pose, self.wrist_position)
 
         # Test if the wrist is in the arm range
         d_shoulder_wrist = np.linalg.norm(self.wrist_position - self.shoulder_position)
@@ -257,9 +264,25 @@ class SymbolicIK:
         return is_reachable, np.array([goal_position, goal_pose[1]]), state
 
     def limit_wrist_pose(
-        self, goal_pose: npt.NDArray[np.float64], wrist_position: npt.NDArray[np.float64], wrist_limit: float
+        self, goal_pose: npt.NDArray[np.float64], wrist_position: npt.NDArray[np.float64]
     ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
-        diff = wrist_position[2] - wrist_limit
+        """Limit the wrist pose if the wrist is out of reach"""
+
+        # TODO : use offset
+        M_torso_shoulderYaw = R.from_euler("xyz", [0, 0, np.radians(self.shoulder_orientation_offset[2])]).as_matrix()
+        M_shoulderYaw_torso = M_torso_shoulderYaw.T
+        P_torso_shoulder = np.dot(-M_shoulderYaw_torso, self.shoulder_position[:3])
+        T_shoulderYaw_torso = make_homogenous_matrix_from_rotation_matrix(P_torso_shoulder, M_shoulderYaw_torso)
+        P_shoulderYaw_wrist = np.dot(
+            T_shoulderYaw_torso, np.array([wrist_position[0], wrist_position[1], wrist_position[2], 1])
+        )
+
+        if P_shoulderYaw_wrist[0] > 0:
+            diff = P_shoulderYaw_wrist[2] - (
+                P_shoulderYaw_wrist[0] * self.singularity_limit_coeff + self.wrist_singularity_position[2]
+            )
+        else:
+            diff = P_shoulderYaw_wrist[2] - self.wrist_singularity_position[2]
         if diff > 0:
             new_goal_position = goal_pose[0] - np.array([0, 0, diff])
             new_wrist_position = wrist_position - np.array([0, 0, diff])
