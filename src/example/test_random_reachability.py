@@ -16,8 +16,8 @@ from scipy.spatial.transform import Rotation
 from reachy2_symbolic_ik.control_ik import ControlIK
 from reachy2_symbolic_ik.utils import distance_from_singularity
 
-CONTROLE_TYPE = "local_discrete"
-# CONTROLE_TYPE = "local_continuous"
+# CONTROLE_TYPE = "local_discrete"
+CONTROLE_TYPE = "local_continuous"
 # CONTROLE_TYPE = "sdk_discrete"
 # CONTROLE_TYPE = "sdk_continuous"
 
@@ -200,7 +200,7 @@ def random_trajectoy(reachy: ReachySDK, debug_pose: bool = False, bypass: bool =
             l_real_pose = reachy.l_arm.forward_kinematics(ik_l)
 
         is_real_pose_correct = check_precision_and_symmetry(
-            reachy, M_r, M_l, r_real_pose, l_real_pose, ik_r, ik_l, elbow_position_r, elbow_position_l
+            reachy, M_r, M_l, r_real_pose, l_real_pose, ik_r, ik_l, elbow_position_r, elbow_position_l, control_ik
         )
         if not is_real_pose_correct:
             break
@@ -221,13 +221,28 @@ def check_precision_and_symmetry(
     ik_l: list[float],
     elbow_position_r: npt.NDArray[np.float64],
     elbow_position_l: npt.NDArray[np.float64],
+    control_ik: ControlIK,
 ) -> bool:
     is_real_pose_correct = True
 
     if CONTROLE_TYPE == "local_continuous" or CONTROLE_TYPE == "local_discrete":
         # print(elbow_position_r)
-        distance_from_singularity_r = distance_from_singularity(elbow_position_r, "r_arm", [-15, 0, 10])
-        distance_from_singularity_l = distance_from_singularity(elbow_position_l, "l_arm", [15, 0, -10])
+        distance_from_singularity_r = distance_from_singularity(
+            elbow_position_r,
+            "r_arm",
+            control_ik.symbolic_ik_solver["r_arm"].elbow_position,
+            control_ik.symbolic_ik_solver["r_arm"].shoulder_orientation_offset,
+            control_ik.symbolic_ik_solver["r_arm"].upper_arm_size,
+            control_ik.symbolic_ik_solver["r_arm"].forearm_size,
+        )
+        distance_from_singularity_l = distance_from_singularity(
+            elbow_position_l,
+            "l_arm",
+            control_ik.symbolic_ik_solver["l_arm"].elbow_position,
+            control_ik.symbolic_ik_solver["l_arm"].shoulder_orientation_offset,
+            control_ik.symbolic_ik_solver["l_arm"].upper_arm_size,
+            control_ik.symbolic_ik_solver["l_arm"].forearm_size,
+        )
         print(f"distance_from_singularity_r: {distance_from_singularity_r:.5f}")
         print(f"distance_from_singularity_l: {distance_from_singularity_l:.5f}")
         if distance_from_singularity_r < 1e-4 or distance_from_singularity_l < 1e-4:
