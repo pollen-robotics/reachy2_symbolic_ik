@@ -134,6 +134,9 @@ def get_best_continuous_theta(
     d_theta_max: float,
     preferred_theta: float,
     arm: str,
+    singularity_offset: float,
+    singularity_limit_coeff: float,
+    elbow_singularity_position: npt.NDArray[np.float64],
 ) -> Tuple[bool, float, str]:
     """Get the best continuous theta,
     if the entire circle is possible, return the preferred_theta
@@ -165,7 +168,7 @@ def get_best_continuous_theta(
     joints, elbow_position = get_joints(theta_middle)
     # states = f"elbow_position: {elbow_position} : {is_elbow_ok(elbow_position, side)}"
 
-    if is_elbow_ok(elbow_position, side):
+    if is_elbow_ok(elbow_position, side, singularity_offset, singularity_limit_coeff, elbow_singularity_position):
         if abs(angle_diff(theta_middle, previous_theta)) < d_theta_max:
             # middle theta is reachable and close to previous theta
             state += "\n" + "theta milieu ok et proche"
@@ -178,7 +181,9 @@ def get_best_continuous_theta(
             # if perf needed delete this and return False, (previous_theta + sign * d_theta_max)
             theta_side = previous_theta + sign * d_theta_max
             joints, elbow_position = get_joints(theta_side)
-            is_reachable = is_elbow_ok(elbow_position, side)
+            is_reachable = is_elbow_ok(
+                elbow_position, side, singularity_offset, singularity_limit_coeff, elbow_singularity_position
+            )
             is_reachable = is_reachable and is_valid_angle(theta_side, interval)
             state += "\n" + f"previous_theta: {previous_theta}"
             state += "\n" + f"theta milieu ok mais loin - et moi je suis {is_reachable}"
@@ -190,7 +195,9 @@ def get_best_continuous_theta(
 
     else:
         joints, elbow_position = get_joints(previous_theta)
-        is_reachable = is_elbow_ok(elbow_position, side)
+        is_reachable = is_elbow_ok(
+            elbow_position, side, singularity_offset, singularity_limit_coeff, elbow_singularity_position
+        )
         if is_reachable:
             # middle theta is not reachable but previous theta is okay
             state += "\n" + "theta milieu pas ok mais moi ok - bouge pas "
@@ -215,13 +222,24 @@ def get_best_continuous_theta2(
     d_theta_max: float,
     preferred_theta: float,
     arm: str,
+    singularity_offset: float,
+    singularity_limit_coeff: float,
+    elbow_singularity_position: npt.NDArray[np.float64],
 ) -> Tuple[bool, float, str]:
     """Get the best theta to aim for,
     tend to the closest reachable theta (sampled with nb_search_points) to preferred_theta"""
     state = f"{arm}"
     state += "\n" + f"interval: {interval}"
     is_reachable, theta_goal, state = get_best_discrete_theta(
-        previous_theta, interval, get_joints, nb_search_points, preferred_theta, arm
+        previous_theta,
+        interval,
+        get_joints,
+        nb_search_points,
+        preferred_theta,
+        arm,
+        singularity_offset,
+        singularity_limit_coeff,
+        elbow_singularity_position,
     )
     if not is_reachable:
         # No solution was found
@@ -316,6 +334,9 @@ def get_best_discrete_theta(
     nb_search_points: int,
     preferred_theta: float,
     arm: str,
+    singularity_offset: float,
+    singularity_limit_coeff: float,
+    elbow_singularity_position: npt.NDArray[np.float64],
 ) -> Tuple[bool, float, str]:
     """Searches a valid theta in the interval that is the closest to preferred_theta.
     A valid theta is a theta that is reachable and does not make the elbow touch the robot body."""
@@ -332,7 +353,7 @@ def get_best_discrete_theta(
     if is_valid_angle(preferred_theta, interval):
         # if preferred_theta is in the interval, test it first
         joints, elbow_position = get_joints(preferred_theta)
-        if is_elbow_ok(elbow_position, side):
+        if is_elbow_ok(elbow_position, side, singularity_offset, singularity_limit_coeff, elbow_singularity_position):
             best_theta = preferred_theta
             best_distance = 0
             state += "\n" + "preferred_theta worked!"
@@ -355,7 +376,7 @@ def get_best_discrete_theta(
     # test all theta points and choose the closest to preferred_theta
     for theta in theta_points:
         joints, elbow_position = get_joints(theta)
-        if is_elbow_ok(elbow_position, side):
+        if is_elbow_ok(elbow_position, side, singularity_offset, singularity_limit_coeff, elbow_singularity_position):
             distance = abs(angle_diff(theta, preferred_theta))
             debug_dict[theta] = distance
             if distance < best_distance:
@@ -415,7 +436,13 @@ def get_best_discrete_theta(
 #         return False, previous_theta, state
 
 
-def is_elbow_ok(elbow_position: npt.NDArray[np.float64], side: int) -> bool:
+def is_elbow_ok(
+    elbow_position: npt.NDArray[np.float64],
+    side: int,
+    singularity_offset: float,
+    singularity_limit_coeff: float,
+    elbow_singularity_position: npt.NDArray[np.float64],
+) -> bool:
     """Check if the elbow is in a valid position
     Prevent the elbow to touch the robot body"""
     is_ok = True
@@ -423,7 +450,13 @@ def is_elbow_ok(elbow_position: npt.NDArray[np.float64], side: int) -> bool:
         if elbow_position[0] < 0.15:
             is_ok = False
     # ultra safe config
-    is_ok = elbow_position[1] * side < -0.2 and elbow_position[2] < 0.07
+    is_ok = elbow_position[1] * side < -0.2
+    if elbow_position[0] > 0:
+        is_ok = is_ok and (
+            elbow_position[2] < elbow_position[0] * singularity_limit_coeff + elbow_singularity_position[2] - singularity_offset
+        )
+    else:
+        is_ok = is_ok and (elbow_position[2] < elbow_singularity_position[2] - singularity_offset)
     return is_ok
 
 

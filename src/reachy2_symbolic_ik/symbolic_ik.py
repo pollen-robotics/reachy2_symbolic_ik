@@ -34,14 +34,26 @@ class SymbolicIK:
     ) -> None:
         if ik_parameters == {}:
             print("Using default parameters")
+            # ik_parameters = {
+            #     "r_shoulder_position": np.array([0.0, -0.2, 0.0]),
+            #     "r_shoulder_orientation": [10, 0, 15],
+            #     "r_upper_arm_size": np.float64(0.28),
+            #     "r_forearm_size": np.float64(0.28),
+            #     "r_tip_position": np.array([-0.0, 0.0, 0.10]),
+            #     "l_shoulder_position": np.array([0.0, 0.2, 0.0]),
+            #     "l_shoulder_orientation": [-10, 0, -15],
+            #     "l_upper_arm_size": np.float64(0.28),
+            #     "l_forearm_size": np.float64(0.28),
+            #     "l_tip_position": np.array([-0.0, 0.0, 0.10]),
+            # }
             ik_parameters = {
                 "r_shoulder_position": np.array([0.0, -0.2, 0.0]),
-                "r_shoulder_orientation": [10, 0, 15],
+                "r_shoulder_orientation": [-15, 0, 10],
                 "r_upper_arm_size": np.float64(0.28),
                 "r_forearm_size": np.float64(0.28),
                 "r_tip_position": np.array([-0.0, 0.0, 0.10]),
                 "l_shoulder_position": np.array([0.0, 0.2, 0.0]),
-                "l_shoulder_orientation": [-10, 0, -15],
+                "l_shoulder_orientation": [15, 0, -10],
                 "l_upper_arm_size": np.float64(0.28),
                 "l_forearm_size": np.float64(0.28),
                 "l_tip_position": np.array([-0.0, 0.0, 0.10]),
@@ -121,7 +133,7 @@ class SymbolicIK:
         self.wrist_position = self.get_wrist_position(goal_pose)
 
         self.goal_pose, self.wrist_position = self.limit_wrist_pose(self.goal_pose, self.wrist_position)
-
+        print(f"___goal pose: {self.goal_pose}")
         # Test if the wrist is in the arm range
         d_shoulder_wrist = np.linalg.norm(self.wrist_position - self.shoulder_position)
         if d_shoulder_wrist > self.upper_arm_size + self.forearm_size:
@@ -279,10 +291,12 @@ class SymbolicIK:
 
         if P_shoulderYaw_wrist[0] > 0:
             diff = P_shoulderYaw_wrist[2] - (
-                P_shoulderYaw_wrist[0] * self.singularity_limit_coeff + self.wrist_singularity_position[2]
+                P_shoulderYaw_wrist[0] * self.singularity_limit_coeff
+                + self.wrist_singularity_position[2]
+                - self.singularity_offset
             )
         else:
-            diff = P_shoulderYaw_wrist[2] - self.wrist_singularity_position[2]
+            diff = P_shoulderYaw_wrist[2] - (self.wrist_singularity_position[2] - self.singularity_offset)
         if diff > 0:
             new_goal_position = goal_pose[0] - np.array([0, 0, diff])
             new_wrist_position = wrist_position - np.array([0, 0, diff])
