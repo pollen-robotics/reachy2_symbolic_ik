@@ -45,6 +45,7 @@ def test_go_to(ik: ControlIK, reachy: ReachySDK) -> None:
 
             print(f"joints {joints}")
             print(f"is_reachable {is_reachable}")
+            print(f"state {state}")
 
             for joint, goal_pos in zip(reachy.r_arm.joints.values(), joints):
                 joint.goal_position = goal_pos

@@ -118,7 +118,7 @@ def show_graph(symbolic_ik: SymbolicIK, goal_pose: npt.NDArray[np.float64]) -> N
     else:
         theta_middle = (result[1][0] + result[1][1]) / 2
 
-    elbow_position = symbolic_ik.get_coordinate_cercle(intersection_circle, theta_middle)
+    elbow_position = symbolic_ik.get_elbow_position(theta_middle)
     show_point(ax, elbow_position, "b")
     plt.draw()
     plt.pause(2)

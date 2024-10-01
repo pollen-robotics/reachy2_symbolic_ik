@@ -247,7 +247,7 @@ class ControlIK:
 
         return ik_joints, is_reachable, state
 
-    def symbolic_inverse_kinematics_continuous(
+    def symbolic_inverse_kinematics_continuous(  # noqa: C901
         self,
         name: str,
         goal_pose: npt.NDArray[np.float64],
@@ -314,7 +314,7 @@ class ControlIK:
             # is_reachable, theta, state_theta = get_best_continuous_theta(
             #     self.previous_theta[name],
             #     interval,
-            #     theta_to_joints_func,
+            #     self.symbolic_ik_solver[name].get_elbow_position,
             #     d_theta_max,
             #     preferred_theta,
             #     self.symbolic_ik_solver[name].arm,
@@ -325,7 +325,7 @@ class ControlIK:
             is_reachable, theta, state_theta = get_best_continuous_theta2(
                 self.previous_theta[name],
                 interval,
-                theta_to_joints_func,
+                self.symbolic_ik_solver[name].get_elbow_position,
                 10,
                 d_theta_max,
                 self.preferred_theta[name],
@@ -405,7 +405,7 @@ class ControlIK:
             is_reachable, theta, state_theta = get_best_discrete_theta(
                 self.previous_theta[name],
                 interval,
-                theta_to_joints_func,
+                self.symbolic_ik_solver[name].get_elbow_position,
                 self.nb_search_points,
                 preferred_theta,
                 self.symbolic_ik_solver[name].arm,

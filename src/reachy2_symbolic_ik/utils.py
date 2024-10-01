@@ -130,7 +130,8 @@ def tend_to_preferred_theta(
 def get_best_continuous_theta(
     previous_theta: float,
     interval: npt.NDArray[np.float64],
-    get_joints: Any,
+    # get_joints: Any,
+    get_elbow_position: Any,
     d_theta_max: float,
     preferred_theta: float,
     arm: str,
@@ -165,7 +166,7 @@ def get_best_continuous_theta(
     state += "\n" + f"theta milieu {theta_middle}"
     state += "\n" + f"angle diff {angle_diff(theta_middle, previous_theta)}"
 
-    joints, elbow_position = get_joints(theta_middle)
+    elbow_position = get_elbow_position(theta_middle)
     # states = f"elbow_position: {elbow_position} : {is_elbow_ok(elbow_position, side)}"
 
     if is_elbow_ok(elbow_position, side, singularity_offset, singularity_limit_coeff, elbow_singularity_position):
@@ -180,7 +181,9 @@ def get_best_continuous_theta(
 
             # if perf needed delete this and return False, (previous_theta + sign * d_theta_max)
             theta_side = previous_theta + sign * d_theta_max
-            joints, elbow_position = get_joints(theta_side)
+            # joints, elbow_position = get_joints(theta_side)
+
+            elbow_position = get_elbow_position(theta_side)
             is_reachable = is_elbow_ok(
                 elbow_position, side, singularity_offset, singularity_limit_coeff, elbow_singularity_position
             )
@@ -194,7 +197,7 @@ def get_best_continuous_theta(
             return is_reachable, theta_side, state
 
     else:
-        joints, elbow_position = get_joints(previous_theta)
+        elbow_position = get_elbow_position(previous_theta)
         is_reachable = is_elbow_ok(
             elbow_position, side, singularity_offset, singularity_limit_coeff, elbow_singularity_position
         )
@@ -217,7 +220,7 @@ def get_best_continuous_theta(
 def get_best_continuous_theta2(
     previous_theta: float,
     interval: npt.NDArray[np.float64],
-    get_joints: Any,
+    get_elbow_position: Any,
     nb_search_points: int,
     d_theta_max: float,
     preferred_theta: float,
@@ -233,7 +236,7 @@ def get_best_continuous_theta2(
     is_reachable, theta_goal, state = get_best_discrete_theta(
         previous_theta,
         interval,
-        get_joints,
+        get_elbow_position,
         nb_search_points,
         preferred_theta,
         arm,
@@ -288,12 +291,12 @@ def get_best_theta_to_current_joints(
         low = 0
         high = 2 * np.pi
 
-    tolerance = 0.001
+    tolerance = 0.01
 
     joints, elbow_position = get_joints(preferred_theta)
     diff = np.linalg.norm([angle_diff(joints[i], current_joints[i]) for i in range(len(current_joints))])
     # state += f" \n diff = {diff}"
-    if diff < 0.001:
+    if diff < tolerance:
         return preferred_theta, f"preferred_theta worked! \n joints = {joints} \n current_joints = {current_joints}"
 
     while (high - low) > tolerance:
@@ -331,7 +334,7 @@ def get_best_theta_to_current_joints(
 def get_best_discrete_theta(
     previous_theta: float,
     interval: npt.NDArray[np.float64],
-    get_joints: Any,
+    get_elbow_position: Any,
     nb_search_points: int,
     preferred_theta: float,
     arm: str,
@@ -353,7 +356,7 @@ def get_best_discrete_theta(
 
     if is_valid_angle(preferred_theta, interval):
         # if preferred_theta is in the interval, test it first
-        joints, elbow_position = get_joints(preferred_theta)
+        elbow_position = get_elbow_position(preferred_theta)
         if is_elbow_ok(elbow_position, side, singularity_offset, singularity_limit_coeff, elbow_singularity_position):
             best_theta = preferred_theta
             best_distance = 0
@@ -376,7 +379,7 @@ def get_best_discrete_theta(
 
     # test all theta points and choose the closest to preferred_theta
     for theta in theta_points:
-        joints, elbow_position = get_joints(theta)
+        elbow_position = get_elbow_position(theta)
         if is_elbow_ok(elbow_position, side, singularity_offset, singularity_limit_coeff, elbow_singularity_position):
             distance = abs(angle_diff(theta, preferred_theta))
             debug_dict[theta] = distance

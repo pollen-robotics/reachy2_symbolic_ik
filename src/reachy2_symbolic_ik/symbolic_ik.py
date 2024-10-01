@@ -162,7 +162,7 @@ class SymbolicIK:
             interval = self.are_circles_linked(intersection_circle, limitation_wrist_circle)
             if len(interval) > 0:
                 if SHOW_GRAPH:
-                    elbow_position = self.get_coordinate_cercle(intersection_circle, interval[0])
+                    elbow_position = self.get_elbow_position(interval[0])
                     show_point(self.ax, elbow_position, "r")
                     self.ax.plot(
                         [goal_pose[0][0], self.wrist_position[0]],
@@ -648,16 +648,17 @@ class SymbolicIK:
 
         return np.array([new_goal_position, goal_pose[1]]), new_elbow_position
 
-    def get_coordinate_cercle(
-        self, intersection_circle: Tuple[npt.NDArray[np.float64], float, npt.NDArray[np.float64]], theta: float
-    ) -> npt.NDArray[np.float64]:
+    # def get_coordinate_cercle(
+    #     self, intersection_circle: Tuple[npt.NDArray[np.float64], float, npt.NDArray[np.float64]], theta: float
+    # ) -> npt.NDArray[np.float64]:
+    def get_elbow_position(self, theta: float) -> npt.NDArray[np.float64]:
         """Get the position of the elbow from the intersection circle and the angle theta"""
-        R_torso_intersection = rotation_matrix_from_vector(np.array(intersection_circle[2]))
-        T_torso_intersection = make_homogenous_matrix_from_rotation_matrix(intersection_circle[0], R_torso_intersection)
+        R_torso_intersection = rotation_matrix_from_vector(np.array(self.intersection_circle[2]))
+        T_torso_intersection = make_homogenous_matrix_from_rotation_matrix(self.intersection_circle[0], R_torso_intersection)
         # Get the point on the circle in the intersection frame
         x = 0
-        y = intersection_circle[1] * np.cos(theta)
-        z = intersection_circle[1] * np.sin(theta)
+        y = self.intersection_circle[1] * np.cos(theta)
+        z = self.intersection_circle[1] * np.sin(theta)
         P_intersection_point = np.array([x, y, z, 1])
         # Get the point on the circle in the torso frame
         P_torso_point = np.array(np.dot(T_torso_intersection, P_intersection_point))
@@ -672,7 +673,7 @@ class SymbolicIK:
         """
         # Get the position of the elbow from theta
         print(f"pose {self.goal_pose}")
-        self.elbow_position = self.get_coordinate_cercle(self.intersection_circle, theta)
+        self.elbow_position = self.get_elbow_position(theta)
         if (
             self.elbow_position[2]
             > (self.elbow_position[0] - self.elbow_singularity_position[0]) * self.singularity_limit_coeff
