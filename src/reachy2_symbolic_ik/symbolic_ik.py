@@ -89,7 +89,7 @@ class SymbolicIK:
     def is_reachable_no_limits(self, goal_pose: npt.NDArray[np.float64]) -> Tuple[bool, npt.NDArray[np.float64], Optional[Any]]:
         """Check if the goal pose is reachable without taking into account the limits of the wrist and the elbow
         Should alway return True"""
-        print(f"is_reachable_no_limits")
+        # print(f"is_reachable_no_limits")
         # Change goal pose if goal pose is out of reach or with x <= 0
         _, goal_pose, _ = self.is_pose_in_robot_reach(goal_pose)
 
@@ -112,9 +112,11 @@ class SymbolicIK:
         else:
             return False, np.array([]), None
 
-    def is_reachable(self, goal_pose: npt.NDArray[np.float64]) -> Tuple[bool, npt.NDArray[np.float64], Optional[Any], str]:
+    def is_reachable(  # noqa C901
+        self, goal_pose: npt.NDArray[np.float64]
+    ) -> Tuple[bool, npt.NDArray[np.float64], Optional[Any], str]:
         """Check if the goal pose is reachable taking into account the limits of the wrist and the elbow"""
-        print(f"is_reachable")
+        # print(f"is_reachable")
         state = ""
         # Change goal pose if goal pose is out of reach or with x <= 0
         is_reachable, goal_pose, reach_state = self.is_pose_in_robot_reach(goal_pose)
@@ -601,7 +603,7 @@ class SymbolicIK:
                     "ro",
                 )
         return points
-    
+
     def make_elbow_projection(
         self,
         goal_pose: npt.NDArray[np.float64],
@@ -611,10 +613,17 @@ class SymbolicIK:
         # singularity_offset: float,
         # singularity_limit_coeff: float,
         # elbow_singularity_position: npt.NDArray[np.float64],
-    ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]] :
+    ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         alpha = np.arctan2(-self.singularity_limit_coeff, 1)
         M_limits = R.from_euler("xyz", [0, alpha, 0]).as_matrix()
-        P_limits = np.array([self.elbow_singularity_position[0], self.elbow_singularity_position[1], self.elbow_singularity_position[2] - self.singularity_offset, 1])
+        P_limits = np.array(
+            [
+                self.elbow_singularity_position[0],
+                self.elbow_singularity_position[1],
+                self.elbow_singularity_position[2] - self.singularity_offset,
+                1,
+            ]
+        )
         T_limits = make_homogenous_matrix_from_rotation_matrix(P_limits, M_limits)
 
         # get normal vector
@@ -627,12 +636,12 @@ class SymbolicIK:
         v3 = np.cross(v1[:3], v2[:3])
         v3 = v3 / np.linalg.norm(v3)
 
-        projected_center = make_projection_on_plane(P_limits[:3], v3,  self.shoulder_position)
-        radius = np.sqrt(self.upper_arm_size**2 - np.linalg.norm(self.shoulder_position - projected_center)**2)
+        projected_center = make_projection_on_plane(P_limits[:3], v3, self.shoulder_position)
+        radius = np.sqrt(self.upper_arm_size**2 - np.linalg.norm(self.shoulder_position - projected_center) ** 2)
 
         projected_elbow = make_projection_on_plane(P_limits[:3], v3, elbow_position)
         V_center_projection = projected_elbow - projected_center
-        new_elbow_position = projected_center + radius* (V_center_projection/np.linalg.norm(V_center_projection))
+        new_elbow_position = projected_center + radius * (V_center_projection / np.linalg.norm(V_center_projection))
 
         diff = new_elbow_position - elbow_position
         new_goal_position = goal_pose[0] + diff
@@ -664,7 +673,12 @@ class SymbolicIK:
         # Get the position of the elbow from theta
         print(f"pose {self.goal_pose}")
         self.elbow_position = self.get_coordinate_cercle(self.intersection_circle, theta)
-        if self.elbow_position[2] > (self.elbow_position[0]- self.elbow_singularity_position[0]) * self.singularity_limit_coeff + self.elbow_singularity_position[2] - self.singularity_offset:
+        if (
+            self.elbow_position[2]
+            > (self.elbow_position[0] - self.elbow_singularity_position[0]) * self.singularity_limit_coeff
+            + self.elbow_singularity_position[2]
+            - self.singularity_offset
+        ):
             self.goal_pose, self.elbow_position = self.make_elbow_projection(self.goal_pose, self.elbow_position[:3])
         print(f"post elbow projection: {self.goal_pose}")
         goal_orientation = self.goal_pose[1]

@@ -7,9 +7,7 @@ from std_msgs.msg import ColorRGBA
 from visualization_msgs.msg import Marker, MarkerArray
 
 from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
-from reachy2_symbolic_ik.utils import (
-    make_homogenous_matrix_from_rotation_matrix,
-)
+from reachy2_symbolic_ik.utils import make_homogenous_matrix_from_rotation_matrix
 
 # def singularity_position_by_offset(
 #     shoulder_orientation_offset: npt.NDArray[np.float64], upper_arm_size: float = 0.28, arm: str = "r"
@@ -95,6 +93,7 @@ def add_plane(
         # create_sphere([0, 0, 0], ColorRGBA(r=0.0, g=1.0, b=0.0, a=1.0), 0.03)
     )
 
+
 def add_circle(
     markers: Marker,
     radius: float,
@@ -126,47 +125,52 @@ def add_circle(
     marker.pose.position.z = position[2]
     marker.id = index
 
-    markers.markers.append(
-        marker
-    )
+    markers.markers.append(marker)
 
-def make_elbow_projection(
-        elbow_position: npt.NDArray[np.float64],
-        shoulder_position: npt.NDArray[np.float64],
-        upper_arm_size: float,
-        singularity_offset: float,
-        singularity_limit_coeff: float,
-        elbow_singularity_position: npt.NDArray[np.float64],
-    ) -> npt.NDArray[np.float64] :
-    alpha = np.arctan2(-singularity_limit_coeff, 1)
-    M_limits = R.from_euler("xyz", [0, alpha, 0]).as_matrix()
-    P_limits = [elbow_singularity_position[0], elbow_singularity_position[1], elbow_singularity_position[2] - singularity_offset, 1]
-    T_limits = make_homogenous_matrix_from_rotation_matrix(P_limits, M_limits)
 
-    # get normal vector
-    n1 = np.array([1, 0, 0, 1])
-    n2 = np.array([0, 1, 0, 1])
-    n1 = np.dot(T_limits, n1)
-    n2 = np.dot(T_limits, n2)
-    v1 = n1 - P_limits
-    v2 = n2 - P_limits
-    v3 = np.cross(v1[:3], v2[:3])
-    v3 = v3 / np.linalg.norm(v3)
+# def make_elbow_projection(
+#     elbow_position: npt.NDArray[np.float64],
+#     shoulder_position: npt.NDArray[np.float64],
+#     upper_arm_size: float,
+#     singularity_offset: float,
+#     singularity_limit_coeff: float,
+#     elbow_singularity_position: npt.NDArray[np.float64],
+# ) -> npt.NDArray[np.float64]:
+#     alpha = np.arctan2(-singularity_limit_coeff, 1)
+#     M_limits = R.from_euler("xyz", [0, alpha, 0]).as_matrix()
+#     P_limits = [
+#         elbow_singularity_position[0],
+#         elbow_singularity_position[1],
+#         elbow_singularity_position[2] - singularity_offset,
+#         1,
+#     ]
+#     T_limits = make_homogenous_matrix_from_rotation_matrix(P_limits, M_limits)
 
-    projected_center = get_projection_point(v3, P_limits[:3], shoulder_position)
-    radius = np.sqrt(upper_arm_size**2 - np.linalg.norm(shoulder_position - projected_center)**2)
+#     # get normal vector
+#     n1 = np.array([1, 0, 0, 1])
+#     n2 = np.array([0, 1, 0, 1])
+#     n1 = np.dot(T_limits, n1)
+#     n2 = np.dot(T_limits, n2)
+#     v1 = n1 - P_limits
+#     v2 = n2 - P_limits
+#     v3 = np.cross(v1[:3], v2[:3])
+#     v3 = v3 / np.linalg.norm(v3)
 
-    projected_elbow = get_projection_point(v3, P_limits[:3], elbow_position[:3])
-    V_center_projection = projected_elbow - projected_center
-    new_elbow_position = projected_center + radius* (V_center_projection/np.linalg.norm(V_center_projection))
-    return new_elbow_position
+#     projected_center = get_projection_point(v3, P_limits[:3], shoulder_position)
+#     radius = np.sqrt(upper_arm_size**2 - np.linalg.norm(shoulder_position - projected_center) ** 2)
 
-def get_projection_point(normal_vector, plane_point, point):
-        v = point - plane_point 
-        dist = np.dot(v, normal_vector)
-        # print(dist)
-        projected_point = point - dist * normal_vector
-        return projected_point
+#     projected_elbow = get_projection_point(v3, P_limits[:3], elbow_position[:3])
+#     V_center_projection = projected_elbow - projected_center
+#     new_elbow_position = projected_center + radius * (V_center_projection / np.linalg.norm(V_center_projection))
+#     return new_elbow_position
+
+
+# def get_projection_point(normal_vector, plane_point, point):
+#     v = point - plane_point
+#     dist = np.dot(v, normal_vector)
+#     # print(dist)
+#     projected_point = point - dist * normal_vector
+#     return projected_point
 
 
 if __name__ == "__main__":
@@ -249,17 +253,30 @@ if __name__ == "__main__":
         #     - ik.singularity_offset
         # )
         # p2 = np.array([x, y, z])
-        p2 = [ik.elbow_singularity_position[0], ik.elbow_singularity_position[1], ik.elbow_singularity_position[2] - ik.singularity_offset, 1]
+        p2 = np.array(
+            [
+                ik.elbow_singularity_position[0],
+                ik.elbow_singularity_position[1],
+                ik.elbow_singularity_position[2] - ik.singularity_offset,
+                1,
+            ]
+        )
 
+        # elbow_position = np.array([0.2, 0.3 * side, 0.1, 1])
+        # add_sphere(markers, 0.01, ColorRGBA(r=1.0, g=0.0, b=0.0, a=0.3), elbow_position, index)
+        # index += 1
 
-        elbow_position = np.array([0.2, 0.3*side, 0.1, 1])
-        add_sphere(markers, 0.01, ColorRGBA(r=1.0, g=.0, b=.0, a=0.3), elbow_position, index)
-        index += 1
+        # new_elbow_position = make_elbow_projection(
+        #     elbow_position,
+        #     ik.shoulder_position,
+        #     ik.upper_arm_size,
+        #     ik.singularity_offset,
+        #     ik.singularity_limit_coeff,
+        #     ik.elbow_singularity_position,
+        # )
+        # add_sphere(markers, 0.01, ColorRGBA(r=0.0, g=1.0, b=0.0, a=0.3), new_elbow_position, index)
+        # index += 1
 
-        new_elbow_position = make_elbow_projection(elbow_position, ik.shoulder_position, ik.upper_arm_size, ik.singularity_offset, ik.singularity_limit_coeff, ik.elbow_singularity_position)
-        add_sphere(markers, 0.01, ColorRGBA(r=.0, g=1.0, b=.0, a=0.3), new_elbow_position, index)
-        index += 1
-        
         # T_r2 = make_homogenous_matrix_from_rotation_matrix(p2[:3], rotation2.as_matrix())
         # pp = [0,0,0,1]
         # pp = np.dot(T_r2, pp)
@@ -270,7 +287,6 @@ if __name__ == "__main__":
         # print(np.sqrt(ppp[0]**2 + ppp[1]**2+ ppp[2]**2))
         # P_shoulder_position = np.dot(T_r2, [ik.shoulder_position[0], ik.shoulder_position[1], ik.shoulder_position[2], 1])
         # print(f"radius {radius}")
-        
 
         # n1 = np.array([0.1, 0, 0, 1])
         # n2 = np.array([0, 0.1, 0, 1])
@@ -283,10 +299,8 @@ if __name__ == "__main__":
         # n3 = v3 + p2[:3]
         # print(f"n3 {n3}")
 
-
         # projected_center = get_projection_point(v3, p2[:3], ik.shoulder_position)
         # radius = np.sqrt(ik.upper_arm_size**2 - np.linalg.norm( ik.shoulder_position - projected_center[:3])**2)
-
 
         # random_point = np.array([-0.2, 0.3*side, 0.1, 1])
 
@@ -312,15 +326,10 @@ if __name__ == "__main__":
         # add_circle(markers, radius*2, ColorRGBA(r=0.0, g=0.0, b=1.0, a=0.3), projected_center, index, rotation2.as_quat())
         # index += 1
 
-        # v = random_point - p2 
+        # v = random_point - p2
         # dist = np.dot(v[:3], v3)
         # print(dist)
         # projection = random_point[:3] - dist * v3
-
-        
-     
-
-
 
         # add_sphere(markers, 0.01, ColorRGBA(r=0.0, g=1.0, b=1.0, a=0.3), p2, index)
         # index += 1
@@ -331,11 +340,10 @@ if __name__ == "__main__":
         # add_sphere(markers, 0.01, ColorRGBA(r=0.0, g=1.0, b=1.0, a=0.3), n3, index)
         # index += 1
 
-        
         add_plane(
             markers,
-            size*2,
-            size*1.5,
+            size * 2,
+            size * 1.5,
             ColorRGBA(r=1.0, g=0.0, b=0.0, a=0.3),
             p2,
             index,
@@ -354,11 +362,6 @@ if __name__ == "__main__":
         # random_point = np.dot(T_r2, random_point)
         # add_sphere(markers, 0.01, ColorRGBA(r=0.0, g=1.0, b=1.0, a=1.0), random_point, index)
         # index += 1
-
-
-
-
-
 
     print(f"singularity position {ik_r.elbow_singularity_position}")
 

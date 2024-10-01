@@ -454,11 +454,15 @@ def is_elbow_ok(
     is_ok = elbow_position[1] * side < -0.2
     if elbow_position[0] > elbow_singularity_position[0]:
         is_ok = is_ok and (
-            elbow_position[2] < (elbow_position[0]- elbow_singularity_position[0]) * singularity_limit_coeff + elbow_singularity_position[2] - singularity_offset
+            elbow_position[2]
+            < (elbow_position[0] - elbow_singularity_position[0]) * singularity_limit_coeff
+            + elbow_singularity_position[2]
+            - singularity_offset
         )
         # print(f"elbow_position[2] = {elbow_position[2]}")
         # print(f"elbow_position[0] = {elbow_position[0]}")
-        # print(f" < {(elbow_position[0]- elbow_singularity_position[0]) * singularity_limit_coeff + elbow_singularity_position[2] - singularity_offset}")
+        # print(f" < {(elbow_position[0]- elbow_singularity_position[0]) * singularity_limit_coeff +
+        # elbow_singularity_position[2] - singularity_offset}")
     else:
         is_ok = is_ok and (elbow_position[2] < elbow_singularity_position[2] - singularity_offset)
     #     print(f"elbow_position[2] = {elbow_position[2]}")
@@ -476,12 +480,13 @@ def is_valid_angle(angle: float, interval: npt.NDArray[np.float64]) -> bool:
     return bool(interval[0] <= angle) or (angle <= interval[1])
 
 
-def make_projection_on_plane(P_plane: npt.NDArray[np.float64], normal_vector: npt.NDArray[np.float64], point: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
-    v = point - P_plane 
+def make_projection_on_plane(
+    P_plane: npt.NDArray[np.float64], normal_vector: npt.NDArray[np.float64], point: npt.NDArray[np.float64]
+) -> npt.NDArray[np.float64]:
+    v = point - P_plane
     dist = np.dot(v, normal_vector)
     projected_point = point - dist * normal_vector
-    return projected_point
-
+    return np.array(projected_point)
 
 
 def angle_diff(a: float, b: float) -> float:
