@@ -10,6 +10,7 @@ from scipy.spatial.transform import Rotation as R
 from reachy2_symbolic_ik.utils import (
     get_singularity_position,
     make_homogenous_matrix_from_rotation_matrix,
+    make_projection_on_plane,
     rotation_matrix_from_vector,
     show_circle,
     show_point,
@@ -29,7 +30,7 @@ class SymbolicIK:
         projection_margin: float = 1e-8,
         backward_limit: float = 1e-10,
         normal_vector_margin: float = 1e-7,
-        singularity_offset: float = 0.01,
+        singularity_offset: float = 0.03,
         singularity_limit_coeff: float = 1.0,
     ) -> None:
         if ik_parameters == {}:
@@ -88,7 +89,7 @@ class SymbolicIK:
     def is_reachable_no_limits(self, goal_pose: npt.NDArray[np.float64]) -> Tuple[bool, npt.NDArray[np.float64], Optional[Any]]:
         """Check if the goal pose is reachable without taking into account the limits of the wrist and the elbow
         Should alway return True"""
-
+        print(f"is_reachable_no_limits")
         # Change goal pose if goal pose is out of reach or with x <= 0
         _, goal_pose, _ = self.is_pose_in_robot_reach(goal_pose)
 
@@ -113,12 +114,13 @@ class SymbolicIK:
 
     def is_reachable(self, goal_pose: npt.NDArray[np.float64]) -> Tuple[bool, npt.NDArray[np.float64], Optional[Any], str]:
         """Check if the goal pose is reachable taking into account the limits of the wrist and the elbow"""
+        print(f"is_reachable")
         state = ""
         # Change goal pose if goal pose is out of reach or with x <= 0
         is_reachable, goal_pose, reach_state = self.is_pose_in_robot_reach(goal_pose)
         if not is_reachable:
             state = reach_state
-            return False, np.array([]), None, state
+            # return False, np.array([]), None, state
 
         if SHOW_GRAPH:
             fig = plt.figure()
@@ -133,7 +135,7 @@ class SymbolicIK:
         self.wrist_position = self.get_wrist_position(goal_pose)
 
         self.goal_pose, self.wrist_position = self.limit_wrist_pose(self.goal_pose, self.wrist_position)
-        print(f"___goal pose: {self.goal_pose}")
+        # print(f"___goal pose: {self.goal_pose}")
         # Test if the wrist is in the arm range
         d_shoulder_wrist = np.linalg.norm(self.wrist_position - self.shoulder_position)
         if d_shoulder_wrist > self.upper_arm_size + self.forearm_size:
@@ -201,7 +203,8 @@ class SymbolicIK:
                         "y",
                     )
                     plt.show()
-                state = "reachable"
+                if state == "":
+                    state = "reachable"
                 return True, interval, self.get_joints, state
 
             if SHOW_GRAPH:
@@ -228,7 +231,8 @@ class SymbolicIK:
                     "y",
                 )
                 plt.show()
-            state = "limited by wrist"
+            if state == "":
+                state = "limited by wrist"
             return False, np.array([]), None, state
 
         if SHOW_GRAPH:
@@ -597,6 +601,43 @@ class SymbolicIK:
                     "ro",
                 )
         return points
+    
+    def make_elbow_projection(
+        self,
+        goal_pose: npt.NDArray[np.float64],
+        elbow_position: npt.NDArray[np.float64],
+        # shoulder_position: npt.NDArray[np.float64],
+        # upper_arm_size: float,
+        # singularity_offset: float,
+        # singularity_limit_coeff: float,
+        # elbow_singularity_position: npt.NDArray[np.float64],
+    ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]] :
+        alpha = np.arctan2(-self.singularity_limit_coeff, 1)
+        M_limits = R.from_euler("xyz", [0, alpha, 0]).as_matrix()
+        P_limits = np.array([self.elbow_singularity_position[0], self.elbow_singularity_position[1], self.elbow_singularity_position[2] - self.singularity_offset, 1])
+        T_limits = make_homogenous_matrix_from_rotation_matrix(P_limits, M_limits)
+
+        # get normal vector
+        n1 = np.array([1, 0, 0, 1])
+        n2 = np.array([0, 1, 0, 1])
+        n1 = np.dot(T_limits, n1)
+        n2 = np.dot(T_limits, n2)
+        v1 = n1 - P_limits
+        v2 = n2 - P_limits
+        v3 = np.cross(v1[:3], v2[:3])
+        v3 = v3 / np.linalg.norm(v3)
+
+        projected_center = make_projection_on_plane(P_limits[:3], v3,  self.shoulder_position)
+        radius = np.sqrt(self.upper_arm_size**2 - np.linalg.norm(self.shoulder_position - projected_center)**2)
+
+        projected_elbow = make_projection_on_plane(P_limits[:3], v3, elbow_position)
+        V_center_projection = projected_elbow - projected_center
+        new_elbow_position = projected_center + radius* (V_center_projection/np.linalg.norm(V_center_projection))
+
+        diff = new_elbow_position - elbow_position
+        new_goal_position = goal_pose[0] + diff
+
+        return np.array([new_goal_position, goal_pose[1]]), new_elbow_position
 
     def get_coordinate_cercle(
         self, intersection_circle: Tuple[npt.NDArray[np.float64], float, npt.NDArray[np.float64]], theta: float
@@ -621,7 +662,11 @@ class SymbolicIK:
         Return the joints cast between -pi and pi
         """
         # Get the position of the elbow from theta
+        print(f"pose {self.goal_pose}")
         self.elbow_position = self.get_coordinate_cercle(self.intersection_circle, theta)
+        if self.elbow_position[2] > (self.elbow_position[0]- self.elbow_singularity_position[0]) * self.singularity_limit_coeff + self.elbow_singularity_position[2] - self.singularity_offset:
+            self.goal_pose, self.elbow_position = self.make_elbow_projection(self.goal_pose, self.elbow_position[:3])
+        print(f"post elbow projection: {self.goal_pose}")
         goal_orientation = self.goal_pose[1]
 
         P_torso_shoulder = [self.shoulder_position[0], self.shoulder_position[1], self.shoulder_position[2], 1]

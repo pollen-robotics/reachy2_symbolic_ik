@@ -62,7 +62,7 @@ class ControlIK:
         self.nb_search_points = 20
 
         if is_dvt:
-            self.singularity_offset = 0.01
+            self.singularity_offset = 0.03
         else:
             self.singularity_offset = -1.01
         self.singularity_limit_coeff = 1.0
@@ -268,6 +268,7 @@ class ControlIK:
             d_theta_max: maximum angle difference between two consecutive theta
         """
 
+        print("- - - - - - - - - - - -- -- - - - - - - -")
         t = time.time()
         state = ""
         if abs(t - self.last_call_t[name]) > self.call_timeout:
@@ -296,6 +297,7 @@ class ControlIK:
             if DEBUG:
                 print(f"{name}, previous_theta: {self.previous_theta[name]}")
 
+        print("_________________________")
         (
             is_reachable,
             interval,
@@ -304,6 +306,9 @@ class ControlIK:
         ) = self.symbolic_ik_solver[
             name
         ].is_reachable(goal_pose)
+        # print(f"interval: {interval}")
+        # print(f"is_reachable: {is_reachable}")
+        # print(f"state_reachable: {state_reachable}")
         # self.print_log(f"{name} state_reachable: {state_reachable}")
         if is_reachable:
             # is_reachable, theta, state_theta = get_best_continuous_theta(
@@ -329,6 +334,8 @@ class ControlIK:
                 self.singularity_limit_coeff,
                 self.symbolic_ik_solver[name].elbow_singularity_position,
             )
+            # print(f" get_best_continuous_theta2: {is_reachable}")
+            # print(f"state {state_theta}")
             if not is_reachable:
                 state = "limited by shoulder"
             theta, state_interval = limit_theta_to_interval(theta, self.previous_theta[name], interval_limit)
@@ -360,6 +367,8 @@ class ControlIK:
         if DEBUG:
             print(f"State: {state}")
 
+        # print(f"is_reachable: {is_reachable}")
+        # print(f"state: {state}")
         return ik_joints, is_reachable, state
 
     def symbolic_inverse_kinematics_discrete(

@@ -180,11 +180,38 @@ def main_test() -> None:
     make_line(reachy, start_pose, end_pose)
 
     start_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
-    end_pose = np.array([[0.18, -0.4, -0.30], [0, 0, np.pi / 2]])
+    end_pose = np.array([[0.15, -0.4, -0.30], [0, 0, np.pi / 2]])
     make_line(reachy, start_pose, end_pose)
-    start_pose = np.array([[0.18, -0.4, -0.30], [0, 0, np.pi / 2]])
-    end_pose = np.array([[0.18, -0.4, -0.30], [0, 0, np.pi / 2]])
+    start_pose = np.array([[0.15, -0.4, -0.30], [0, 0, np.pi / 2]])
+    end_pose = np.array([[0.15, -0.4, -0.25], [0, 0, np.pi / 2]])
     make_line(reachy, start_pose, end_pose)
+    # start_pose = np.array([[0.18, -0.4, -0.30], [0, 0, np.pi / 2]])
+    # end_pose = np.array([[0.08, -0.4, -0.30], [0, 0, np.pi / 2]])
+    # make_line(reachy, start_pose, end_pose)
+    # start_pose = np.array([[0.08, -0.4, -0.30], [0, 0, np.pi / 2]])
+    # end_pose = np.array([[0.18, -0.4, -0.30], [0, 0, np.pi / 2]])
+    # make_line(reachy, start_pose, end_pose)
+    start_pose = np.array([[0.15, -0.4, -0.25], [0, 0, np.pi / 2]])
+    end_pose = np.array([[0.15, -0.4, -0.20], [0, 0, np.pi / 2]])
+    make_line(reachy, start_pose, end_pose)
+    start_pose = np.array([[0.15, -0.4, -0.20], [0, 0, np.pi / 2]])
+    end_pose = np.array([[0.15, -0.4, -0.20], [0, 0, np.pi / 2]])
+    make_line(reachy, start_pose, end_pose)
+    start_pose = np.array([[0.15, -0.4, -0.20], [0, 0, np.pi / 2]])
+    end_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
+    make_line(reachy, start_pose, end_pose)
+    start_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
+    end_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
+    make_line(reachy, start_pose, end_pose)
+
+
+
+    # start_pose = np.array([[0.18, -0.4, -0.30], [0, 0, np.pi / 2]])
+    # end_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
+    # make_line(reachy, start_pose, end_pose)
+    # start_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
+
+
 
     time.sleep(10.0)
 

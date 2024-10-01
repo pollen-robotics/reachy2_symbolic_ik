@@ -253,7 +253,8 @@ def get_best_continuous_theta2(
     else:
         # middle theta is reachable but far from previous theta
         sign = angle_diff(theta_goal, previous_theta) / np.abs(angle_diff(theta_goal, previous_theta))
-        state += "\n" + "theta theta_goal ok mais loin"
+        # state += "\n" + "theta theta_goal ok mais loin"
+        state = "\n" + "theta theta_goal ok mais loin"
         theta_tends = previous_theta + sign * d_theta_max
         # Saying True here is not always true. It could be that the intermediate theta_tends is not reachable,
         # but eventually it will reach a reachable theta
@@ -451,12 +452,18 @@ def is_elbow_ok(
             is_ok = False
     # ultra safe config
     is_ok = elbow_position[1] * side < -0.2
-    if elbow_position[0] > 0:
+    if elbow_position[0] > elbow_singularity_position[0]:
         is_ok = is_ok and (
-            elbow_position[2] < elbow_position[0] * singularity_limit_coeff + elbow_singularity_position[2] - singularity_offset
+            elbow_position[2] < (elbow_position[0]- elbow_singularity_position[0]) * singularity_limit_coeff + elbow_singularity_position[2] - singularity_offset
         )
+        # print(f"elbow_position[2] = {elbow_position[2]}")
+        # print(f"elbow_position[0] = {elbow_position[0]}")
+        # print(f" < {(elbow_position[0]- elbow_singularity_position[0]) * singularity_limit_coeff + elbow_singularity_position[2] - singularity_offset}")
     else:
         is_ok = is_ok and (elbow_position[2] < elbow_singularity_position[2] - singularity_offset)
+    #     print(f"elbow_position[2] = {elbow_position[2]}")
+    #     print(f"elbow_singularity_position[2] = {elbow_singularity_position[2] - singularity_offset}")
+    # print(f" is_ok = {is_ok}")
     return is_ok
 
 
@@ -467,6 +474,14 @@ def is_valid_angle(angle: float, interval: npt.NDArray[np.float64]) -> bool:
     if interval[0] < interval[1]:
         return bool(interval[0] <= angle) and (angle <= interval[1])
     return bool(interval[0] <= angle) or (angle <= interval[1])
+
+
+def make_projection_on_plane(P_plane: npt.NDArray[np.float64], normal_vector: npt.NDArray[np.float64], point: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+    v = point - P_plane 
+    dist = np.dot(v, normal_vector)
+    projected_point = point - dist * normal_vector
+    return projected_point
+
 
 
 def angle_diff(a: float, b: float) -> float:
