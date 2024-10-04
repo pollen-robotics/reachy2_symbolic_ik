@@ -187,7 +187,10 @@ class ControlIK:
             print(f"{name} preferred_theta: {preferred_theta}")
 
         if constrained_mode == "unconstrained":
-            interval_limit = np.array([-np.pi, np.pi])
+            # interval_limit = np.array([-np.pi, np.pi])
+            # TEST
+            # interval_limit = np.array([-3*np.pi/2, 0])
+            interval_limit = np.array([np.pi / 2, 0])
         elif constrained_mode == "low_elbow":
             interval_limit = np.array([-4 * np.pi / 5, 0])
             # interval_limit = np.array([-4 * np.pi / 5, -np.pi / 2])
@@ -267,8 +270,7 @@ class ControlIK:
             preferred_theta
             d_theta_max: maximum angle difference between two consecutive theta
         """
-
-        print("- - - - - - - - - - - -- -- - - - - - - -")
+        # print("- - - - - - - - - - - -- -- - - - - - - -")
         t = time.time()
         state = ""
         if abs(t - self.last_call_t[name]) > self.call_timeout:
@@ -338,7 +340,9 @@ class ControlIK:
             # print(f"state {state_theta}")
             if not is_reachable:
                 state = "limited by shoulder"
+            print(f"theta: {theta}")
             theta, state_interval = limit_theta_to_interval(theta, self.previous_theta[name], interval_limit)
+            print(f"theta: {theta}")
             self.previous_theta[name] = theta
             ik_joints, elbow_position = theta_to_joints_func(theta, previous_joints=self.previous_sol[name])
 
@@ -356,7 +360,9 @@ class ControlIK:
                     d_theta_max,
                     goal_theta=preferred_theta,
                 )
+                print(f"theta: {theta}")
                 theta, state = limit_theta_to_interval(theta, self.previous_theta[name], interval_limit)
+                print(f"theta: {theta}")
                 self.previous_theta[name] = theta
                 ik_joints, elbow_position = theta_to_joints_func(theta, previous_joints=self.previous_sol[name])
             else:
