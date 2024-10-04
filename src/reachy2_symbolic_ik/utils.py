@@ -455,19 +455,19 @@ def is_elbow_ok(
             is_ok = False
     # ultra safe config
     is_ok = elbow_position[1] * side < -0.2
-    if elbow_position[0] > elbow_singularity_position[0]:
-        is_ok = is_ok and (
-            elbow_position[2]
-            < (elbow_position[0] - elbow_singularity_position[0]) * singularity_limit_coeff
-            + elbow_singularity_position[2]
-            - singularity_offset
-        )
-        # print(f"elbow_position[2] = {elbow_position[2]}")
-        # print(f"elbow_position[0] = {elbow_position[0]}")
-        # print(f" < {(elbow_position[0]- elbow_singularity_position[0]) * singularity_limit_coeff +
-        # elbow_singularity_position[2] - singularity_offset}")
-    else:
-        is_ok = is_ok and (elbow_position[2] < elbow_singularity_position[2] - singularity_offset)
+    # if elbow_position[0] > elbow_singularity_position[0]:
+    is_ok = is_ok and (
+        elbow_position[2]
+        < (elbow_position[0] - elbow_singularity_position[0]) * singularity_limit_coeff
+        + elbow_singularity_position[2]
+        - singularity_offset
+    )
+    # print(f"elbow_position[2] = {elbow_position[2]}")
+    # print(f"elbow_position[0] = {elbow_position[0]}")
+    # print(f" < {(elbow_position[0]- elbow_singularity_position[0]) * singularity_limit_coeff +
+    # elbow_singularity_position[2] - singularity_offset}")
+    # else:
+    #     is_ok = is_ok and (elbow_position[2] < elbow_singularity_position[2] - singularity_offset)
     #     print(f"elbow_position[2] = {elbow_position[2]}")
     #     print(f"elbow_singularity_position[2] = {elbow_singularity_position[2] - singularity_offset}")
     # print(f" is_ok = {is_ok}")
