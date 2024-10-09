@@ -345,8 +345,10 @@ class ControlIK:
             print(f"theta: {theta}")
             self.previous_theta[name] = theta
             ik_joints, elbow_position = theta_to_joints_func(theta, previous_joints=self.previous_sol[name])
+            # print(elbow_position)
 
         else:
+            # print(f"state {state_reachable}")
             if DEBUG:
                 print(f"{name} Pose not reachable before even reaching theta selection. State: {state_reachable}")
             is_reachable_no_limits, interval, theta_to_joints_func = self.symbolic_ik_solver[name].is_reachable_no_limits(

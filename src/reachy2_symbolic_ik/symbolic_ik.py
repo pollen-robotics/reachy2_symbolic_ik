@@ -660,14 +660,18 @@ class SymbolicIK:
     ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         alpha = np.arctan2(-singularity_limit_coeff, 1)
         M_limits = R.from_euler("xyz", [0, alpha, 0]).as_matrix()
-        P_limits = np.array(
-            [
-                self.elbow_singularity_position[0],
-                self.elbow_singularity_position[1],
-                self.elbow_singularity_position[2] - self.singularity_offset,
-                1,
-            ]
-        )
+
+        T_limits = make_homogenous_matrix_from_rotation_matrix(self.elbow_singularity_position, M_limits)
+        P_limits = np.dot(T_limits, np.array([0, 0, -self.singularity_offset, 1]))
+
+        # P_limits = np.array(
+        #     [
+        #         self.elbow_singularity_position[0],
+        #         self.elbow_singularity_position[1],
+        #         self.elbow_singularity_position[2] - self.singularity_offset,
+        #         1,
+        #     ]
+        # )
         T_limits = make_homogenous_matrix_from_rotation_matrix(P_limits, M_limits)
 
         # get normal vector
@@ -683,29 +687,29 @@ class SymbolicIK:
         projected_center = make_projection_on_plane(P_limits[:3], v3, self.shoulder_position)
         radius = np.sqrt(self.upper_arm_size**2 - np.linalg.norm(self.shoulder_position - projected_center) ** 2)
 
-        projected_elbow1 = [
-            elbow_position[0] + self.elbow_singularity_position[0],
-            elbow_position[1],
-            (self.elbow_position[0] - self.elbow_singularity_position[0]) * singularity_limit_coeff
-            + self.elbow_singularity_position[2]
-            - self.singularity_offset,
-        ]
-        projected_elbow2 = [
-            elbow_position[0],
-            elbow_position[1] + self.elbow_singularity_position[1],
-            -(self.elbow_position[0] - self.elbow_singularity_position[0]) * singularity_limit_coeff
-            + self.elbow_singularity_position[2]
-            - self.singularity_offset,
-        ]
-        dist1 = np.linalg.norm(projected_elbow1 - elbow_position)
-        dist2 = np.linalg.norm(projected_elbow2 - elbow_position)
-        print(f"dist1: {dist1}, dist2: {dist2}")
-        if dist1 < dist2:
-            projected_elbow = projected_elbow1
-        else:
-            projected_elbow = projected_elbow2
+        # projected_elbow1 = [
+        #     elbow_position[0],
+        #     elbow_position[1],
+        #     (self.elbow_position[0] - self.elbow_singularity_position[0]) * singularity_limit_coeff
+        #     + self.elbow_singularity_position[2]
+        #     - self.singularity_offset,
+        # ]
+        # projected_elbow2 = [
+        #     elbow_position[0],
+        #     elbow_position[1],
+        #     -(self.elbow_position[0] - self.elbow_singularity_position[0]) * singularity_limit_coeff
+        #     + self.elbow_singularity_position[2]
+        #     - self.singularity_offset,
+        # ]
+        # dist1 = np.linalg.norm(projected_elbow1 - elbow_position)
+        # dist2 = np.linalg.norm(projected_elbow2 - elbow_position)
+        # print(f"dist1: {dist1}, dist2: {dist2}")
+        # if dist1 < dist2:
+        #     projected_elbow = projected_elbow1
+        # else:
+        #     projected_elbow = projected_elbow2
 
-        # projected_elbow = make_projection_on_plane(P_limits[:3], v3, elbow_position)
+        projected_elbow = make_projection_on_plane(P_limits[:3], v3, elbow_position)
         V_center_projection = projected_elbow - projected_center
         new_elbow_position = projected_center + radius * (V_center_projection / np.linalg.norm(V_center_projection))
 
@@ -741,6 +745,8 @@ class SymbolicIK:
         # Get the position of the elbow from theta
         # print(f"pose {self.goal_pose}")
         self.elbow_position = self.get_elbow_position(theta)
+        print(f"elbow position {self.elbow_position}")
+
         if (
             self.elbow_position[2]
             > (self.elbow_position[0] - self.elbow_singularity_position[0]) * self.singularity_limit_coeff
