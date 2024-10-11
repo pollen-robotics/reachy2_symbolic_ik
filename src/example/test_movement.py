@@ -37,7 +37,7 @@ def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> No
             id=reachy.l_arm._part_id,
             goal_pose=Matrix4x4(data=pose.flatten().tolist()),
             continuous_mode=IKContinuousMode.CONTINUOUS,
-            constrained_mode=IKConstrainedMode.LOW_ELBOW,
+            constrained_mode=IKConstrainedMode.UNCONSTRAINED,
             preferred_theta=FloatValue(
                 value=-4 * np.pi / 6,
             ),

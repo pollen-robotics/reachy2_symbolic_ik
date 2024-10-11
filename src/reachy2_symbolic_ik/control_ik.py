@@ -203,8 +203,19 @@ class ControlIK:
 
         if name.startswith("l"):
             interval_limit = np.array([-np.pi - interval_limit[1], -np.pi - interval_limit[0]])
+            # cast between -pi and pi
+            if interval_limit[0] < -np.pi:
+                interval_limit[0] = interval_limit[0] % (2 * np.pi)
+            if interval_limit[1] < -np.pi:
+                interval_limit[1] = interval_limit[1] % (2 * np.pi)
+            if interval_limit[0] > np.pi:
+                interval_limit[0] = interval_limit[0] % (-2 * np.pi)
+            if interval_limit[1] > np.pi:
+                interval_limit[1] = interval_limit[1] % (-2 * np.pi)
+            # interval_limit = [-np.pi, np.pi/2]
             preferred_theta = -np.pi - preferred_theta
 
+        self.logger.info(f"{name} interval_limit: {interval_limit}  constrained_mode: {constrained_mode}")
         if control_type == "continuous":
             ik_joints, is_reachable, state = self.symbolic_inverse_kinematics_continuous(
                 name, goal_pose, interval_limit, current_joints, current_pose, preferred_theta, d_theta_max
