@@ -715,7 +715,7 @@ class SymbolicIK:
 
         diff = new_elbow_position - elbow_position
         new_goal_position = goal_pose[0] + diff
-        print(f"diff {diff}")
+        # print(f"diff {diff}")
 
         return np.array([new_goal_position, goal_pose[1]]), new_elbow_position
 
@@ -745,7 +745,7 @@ class SymbolicIK:
         # Get the position of the elbow from theta
         # print(f"pose {self.goal_pose}")
         self.elbow_position = self.get_elbow_position(theta)
-        print(f"elbow position {self.elbow_position}")
+        # print(f"elbow position {self.elbow_position}")
 
         if (
             self.elbow_position[2]

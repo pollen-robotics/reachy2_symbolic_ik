@@ -327,7 +327,7 @@ def get_best_theta_to_current_joints(
     state += f" \n joints = {joints}"
     state += f" \n current_joints = {current_joints}"
 
-    print(f"best_theta = {best_theta}")
+    # print(f"best_theta = {best_theta}")
     return best_theta, state
 
 
