@@ -104,10 +104,6 @@ class ControlIK:
 
         for prefix in arms:
             arm = f"{prefix}_arm"
-            # self.symbolic_ik_solver[arm] = SymbolicIK(
-            #     arm=arm,
-            #     wrist_limit=np.rad2deg(self.orbita3D_max_angle),
-            # )
             if ik_parameters != {}:
                 if DEBUG:
                     print(f"Using URDF parameters for {arm}")
@@ -134,8 +130,6 @@ class ControlIK:
                 self.preferred_theta[arm] = -np.pi - preferred_theta
                 self.previous_sol[arm] = current_joints[1]
                 self.previous_pose[arm] = current_pose[1]
-            # print(self.previous_pose[arm][:3, :3])
-            # print(np.allclose(self.previous_pose[arm][:3, :3], np.eye(3)))
             if np.allclose(self.previous_pose[arm][:3, :3], np.eye(3)):
                 current_goal_orientation = [0, 0, 0]
                 current_goal_position = self.previous_pose[arm][:3, 3]
@@ -227,7 +221,6 @@ class ControlIK:
             # interval_limit = [-np.pi, np.pi/2]
             preferred_theta = -np.pi - preferred_theta
 
-        # self.logger.info(f"{name} interval_limit: {interval_limit}  constrained_mode: {constrained_mode}")
         if control_type == "continuous":
             ik_joints, is_reachable, state = self.symbolic_inverse_kinematics_continuous(
                 name, goal_pose, interval_limit, current_joints, current_pose, preferred_theta, d_theta_max
@@ -309,8 +302,6 @@ class ControlIK:
             # Otherwise, when there is no call for more than call_timeout, the joints will be cast between -pi and pi
             # -> If you pause a rosbag during a multiturn and restart it, the previous_sol will be wrong by 2pi
             self.previous_sol[name] = current_joints
-            # print(current_pose[:3, :3])
-            # print(np.allclose(current_pose[:3, :3], np.eye(3)))
             if np.allclose(current_pose[:3, :3], np.eye(3)):
                 current_goal_orientation = [0, 0, 0]
                 current_goal_position = current_pose[:3, 3]
@@ -328,7 +319,6 @@ class ControlIK:
             if DEBUG:
                 print(f"{name}, previous_theta: {self.previous_theta[name]}")
 
-        # print("_________________________")
         (
             is_reachable,
             interval,
@@ -337,10 +327,6 @@ class ControlIK:
         ) = self.symbolic_ik_solver[
             name
         ].is_reachable(goal_pose)
-        # print(f"interval: {interval}")
-        # print(f"is_reachable: {is_reachable}")
-        # print(f"state_reachable: {state_reachable}")
-        # self.print_log(f"{name} state_reachable: {state_reachable}")
         if is_reachable:
             # is_reachable, theta, state_theta = get_best_continuous_theta(
             #     self.previous_theta[name],
@@ -365,19 +351,13 @@ class ControlIK:
                 self.singularity_limit_coeff,
                 self.symbolic_ik_solver[name].elbow_singularity_position,
             )
-            # print(f" get_best_continuous_theta2: {is_reachable}")
-            # print(f"state {state_theta}")
             if not is_reachable:
                 state = "limited by shoulder"
-            # print(f"theta: {theta}")
             theta, state_interval = limit_theta_to_interval(theta, self.previous_theta[name], interval_limit)
-            # print(f"theta: {theta}")
             self.previous_theta[name] = theta
             ik_joints, elbow_position = theta_to_joints_func(theta, previous_joints=self.previous_sol[name])
-            # print(elbow_position)
 
         else:
-            # print(f"state {state_reachable}")
             if DEBUG:
                 print(f"{name} Pose not reachable before even reaching theta selection. State: {state_reachable}")
             is_reachable_no_limits, interval, theta_to_joints_func = self.symbolic_ik_solver[name].is_reachable_no_limits(
@@ -391,9 +371,7 @@ class ControlIK:
                     d_theta_max,
                     goal_theta=preferred_theta,
                 )
-                # print(f"theta: {theta}")
                 theta, state = limit_theta_to_interval(theta, self.previous_theta[name], interval_limit)
-                # print(f"theta: {theta}")
                 self.previous_theta[name] = theta
                 ik_joints, elbow_position = theta_to_joints_func(theta, previous_joints=self.previous_sol[name])
             else:
@@ -403,9 +381,6 @@ class ControlIK:
 
         if DEBUG:
             print(f"State: {state}")
-
-        # print(f"is_reachable: {is_reachable}")
-        # print(f"state: {state}")
         return ik_joints, is_reachable, state
 
     def symbolic_inverse_kinematics_discrete(
