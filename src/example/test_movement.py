@@ -27,7 +27,7 @@ def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> No
             preferred_theta=FloatValue(
                 value=-4 * np.pi / 6,
             ),
-            d_theta_max=FloatValue(value=0.01),
+            d_theta_max=FloatValue(value=0.05),
             order_id=Int32Value(value=5),
         )
         reachy.r_arm._stub.SendArmCartesianGoal(request)
@@ -41,7 +41,7 @@ def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> No
             preferred_theta=FloatValue(
                 value=-4 * np.pi / 6,
             ),
-            d_theta_max=FloatValue(value=0.01),
+            d_theta_max=FloatValue(value=0.05),
             order_id=Int32Value(value=5),
         )
         reachy.l_arm._stub.SendArmCartesianGoal(request)

@@ -139,7 +139,7 @@ class ControlIK:
             if np.allclose(self.previous_pose[arm][:3, :3], np.eye(3)):
                 current_goal_orientation = [0, 0, 0]
                 current_goal_position = self.previous_pose[arm][:3, 3]
-            else :
+            else:
                 current_goal_position, current_goal_orientation = get_euler_from_homogeneous_matrix(self.previous_pose[arm])
             current_pose_tuple = np.array([current_goal_position, current_goal_orientation])
             is_reachable, interval, theta_to_joints_func = self.symbolic_ik_solver[arm].is_reachable_no_limits(
@@ -188,7 +188,7 @@ class ControlIK:
         if np.allclose(M[:3, :3], np.eye(3)):
             goal_position = [0, 0, 0]
             goal_orientation = M[:3, 3]
-        else :
+        else:
             goal_position, goal_orientation = get_euler_from_homogeneous_matrix(M)
         goal_pose = np.array([goal_position, goal_orientation])
 
@@ -314,7 +314,7 @@ class ControlIK:
             if np.allclose(current_pose[:3, :3], np.eye(3)):
                 current_goal_orientation = [0, 0, 0]
                 current_goal_position = current_pose[:3, 3]
-            else :
+            else:
                 current_goal_position, current_goal_orientation = get_euler_from_homogeneous_matrix(current_pose)
             current_pose_tuple = np.array([current_goal_position, current_goal_orientation])
             is_reachable, interval, theta_to_joints_func = self.symbolic_ik_solver[name].is_reachable_no_limits(
