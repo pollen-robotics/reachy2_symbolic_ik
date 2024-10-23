@@ -265,7 +265,7 @@ class ControlIK:
                 print(f"{name} Timeout reached. Resetting previous_sol {t},  {self.last_call_t[name]}")
         self.last_call_t[name] = t
 
-        if self.previous_sol[name] == []:
+        if not len(self.previous_sol[name]):
             # if the arm moved since last call, we need to update the previous_sol
             # self.previous_sol[name] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
             # TODO : Get a current position that take the multiturn into consideration
