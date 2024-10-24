@@ -408,11 +408,32 @@ if __name__ == "__main__":
                 size * 2,
                 size * 1.5,
                 ColorRGBA(r=1.0, g=0.0, b=0.0, a=0.3),
-                np.array([-0.1, 0.0, 0.0]),
+                np.array([-0.0, 0.0, 0.0]),
                 index,
                 R.from_euler("xyz", [0, np.pi / 2, 0]).as_quat(),
             )
             index += 1
+
+            nb_points = 100
+            angles = np.linspace(-np.pi / 2, np.pi / 2, nb_points)
+            for angle in angles:
+                if angle < np.pi / 4 and angle > -np.pi / 4:
+                    alpha = -angle
+                elif angle > np.pi / 4:
+                    alpha = -np.pi / 4
+                else:
+                    alpha = np.pi / 4
+
+                dx = 0.28 * np.cos(angle) + 0.1 * np.cos(alpha + angle)
+                dz = 0.28 * np.sin(angle) + 0.1 * np.sin(alpha + angle)
+                point = np.array([dx + p5[0], p5[1], dz + p5[2]])
+                is_reachable = point[0] > 0
+                elbow_pos = np.array([p5[0] + 0.28 * np.cos(angle), p5[1], p5[2] + 0.28 * np.sin(angle)])
+                dist_shoulder_elbow = np.linalg.norm(ik.shoulder_position - elbow_pos)
+                is_reachable = is_reachable and dist_shoulder_elbow > 0.25
+                if is_reachable:
+                    add_sphere(markers, 0.01, ColorRGBA(r=0.0, g=1.0, b=0.0, a=0.3), point, index)
+                    index += 1
 
             # print(np.cross(n1[:3], n2[:3]))
 
@@ -493,6 +514,6 @@ if __name__ == "__main__":
 
     print(f"singularity position {ik_r.elbow_singularity_position}")
 
-    add_sphere(markers, 0.56, ColorRGBA(r=0.0, g=1.0, b=0.0, a=0.3), ik_r.shoulder_position, 30)
+    add_sphere(markers, 0.56, ColorRGBA(r=0.0, g=1.0, b=0.0, a=0.3), ik_r.shoulder_position, index)
 
     marker_pub.publish(markers)
