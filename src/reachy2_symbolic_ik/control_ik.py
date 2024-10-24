@@ -9,6 +9,7 @@ import numpy.typing as npt
 from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
 from reachy2_symbolic_ik.utils import (
     allow_multiturn,
+    # continuity_check,
     get_best_continuous_theta2,
     get_best_discrete_theta,
     get_best_theta_to_current_joints,
@@ -16,6 +17,7 @@ from reachy2_symbolic_ik.utils import (
     get_ik_parameters_from_urdf,
     limit_orbita3d_joints_wrist,
     limit_theta_to_interval,
+    multiturn_safety_check,
     tend_to_preferred_theta,
 )
 
@@ -255,6 +257,15 @@ class ControlIK:
             elif DEBUG:
                 print(f"{name} Multiturn joint limit reached. \nRaw joints: {ik_joints}\nLimited joints: {ik_joints_allowed}")
         ik_joints = ik_joints_allowed
+
+        ik_joints = multiturn_safety_check(
+            ik_joints,
+            6 * np.pi,
+            6 * np.pi,
+            6 * np.pi,
+            state,
+        )
+
         self.previous_sol[name] = copy.deepcopy(ik_joints)
 
         # TODO reactivate a smoothing technique
