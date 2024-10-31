@@ -553,45 +553,57 @@ def limit_orbita3d_joints_wrist(joints: list[float], orbita3D_max_angle: float) 
 
 
 def multiturn_safety_check(
-    joints: list[float], shoulder_pitch_limit: float, elbow_yaw_limit: float, wrist_yaw_limit: float, state: str
-) -> list[float]:
+    joints: list[float], shoulder_pitch_limit: float, elbow_yaw_limit: float, wrist_yaw_limit: float, emergency_state: str
+) -> Tuple[list[float], bool, str]:
     """Limit the number of turns allowed on the joints"""
     joints = copy.deepcopy(joints)
+    emergency_stop = False
     # shoulder pitch
     if joints[0] > shoulder_pitch_limit:
         joints[0] = shoulder_pitch_limit
-        state += "\n" + "EMERGENCY STOP: shoulder pitch limit reached"
+        emergency_state += "\n" + "EMERGENCY STOP: shoulder pitch limit reached"
+        emergency_stop = True
     if joints[0] < -shoulder_pitch_limit:
         joints[0] = -shoulder_pitch_limit
-        state += "\n" + "EMERGENCY STOP: shoulder pitch limit reached"
+        emergency_state += "\n" + "EMERGENCY STOP: shoulder pitch limit reached"
+        emergency_stop = True
     # elbow yaw
     if joints[2] > elbow_yaw_limit:
         joints[2] = elbow_yaw_limit
-        state += "\n" + "EMERGENCY STOP: elbow yaw limit reached"
+        emergency_state += "\n" + "EMERGENCY STOP: elbow yaw limit reached"
+        emergency_stop = True
     if joints[2] < -elbow_yaw_limit:
         joints[2] = -elbow_yaw_limit
-        state += "\n" + "EMERGENCY STOP: elbow yaw limit reached"
+        emergency_state += "\n" + "EMERGENCY STOP: elbow yaw limit reached"
+        emergency_stop = True
     # wrist yaw
     if joints[6] > wrist_yaw_limit:
         joints[6] = wrist_yaw_limit
-        state += "\n" + "EMERGENCY STOP: wrist yaw limit reached"
+        emergency_state += "\n" + "EMERGENCY STOP: wrist yaw limit reached"
+        emergency_stop = True
     if joints[6] < -wrist_yaw_limit:
         joints[6] = -wrist_yaw_limit
-        state += "\n" + "EMERGENCY STOP: wrist yaw limit reached"
-    return joints
+        emergency_state += "\n" + "EMERGENCY STOP: wrist yaw limit reached"
+        emergency_stop = True
+    return joints, emergency_stop, emergency_state
 
 
-def continuity_check(joints: list[float], previous_joints: list[float], max_angulare_change: float, state: str) -> list[float]:
+def continuity_check(
+    joints: npt.NDArray[np.float64], previous_joints: npt.NDArray[np.float64], max_angulare_change: float, emergency_state: str
+) -> Tuple[npt.NDArray[np.float64], bool, str]:
     """Check the continuity of the joints"""
-    joints = copy.deepcopy(joints)
     discontinuity = False
+    emergency_stop = False
     for i in range(len(joints)):
         if abs(angle_diff(joints[i], previous_joints[i])) > max_angulare_change:
             discontinuity = True
     if discontinuity:
-        joints = previous_joints
-        state += "\n EMERGENCY STOP: joints are not continuous"
-    return joints
+        joints = np.array(previous_joints)
+        emergency_state += (
+            f"\n EMERGENCY STOP: joints are not continuous \n previous_joints: {previous_joints} \n joints: {joints}"
+        )
+        emergency_stop = True
+    return joints, emergency_stop, emergency_state
 
 
 def show_circle(

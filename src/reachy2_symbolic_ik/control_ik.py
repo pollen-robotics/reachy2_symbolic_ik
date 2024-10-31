@@ -9,7 +9,7 @@ import numpy.typing as npt
 from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
 from reachy2_symbolic_ik.utils import (
     allow_multiturn,
-    # continuity_check,
+    continuity_check,
     get_best_continuous_theta2,
     get_best_discrete_theta,
     get_best_theta_to_current_joints,
@@ -62,6 +62,9 @@ class ControlIK:
         self.call_timeout = 0.2
 
         self.nb_search_points = 20
+        self.emergency_state = ""
+        self.emergency_stop = False
+        self.init = True
 
         if is_dvt:
             self.singularity_offset = 0.03
@@ -71,7 +74,7 @@ class ControlIK:
 
         self.preferred_theta: Dict[str, float] = {}
         self.previous_theta: Dict[str, float] = {}
-        self.previous_sol: Dict[str, list[float]] = {}
+        self.previous_sol: Dict[str, npt.NDArray[np.float64]] = {}
         self.previous_pose: Dict[str, npt.NDArray[np.float64]] = {}
         self.orbita3D_max_angle = np.deg2rad(42.5)
         self.logger = logger
@@ -126,11 +129,11 @@ class ControlIK:
             preferred_theta = -4 * np.pi / 6
             if prefix == "r":
                 self.preferred_theta[arm] = preferred_theta
-                self.previous_sol[arm] = current_joints[0]
+                self.previous_sol[arm] = np.array(current_joints[0])
                 self.previous_pose[arm] = current_pose[0]
             else:
                 self.preferred_theta[arm] = -np.pi - preferred_theta
-                self.previous_sol[arm] = current_joints[1]
+                self.previous_sol[arm] = np.array(current_joints[1])
                 self.previous_pose[arm] = current_pose[1]
             if np.allclose(self.previous_pose[arm][:3, :3], np.eye(3)):
                 current_goal_orientation = [0, 0, 0]
@@ -181,6 +184,14 @@ class ControlIK:
         """
         # print(M[:3, :3])
         # print(np.allclose(M[:3, :3], np.eye(3)))
+
+        # self.logger.info(f" init {self.init}", throttle_duration_sec=0.)
+        # self.logger.info(f"{name} emergency_stop {self.emergency_stop}", throttle_duration_sec=0.)
+        self.previous_sol[name] = np.array(self.previous_sol[name])
+        if self.emergency_stop:
+            self.logger.info(f"{name} Emergency state: {self.emergency_state}", throttle_duration_sec=1.0)
+            return self.previous_sol[name], False, self.emergency_state
+
         if np.allclose(M[:3, :3], np.eye(3)):
             goal_position = [0, 0, 0]
             goal_orientation = M[:3, 3]
@@ -196,9 +207,9 @@ class ControlIK:
 
         if constrained_mode == "unconstrained":
             # interval_limit = np.array([-np.pi, np.pi])
-            # TEST
             # interval_limit = np.array([-3*np.pi/2, 0])
             interval_limit = np.array([np.pi / 2, 0])
+            interval_limit = np.array([3 * np.pi / 4, -2 * np.pi / 6])
         elif constrained_mode == "low_elbow":
             interval_limit = np.array([-4 * np.pi / 5, 0])
             # interval_limit = np.array([-4 * np.pi / 5, -np.pi / 2])
@@ -258,16 +269,27 @@ class ControlIK:
                 print(f"{name} Multiturn joint limit reached. \nRaw joints: {ik_joints}\nLimited joints: {ik_joints_allowed}")
         ik_joints = ik_joints_allowed
 
-        ik_joints = multiturn_safety_check(
+        ik_joints, emergency_stop, self.emergency_state = multiturn_safety_check(
             ik_joints,
             6 * np.pi,
             6 * np.pi,
             6 * np.pi,
-            state,
+            self.emergency_state,
         )
+        self.emergency_stop = self.emergency_stop or emergency_stop
+
+        if not self.init:
+            # self.logger.info(f"{name} Previous joints: {self.previous_sol[name]}, Current joints: {ik_joints}")
+            ik_joints, emergency_stop, self.emergency_state = continuity_check(
+                ik_joints, self.previous_sol[name], 2.0, self.emergency_state
+            )
+            self.emergency_stop = self.emergency_stop or emergency_stop
+
+        self.init = False
 
         self.previous_sol[name] = copy.deepcopy(ik_joints)
 
+        # self.logger.info(f"{name} Joints: {ik_joints}", throttle_duration_sec=0.)
         # TODO reactivate a smoothing technique
 
         if DEBUG:
@@ -304,6 +326,8 @@ class ControlIK:
             self.previous_sol[name] = []
             if DEBUG:
                 print(f"{name} Timeout reached. Resetting previous_sol {t},  {self.last_call_t[name]}")
+            self.logger.info(f"{name} Timeout reached. Resetting previous_sol {t},  {self.last_call_t[name]}")
+            self.init = True
         self.last_call_t[name] = t
 
         if self.previous_sol[name] == []:
@@ -312,7 +336,7 @@ class ControlIK:
             # TODO : Get a current position that take the multiturn into consideration
             # Otherwise, when there is no call for more than call_timeout, the joints will be cast between -pi and pi
             # -> If you pause a rosbag during a multiturn and restart it, the previous_sol will be wrong by 2pi
-            self.previous_sol[name] = current_joints
+            self.previous_sol[name] = np.array(current_joints)
             if np.allclose(current_pose[:3, :3], np.eye(3)):
                 current_goal_orientation = [0, 0, 0]
                 current_goal_position = current_pose[:3, 3]
@@ -392,6 +416,7 @@ class ControlIK:
 
         if DEBUG:
             print(f"State: {state}")
+
         return ik_joints, is_reachable, state
 
     def symbolic_inverse_kinematics_discrete(
@@ -413,7 +438,7 @@ class ControlIK:
         """
         # Checks if an interval exists that handles the wrist limits and the elbow limits
         # self.print_log(f"{name} interval_limit: {interval_limit}")
-
+        self.logger.info("__________discrete mode _______________")
         (
             is_reachable,
             interval,
