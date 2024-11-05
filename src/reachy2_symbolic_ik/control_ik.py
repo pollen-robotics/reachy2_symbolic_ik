@@ -165,7 +165,7 @@ class ControlIK:
         current_pose: npt.NDArray[np.float64] = np.array([]),
         d_theta_max: float = 0.01,
         preferred_theta: float = -4 * np.pi / 6,
-    ) -> Tuple[list[float], bool, str]:
+    ) -> Tuple[npt.NDArray[np.float64], bool, str]:
         """
         Compute the inverse kinematics of the goal pose M.
         Args:
@@ -218,7 +218,7 @@ class ControlIK:
             current_pose = self.previous_pose[name]
 
         if current_joints == []:
-            current_joints = self.previous_sol[name]
+            current_joints = self.previous_sol[name].tolist()
 
         if name.startswith("l"):
             interval_limit = np.array([-np.pi - interval_limit[1], -np.pi - interval_limit[0]])
@@ -278,12 +278,13 @@ class ControlIK:
         )
         self.emergency_stop = self.emergency_stop or emergency_stop
 
-        if not self.init:
-            # self.logger.info(f"{name} Previous joints: {self.previous_sol[name]}, Current joints: {ik_joints}")
-            ik_joints, emergency_stop, self.emergency_state = continuity_check(
-                ik_joints, self.previous_sol[name], 2.0, self.emergency_state
-            )
-            self.emergency_stop = self.emergency_stop or emergency_stop
+        if control_type == "continuous":
+            if not self.init:
+                # self.logger.info(f"{name} Previous joints: {self.previous_sol[name]}, Current joints: {ik_joints}")
+                ik_joints, emergency_stop, self.emergency_state = continuity_check(
+                    ik_joints, self.previous_sol[name], 2.0, self.emergency_state
+                )
+                self.emergency_stop = self.emergency_stop or emergency_stop
 
         self.init = False
 
@@ -308,7 +309,7 @@ class ControlIK:
         current_pose: npt.NDArray[np.float64],
         preferred_theta: float,
         d_theta_max: float,
-    ) -> Tuple[list[float], bool, str]:
+    ) -> Tuple[npt.NDArray[np.float64], bool, str]:
         """Compute the inverse kinematics of the goal pose M with continuous control.
         Args:
             name: r_arm or l_arm
@@ -323,10 +324,10 @@ class ControlIK:
         t = time.time()
         state = ""
         if abs(t - self.last_call_t[name]) > self.call_timeout:
-            self.previous_sol[name] = []
+            self.previous_sol[name] = np.array([])
             if DEBUG:
                 print(f"{name} Timeout reached. Resetting previous_sol {t},  {self.last_call_t[name]}")
-            self.logger.info(f"{name} Timeout reached. Resetting previous_sol {t},  {self.last_call_t[name]}")
+            # self.logger.info(f"{name} Timeout reached. Resetting previous_sol {t},  {self.last_call_t[name]}")
             self.init = True
         self.last_call_t[name] = t
 
@@ -426,7 +427,7 @@ class ControlIK:
         interval_limit: npt.NDArray[np.float64],
         current_joints: list[float],
         preferred_theta: float,
-    ) -> Tuple[list[float], bool, str]:
+    ) -> Tuple[npt.NDArray[np.float64], bool, str]:
         """
         Compute the inverse kinematics of the goal pose M with discrete control.
         Args:
@@ -438,7 +439,7 @@ class ControlIK:
         """
         # Checks if an interval exists that handles the wrist limits and the elbow limits
         # self.print_log(f"{name} interval_limit: {interval_limit}")
-        self.logger.info("__________discrete mode _______________")
+        # self.logger.info("__________discrete mode _______________")
         (
             is_reachable,
             interval,
