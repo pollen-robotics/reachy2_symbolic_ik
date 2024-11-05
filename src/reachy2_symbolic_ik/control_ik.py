@@ -187,7 +187,7 @@ class ControlIK:
 
         # self.logger.info(f" init {self.init}", throttle_duration_sec=0.)
         # self.logger.info(f"{name} emergency_stop {self.emergency_stop}", throttle_duration_sec=0.)
-        self.previous_sol[name] = np.array(self.previous_sol[name])
+        # self.previous_sol[name] = np.array(self.previous_sol[name])
         if self.emergency_stop:
             self.logger.info(f"{name} Emergency state: {self.emergency_state}", throttle_duration_sec=1.0)
             return self.previous_sol[name], False, self.emergency_state
@@ -208,7 +208,7 @@ class ControlIK:
         if constrained_mode == "unconstrained":
             # interval_limit = np.array([-np.pi, np.pi])
             # interval_limit = np.array([-3*np.pi/2, 0])
-            interval_limit = np.array([np.pi / 2, 0])
+            # interval_limit = np.array([np.pi / 2, 0])
             interval_limit = np.array([3 * np.pi / 4, -2 * np.pi / 6])
         elif constrained_mode == "low_elbow":
             interval_limit = np.array([-4 * np.pi / 5, 0])
@@ -331,7 +331,7 @@ class ControlIK:
             self.init = True
         self.last_call_t[name] = t
 
-        if self.previous_sol[name] == []:
+        if len(self.previous_sol[name]) == 0:
             # if the arm moved since last call, we need to update the previous_sol
             # self.previous_sol[name] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
             # TODO : Get a current position that take the multiturn into consideration
