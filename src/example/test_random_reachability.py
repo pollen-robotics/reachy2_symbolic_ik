@@ -18,8 +18,8 @@ from reachy2_symbolic_ik.utils import distance_from_singularity
 
 # CONTROLE_TYPE = "local_discrete"
 # CONTROLE_TYPE = "local_continuous"
-CONTROLE_TYPE = "sdk_discrete"
-# CONTROLE_TYPE = "sdk_continuous"
+# CONTROLE_TYPE = "sdk_discrete"
+CONTROLE_TYPE = "sdk_continuous"
 
 
 def get_homogeneous_matrix_msg_from_euler(
@@ -40,14 +40,12 @@ def angle_diff(a: float, b: float) -> float:
     return d
 
 
-def set_joints(reachy: ReachySDK, joints: list[float], arm: str) -> None:
-    if arm == "r_arm":
-        for joint, goal_pos in zip(reachy.r_arm.joints.values(), joints):
-            joint.goal_position = goal_pos
-    elif arm == "l_arm":
-        for joint, goal_pos in zip(reachy.l_arm.joints.values(), joints):
-            joint.goal_position = goal_pos
-    reachy.send_goal_positions()
+def set_joints(reachy: ReachySDK, ik_r: list[float], ik_l: list[float]) -> None:
+    for joint, goal_pos in zip(reachy.r_arm.joints.values(), ik_r):
+        joint.goal_position = goal_pos
+    for joint, goal_pos in zip(reachy.l_arm.joints.values(), ik_l):
+        joint.goal_position = goal_pos
+    reachy.send_goal_positions(check_positions=False)
 
 
 def get_ik(
@@ -194,8 +192,7 @@ def random_trajectoy(reachy: ReachySDK, debug_pose: bool = False, bypass: bool =
             r_real_pose = reachy.r_arm.forward_kinematics()
             l_real_pose = reachy.l_arm.forward_kinematics()
         else:
-            set_joints(reachy, ik_r, "r_arm")
-            set_joints(reachy, ik_l, "l_arm")
+            set_joints(reachy, ik_r, ik_l)
             r_real_pose = reachy.r_arm.forward_kinematics(ik_r)
             l_real_pose = reachy.l_arm.forward_kinematics(ik_l)
 
