@@ -188,13 +188,14 @@ class ControlIK:
         # self.logger.info(f" init {self.init}", throttle_duration_sec=0.)
         # self.logger.info(f"{name} emergency_stop {self.emergency_stop}", throttle_duration_sec=0.)
         # self.previous_sol[name] = np.array(self.previous_sol[name])
+        # print(f"goal_pose: {M}")
         if self.emergency_stop:
             self.logger.info(f"{name} Emergency state: {self.emergency_state}", throttle_duration_sec=1.0)
             return self.previous_sol[name], False, self.emergency_state
 
         if np.allclose(M[:3, :3], np.eye(3)):
-            goal_position = [0, 0, 0]
-            goal_orientation = M[:3, 3]
+            goal_position = M[:3, 3]
+            goal_orientation = [0, 0, 0]
         else:
             goal_position, goal_orientation = get_euler_from_homogeneous_matrix(M)
         goal_pose = np.array([goal_position, goal_orientation])
@@ -321,6 +322,7 @@ class ControlIK:
             d_theta_max: maximum angle difference between two consecutive theta
         """
         # print("- - - - - - - - - - - -- -- - - - - - - -")
+        # print(f"goal_pose: {goal_pose}")
         t = time.time()
         state = ""
         if abs(t - self.last_call_t[name]) > self.call_timeout:
