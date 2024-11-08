@@ -462,15 +462,6 @@ def is_elbow_ok(
         + elbow_singularity_position[2]
         - singularity_offset
     )
-    # print(f"elbow_position[2] = {elbow_position[2]}")
-    # print(f"elbow_position[0] = {elbow_position[0]}")
-    # print(f" < {(elbow_position[0]- elbow_singularity_position[0]) * singularity_limit_coeff +
-    # elbow_singularity_position[2] - singularity_offset}")
-    # else:
-    #     is_ok = is_ok and (elbow_position[2] < elbow_singularity_position[2] - singularity_offset)
-    #     print(f"elbow_position[2] = {elbow_position[2]}")
-    #     print(f"elbow_singularity_position[2] = {elbow_singularity_position[2] - singularity_offset}")
-    # print(f" is_ok = {is_ok}")
     return is_ok
 
 
@@ -511,17 +502,6 @@ def allow_multiturn(new_joints: list[float], prev_joints: list[float], name: str
         #     )
         diff = angle_diff(new_joints[i], prev_joints[i])
         new_joints[i] = prev_joints[i] + diff
-    # Temp : showing a warning if a multiturn is detected. TODO do better. This info is critical
-    # and should be saved dyamically on disk.
-    # indexes_that_can_multiturn = [0, 2, 6]
-    # for index in indexes_that_can_multiturn:
-    # if abs(new_joints[index]) > np.pi:
-    #     logger.warning(
-    #         f" {name} Multiturn detected on joint {index} with value: {new_joints[index]} @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
-    #         throttle_duration_sec=1,
-    #     )
-    # TEMP forbidding multiturn
-    # new_joints[index] = np.sign(new_joints[index]) * np.pi
     return new_joints
 
 

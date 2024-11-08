@@ -185,7 +185,7 @@ def main_test() -> None:
     time.sleep(5.0)
 
     print("Making a line")
-    start_pose = np.array([[0.0001, -0.2, -0.6599], [0,0, 0]])
+    start_pose = np.array([[0.0001, -0.2, -0.6599], [0, 0, 0]])
     end_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
     make_line(reachy, start_pose, end_pose)
     start_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
@@ -226,7 +226,7 @@ def main_test() -> None:
     end_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
     make_line(reachy, start_pose, end_pose)
     start_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
-    end_pose = np.array([[0.0001, -0.2, -0.6599], [0,0, 0]])
+    end_pose = np.array([[0.0001, -0.2, -0.6599], [0, 0, 0]])
     make_line(reachy, start_pose, end_pose)
 
     # start_pose = np.array([[0.18, -0.4, -0.30], [0, 0, np.pi / 2]])

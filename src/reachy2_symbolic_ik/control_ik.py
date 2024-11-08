@@ -329,8 +329,6 @@ class ControlIK:
             preferred_theta
             d_theta_max: maximum angle difference between two consecutive theta
         """
-        # print("- - - - - - - - - - - -- -- - - - - - - -")
-        # print(f"goal_pose: {goal_pose}")
         t = time.time()
         state = ""
         if abs(t - self.last_call_t[name]) > self.call_timeout:
@@ -449,7 +447,6 @@ class ControlIK:
         """
         # Checks if an interval exists that handles the wrist limits and the elbow limits
         # self.print_log(f"{name} interval_limit: {interval_limit}")
-        # self.logger.info("__________discrete mode _______________")
         (
             is_reachable,
             interval,

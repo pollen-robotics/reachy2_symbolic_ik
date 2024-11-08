@@ -97,7 +97,7 @@ def random_trajectoy(reachy: ReachySDK, debug_pose: bool = False, bypass: bool =
     # q_amps = [40.0, 40.0, 50.0, 60.0, 50.0, 50.0, 140.0]
     q_amps = [90.0, 90.0, 180.0, 65.0, 45.0, 45.0, 30.0]
 
-    previous_joints = [0., 0., 0., 0., 0., 0., 0.]
+    previous_joints = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     control_ik = ControlIK(urdf_path="../config_files/reachy2.urdf", is_dvt=True)
     start = True
 

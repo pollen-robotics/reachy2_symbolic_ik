@@ -35,18 +35,6 @@ class SymbolicIK:
     ) -> None:
         if ik_parameters == {}:
             print("Using default parameters")
-            # ik_parameters = {
-            #     "r_shoulder_position": np.array([0.0, -0.2, 0.0]),
-            #     "r_shoulder_orientation": [10, 0, 15],
-            #     "r_upper_arm_size": np.float64(0.28),
-            #     "r_forearm_size": np.float64(0.28),
-            #     "r_tip_position": np.array([-0.0, 0.0, 0.10]),
-            #     "l_shoulder_position": np.array([0.0, 0.2, 0.0]),
-            #     "l_shoulder_orientation": [-10, 0, -15],
-            #     "l_upper_arm_size": np.float64(0.28),
-            #     "l_forearm_size": np.float64(0.28),
-            #     "l_tip_position": np.array([-0.0, 0.0, 0.10]),
-            # }
             ik_parameters = {
                 "r_shoulder_position": np.array([0.0, -0.2, 0.0]),
                 "r_shoulder_orientation": [-15, 0, 10],
@@ -96,7 +84,6 @@ class SymbolicIK:
         self.goal_pose = goal_pose
         self.wrist_position = self.get_wrist_position(goal_pose)
 
-        # self.goal_pose, self.wrist_position = self.limit_wrist_pose(self.goal_pose, self.wrist_position)
         # Check if the wrist is in the arm range and reduce the goal pose if not
         d_shoulder_wrist = np.linalg.norm(self.wrist_position - self.shoulder_position)
         if d_shoulder_wrist > self.upper_arm_size + self.forearm_size:
@@ -116,7 +103,6 @@ class SymbolicIK:
         self, goal_pose: npt.NDArray[np.float64]
     ) -> Tuple[bool, npt.NDArray[np.float64], Optional[Any], str]:
         """Check if the goal pose is reachable taking into account the limits of the wrist and the elbow"""
-        # print(f"is_reachable")
         state = ""
         # Change goal pose if goal pose is out of reach or with x <= 0
         is_reachable, goal_pose, reach_state = self.is_pose_in_robot_reach(goal_pose)
@@ -136,7 +122,6 @@ class SymbolicIK:
         self.goal_pose = goal_pose
         self.wrist_position = self.get_wrist_position(goal_pose)
 
-        # self.goal_pose, self.wrist_position = self.limit_wrist_pose(self.goal_pose, self.wrist_position)
         # Test if the wrist is in the arm range
         d_shoulder_wrist = np.linalg.norm(self.wrist_position - self.shoulder_position)
         if d_shoulder_wrist > self.upper_arm_size + self.forearm_size:
