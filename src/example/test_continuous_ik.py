@@ -97,7 +97,7 @@ def random_trajectoy(reachy: ReachySDK, debug_pose: bool = False, bypass: bool =
     # q_amps = [40.0, 40.0, 50.0, 60.0, 50.0, 50.0, 140.0]
     q_amps = [90.0, 90.0, 180.0, 65.0, 45.0, 45.0, 30.0]
 
-    previous_joints = [0, 0, 0, 0, 0, 0, 0]
+    previous_joints = [0., 0., 0., 0., 0., 0., 0.]
     control_ik = ControlIK(urdf_path="../config_files/reachy2.urdf", is_dvt=True)
     start = True
 
@@ -186,7 +186,18 @@ def random_trajectoy(reachy: ReachySDK, debug_pose: bool = False, bypass: bool =
             l_real_pose = reachy.l_arm.forward_kinematics(ik_l)
 
         is_real_pose_correct = check_precision_and_symmetry(
-            reachy, M_r, M_l, r_real_pose, l_real_pose, ik_r, ik_l, elbow_position_r, elbow_position_l, previous_joints, control_ik, start
+            reachy,
+            M_r,
+            M_l,
+            r_real_pose,
+            l_real_pose,
+            ik_r,
+            ik_l,
+            elbow_position_r,
+            elbow_position_l,
+            previous_joints,
+            control_ik,
+            start,
         )
 
         previous_joints = ik_r
@@ -298,12 +309,17 @@ def test_joints(reachy: ReachySDK, r_q: list[np.float64]) -> None:
 def test_pose(reachy: ReachySDK, M: npt.NDArray[np.float64], arm: str) -> None:
     control = ControlIK(urdf_path="../config_files/reachy2.urdf", is_dvt=True)
     if arm == "r_arm":
-        joints, is_reachable, state = control.symbolic_inverse_kinematics(arm, M, "continuous", constrained_mode="unconstrained")
+        joints, is_reachable, state = control.symbolic_inverse_kinematics(
+            arm, M, "continuous", constrained_mode="unconstrained"
+        )
         joints = list(np.degrees(joints))
     elif arm == "l_arm":
-        joints, is_reachable, state = control.symbolic_inverse_kinematics(arm, M, "continuous", constrained_mode="unconstrained")
+        joints, is_reachable, state = control.symbolic_inverse_kinematics(
+            arm, M, "continuous", constrained_mode="unconstrained"
+        )
         joints = list(np.degrees(joints))
     print(f"ik: {joints}")
+
 
 def main_test() -> None:
     print("Trying to connect on localhost Reachy...")
@@ -326,14 +342,32 @@ def main_test() -> None:
     random_trajectoy(reachy, debug_pose=False, bypass=False)
     # test_joints(reachy)
 
-    M_r = np.array([[-0.34159004, -0.90910326, -0.23842717,  0.15009035],
-    [ 0.92063745, -0.3746924,   0.10969179, -0.36832501],
-    [-0.18905801, -0.18203536,  0.9649457,   0.05864802],
-    [ 0.,          0.,          0.,          1.,        ]])
-    M_l = np.array([[-0.34159004,  0.90910326, -0.23842717,  0.15009035],
-    [-0.92063745, -0.3746924,  -0.10969179,  0.36832501],
-    [-0.18905801,  0.18203536,  0.9649457,   0.05864802],
-    [ 0.,          0.,          0.,          1.,        ]])
+    M_r = np.array(
+        [
+            [-0.34159004, -0.90910326, -0.23842717, 0.15009035],
+            [0.92063745, -0.3746924, 0.10969179, -0.36832501],
+            [-0.18905801, -0.18203536, 0.9649457, 0.05864802],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+            ],
+        ]
+    )
+    M_l = np.array(
+        [
+            [-0.34159004, 0.90910326, -0.23842717, 0.15009035],
+            [-0.92063745, -0.3746924, -0.10969179, 0.36832501],
+            [-0.18905801, 0.18203536, 0.9649457, 0.05864802],
+            [
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+            ],
+        ]
+    )
     test_pose(reachy, M_r, "r_arm")
     test_pose(reachy, M_l, "l_arm")
 
