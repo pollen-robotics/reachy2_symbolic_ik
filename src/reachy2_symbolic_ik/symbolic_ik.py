@@ -77,7 +77,6 @@ class SymbolicIK:
     def is_reachable_no_limits(self, goal_pose: npt.NDArray[np.float64]) -> Tuple[bool, npt.NDArray[np.float64], Optional[Any]]:
         """Check if the goal pose is reachable without taking into account the limits of the wrist and the elbow
         Should alway return True"""
-        # print(f"is_reachable_no_limits")
         # Change goal pose if goal pose is out of reach or with x <= 0
         _, goal_pose, _ = self.is_pose_in_robot_reach(goal_pose)
 
@@ -106,9 +105,10 @@ class SymbolicIK:
         state = ""
         # Change goal pose if goal pose is out of reach or with x <= 0
         is_reachable, goal_pose, reach_state = self.is_pose_in_robot_reach(goal_pose)
+        # print(f" __ is_reachable: {is_reachable}, goal_pose: {goal_pose}, reach_state: {reach_state}")
         if not is_reachable:
             state = reach_state
-            # return False, np.array([]), None, state
+            return False, np.array([]), None, state
 
         if SHOW_GRAPH:
             fig = plt.figure()
