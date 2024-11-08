@@ -66,8 +66,13 @@ class ControlIK:
         self.emergency_stop = False
         self.init = True
 
+        self.logger = logger
         if is_dvt:
             self.singularity_offset = 0.03
+            if self.logger is not None:
+                self.logger.info("DVT mode activated", throttle_duration_sec=0.1)
+            else:
+                print("DVT mode activated")
         else:
             self.singularity_offset = -1.01
         self.singularity_limit_coeff = 1.0
@@ -77,7 +82,6 @@ class ControlIK:
         self.previous_sol: Dict[str, npt.NDArray[np.float64]] = {}
         self.previous_pose: Dict[str, npt.NDArray[np.float64]] = {}
         self.orbita3D_max_angle = np.deg2rad(42.5)
-        self.logger = logger
 
         if urdf_path == "" and urdf == "":
             raise ValueError("No URDF provided")
@@ -190,7 +194,10 @@ class ControlIK:
         # self.previous_sol[name] = np.array(self.previous_sol[name])
         # print(f"goal_pose: {M}")
         if self.emergency_stop:
-            self.logger.info(f"{name} Emergency state: {self.emergency_state}", throttle_duration_sec=1.0)
+            if self.logger is not None:
+                self.logger.info(f"{name} Emergency state: {self.emergency_state}", throttle_duration_sec=1.0)
+            else:
+                print(f"{name} Emergency state: {self.emergency_state}")
             return self.previous_sol[name], False, self.emergency_state
 
         if np.allclose(M[:3, :3], np.eye(3)):
@@ -289,7 +296,8 @@ class ControlIK:
 
         self.init = False
 
-        self.previous_sol[name] = copy.deepcopy(ik_joints)
+        if not self.emergency_stop:
+            self.previous_sol[name] = copy.deepcopy(ik_joints)
 
         # self.logger.info(f"{name} Joints: {ik_joints}", throttle_duration_sec=0.)
         # TODO reactivate a smoothing technique

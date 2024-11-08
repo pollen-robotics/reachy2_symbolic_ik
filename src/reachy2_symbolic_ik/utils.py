@@ -598,11 +598,11 @@ def continuity_check(
         if abs(angle_diff(joints[i], previous_joints[i])) > max_angulare_change:
             discontinuity = True
     if discontinuity:
-        joints = np.array(previous_joints)
         emergency_state += (
             f"\n EMERGENCY STOP: joints are not continuous \n previous_joints: {previous_joints} \n joints: {joints}"
         )
         emergency_stop = True
+        joints = np.array(previous_joints)
     return joints, emergency_stop, emergency_state
 
 
