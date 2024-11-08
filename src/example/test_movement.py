@@ -60,17 +60,19 @@ def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> No
     #     # print(f"pose diff {pose_diff}")
     #     for joint, goal_pos in zip(reachy.l_arm.joints.values(), ik):
     #         joint.goal_position = goal_pos
-    reachy.send_goal_positions()
+    # reachy.send_goal_positions()
 
 
 def make_line(
-    reachy: ReachySDK, start_pose: npt.NDArray[np.float64], end_pose: npt.NDArray[np.float64], nbr_points: int = 100
+    reachy: ReachySDK, start_pose: npt.NDArray[np.float64], end_pose: npt.NDArray[np.float64], duration: float = 5.0
 ) -> None:
     start_position = start_pose[0]
     end_position = end_pose[0]
     start_orientation = start_pose[1]
     end_orientation = end_pose[1]
 
+    control_frequency = 100.0
+    nbr_points = int(duration * control_frequency)
     # Left arm
     l_start_position = np.array([start_position[0], -start_position[1], start_position[2]])
     l_end_position = np.array([end_position[0], -end_position[1], end_position[2]])
@@ -78,6 +80,7 @@ def make_line(
     l_end_orientation = np.array([-end_orientation[0], end_orientation[1], -end_orientation[2]])
 
     for i in range(nbr_points):
+        t = time.time()
         position = start_position + (end_position - start_position) * (i / nbr_points)
         orientation = start_orientation + (end_orientation - start_orientation) * (i / nbr_points)
         rotation_matrix = R.from_euler("xyz", orientation).as_matrix()
@@ -90,7 +93,8 @@ def make_line(
         l_pose = make_homogenous_matrix_from_rotation_matrix(l_position, l_rotation_matrix)
         go_to_pose(reachy, l_pose, "l_arm")
 
-        time.sleep(0.05)
+        time.sleep(max(1.0 / control_frequency - (time.time() - t), 0.0))
+        # print((time.time() - t)*1000)
 
 
 def make_circle(
@@ -98,16 +102,23 @@ def make_circle(
     center: npt.NDArray[np.float64],
     orientation: npt.NDArray[np.float64],
     radius: float,
-    nbr_points: int = 100,
+    duration: float = 10.0,
     number_of_turns: int = 3,
 ) -> None:
+    control_frequency = 100.0
+    nbr_points = int(duration * control_frequency)
+
     Y_r = center[1] + radius * np.cos(np.linspace(0, 2 * np.pi, nbr_points))
     Z = center[2] + radius * np.sin(np.linspace(0, 2 * np.pi, nbr_points))
     X = center[0] * np.ones(nbr_points)
-    Y_l = -center[1] + radius * np.cos(np.linspace(0, 2 * np.pi, nbr_points))
+    Y_l = -center[1] - radius * np.cos(np.linspace(0, 2 * np.pi, nbr_points))
+
+    make_line(reachy, np.array([[0.0001, -0.2, -0.6599], [0, 0, 0]]), np.array([[X[0], Y_r[0], Z[0]], orientation]), 5.0)
+    time.sleep(2.0)
 
     for k in range(number_of_turns):
         for i in range(nbr_points):
+            t = time.time()
             position = np.array([X[i], Y_r[i], Z[i]])
             rotation_matrix = R.from_euler("xyz", orientation).as_matrix()
             pose = make_homogenous_matrix_from_rotation_matrix(position, rotation_matrix)
@@ -117,8 +128,8 @@ def make_circle(
             l_rotation_matrix = R.from_euler("xyz", orientation).as_matrix()
             l_pose = make_homogenous_matrix_from_rotation_matrix(l_position, l_rotation_matrix)
             go_to_pose(reachy, l_pose, "l_arm")
-
-            time.sleep(0.01)
+            time.sleep(max(1.0 / control_frequency - (time.time() - t), 0.0))
+            # print((time.time() - t)*1000)
 
 
 def make_rectangle(
@@ -127,16 +138,18 @@ def make_rectangle(
     B: npt.NDArray[np.float64],
     C: npt.NDArray[np.float64],
     D: npt.NDArray[np.float64],
-    nbr_points: int = 20,
+    duration: float = 3.0,
     number_of_turns: int = 3,
 ) -> None:
     orientation = [0, -np.pi / 2, 0]
 
+    make_line(reachy, np.array([[0.0001, -0.2, -0.6599], [0, 0, 0]]), np.array([A, orientation]), 5.0)
+
     for i in range(number_of_turns):
-        make_line(reachy, np.array([A, orientation]), np.array([B, orientation]), nbr_points)
-        make_line(reachy, np.array([B, orientation]), np.array([C, orientation]), nbr_points)
-        make_line(reachy, np.array([C, orientation]), np.array([D, orientation]), nbr_points)
-        make_line(reachy, np.array([D, orientation]), np.array([A, orientation]), nbr_points)
+        make_line(reachy, np.array([A, orientation]), np.array([B, orientation]), duration)
+        make_line(reachy, np.array([B, orientation]), np.array([C, orientation]), duration)
+        make_line(reachy, np.array([C, orientation]), np.array([D, orientation]), duration)
+        make_line(reachy, np.array([D, orientation]), np.array([A, orientation]), duration)
 
 
 def turn_hand(reachy: ReachySDK, position: npt.NDArray[np.float64], orientation_init: npt.NDArray[np.float64]) -> None:
@@ -165,7 +178,16 @@ def main_test() -> None:
 
     reachy.turn_on()
 
+    ik = [0.0, 15.0, -10.0, 0.0, 0.0, 0.0, 0.0]
+    reachy.r_arm.goto(ik, 3.0, degrees=True, interpolation_mode="minimum_jerk")
+    ik = [0.0, -15.0, 10.0, 0.0, 0.0, 0.0, 0.0]
+    reachy.l_arm.goto(ik, 3.0, degrees=True, interpolation_mode="minimum_jerk")
+    time.sleep(5.0)
+
     print("Making a line")
+    start_pose = np.array([[0.0001, -0.2, -0.6599], [0,0, 0]])
+    end_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
+    make_line(reachy, start_pose, end_pose)
     start_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
     end_pose = np.array([[0.38, -0.2, 0.28], [0, -np.pi, 0]])
     make_line(reachy, start_pose, end_pose)
@@ -203,13 +225,16 @@ def main_test() -> None:
     start_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
     end_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
     make_line(reachy, start_pose, end_pose)
+    start_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
+    end_pose = np.array([[0.0001, -0.2, -0.6599], [0,0, 0]])
+    make_line(reachy, start_pose, end_pose)
 
     # start_pose = np.array([[0.18, -0.4, -0.30], [0, 0, np.pi / 2]])
     # end_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
     # make_line(reachy, start_pose, end_pose)
     # start_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
 
-    time.sleep(10.0)
+    time.sleep(5.0)
 
     # print("Turning the hand")
     # position = np.array([0.001, -0.2, -0.6599])
@@ -219,6 +244,12 @@ def main_test() -> None:
     # time.sleep(1.0)
 
     print("Making a circle")
+    ik = [0.0, 15.0, -10.0, 0.0, 0.0, 0.0, 0.0]
+    reachy.r_arm.goto(ik, 3.0, degrees=True, interpolation_mode="minimum_jerk")
+    ik = [0.0, -15.0, 10.0, 0.0, 0.0, 0.0, 0.0]
+    reachy.l_arm.goto(ik, 3.0, degrees=True, interpolation_mode="minimum_jerk")
+    time.sleep(3.0)
+
     center = np.array([0.4, -0.4, -0.2])
     orientation = np.array([0, -np.pi / 2, 0])
     radius = 0.15
@@ -227,6 +258,12 @@ def main_test() -> None:
     time.sleep(1.0)
 
     print("Making a rectangle")
+    ik = [0.0, 15.0, -10.0, 0.0, 0.0, 0.0, 0.0]
+    reachy.r_arm.goto(ik, 3.0, degrees=True, interpolation_mode="minimum_jerk")
+    ik = [0.0, -15.0, 10.0, 0.0, 0.0, 0.0, 0.0]
+    reachy.l_arm.goto(ik, 3.0, degrees=True, interpolation_mode="minimum_jerk")
+    time.sleep(3.0)
+
     A = np.array([0.4, -0.5, -0.3])
     B = np.array([0.4, -0.5, -0.1])
     C = np.array([0.4, -0.2, -0.1])
@@ -234,6 +271,12 @@ def main_test() -> None:
     make_rectangle(reachy, A, B, C, D)
 
     time.sleep(1.0)
+
+    ik = [0.0, 15.0, -10.0, 0.0, 0.0, 0.0, 0.0]
+    reachy.r_arm.goto(ik, 3.0, degrees=True, interpolation_mode="minimum_jerk")
+    ik = [0.0, -15.0, 10.0, 0.0, 0.0, 0.0, 0.0]
+    reachy.l_arm.goto(ik, 3.0, degrees=True, interpolation_mode="minimum_jerk")
+    time.sleep(3.0)
 
     print("Finished testing, disconnecting from Reachy...")
     time.sleep(0.5)
