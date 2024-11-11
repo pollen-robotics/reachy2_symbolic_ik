@@ -655,7 +655,6 @@
   <!-- <!-\- Orbita3d config -\-> -->
   <!-- <xacro:arg name="orbita3d_wrist_config" default="$(find
     orbita3d_controller)/config/fake.yaml"/> -->
-  <!-- 10 degrees -->
   <!-- ARM PARAMETERS -->
   <link name="r_shoulder_base_link">
     <inertial>
@@ -666,7 +665,7 @@
   </link>
   <joint name="r_shoulder_base_joint" type="fixed">
     <!-- <origin xyz="${arm_offset_x} ${arm_offset_y*reflect} ${arm_offset_z}" rpy="${(1.5707963267948966+(virtual_shoulder_roll_offset - arm_offset_roll))*reflect} 0 ${arm_offset_yaw*reflect}" /> -->
-    <origin rpy="1.7453292519943295 0 0.2617993877991494" xyz="0.0 -0.2 0.0"/>
+    <origin rpy="1.3089969389957472 0 0.17453292519943295" xyz="0.0 -0.2 0.0"/>
     <parent link="torso"/>
     <child link="r_shoulder_base_link"/>
   </joint>
@@ -1666,7 +1665,6 @@
   <!-- <!-\- Orbita3d config -\-> -->
   <!-- <xacro:arg name="orbita3d_wrist_config" default="$(find
     orbita3d_controller)/config/fake.yaml"/> -->
-  <!-- 10 degrees -->
   <!-- ARM PARAMETERS -->
   <link name="l_shoulder_base_link">
     <inertial>
@@ -1677,7 +1675,7 @@
   </link>
   <joint name="l_shoulder_base_joint" type="fixed">
     <!-- <origin xyz="${arm_offset_x} ${arm_offset_y*reflect} ${arm_offset_z}" rpy="${(1.5707963267948966+(virtual_shoulder_roll_offset - arm_offset_roll))*reflect} 0 ${arm_offset_yaw*reflect}" /> -->
-    <origin rpy="-1.7453292519943295 0 -0.2617993877991494" xyz="0.0 0.2 0.0"/>
+    <origin rpy="-1.3089969389957472 0 -0.17453292519943295" xyz="0.0 0.2 0.0"/>
     <parent link="torso"/>
     <child link="l_shoulder_base_link"/>
   </joint>
