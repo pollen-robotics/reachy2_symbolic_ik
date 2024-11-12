@@ -167,7 +167,7 @@ class ControlIK:
         current_joints: list[float] = [],
         constrained_mode: str = "unconstrained",
         current_pose: npt.NDArray[np.float64] = np.array([]),
-        d_theta_max: float = 0.01,
+        d_theta_max: float = 0.02,
         preferred_theta: float = -4 * np.pi / 6,
     ) -> Tuple[npt.NDArray[np.float64], bool, str]:
         """

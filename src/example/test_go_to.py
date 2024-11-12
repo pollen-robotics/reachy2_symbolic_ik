@@ -116,7 +116,7 @@ def go_to_pose(
     constrained_mode: str = "unconstrained",
     verbose: bool = True,
 ) -> None:
-    controle_ik = ControlIK(urdf_path="../config_files/reachy2.urdf")
+    controle_ik = ControlIK(urdf_path="../config_files/reachy2.urdf", is_dvt=True)
     if arm == "r_arm":
         ik, is_reachable, state = controle_ik.symbolic_inverse_kinematics(
             "r_arm", pose, controle_type, constrained_mode=constrained_mode
@@ -170,6 +170,7 @@ def test_poses(
         [
             # reachable poses
             [[0.0001, -0.2, -0.6599], [0, 0, 0]],
+            [[0.0001, -0.2, 0.6599], [0, 0, 0]],
             [[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]],
             [[0.66, -0.2, -0.0], [0, -np.pi / 2, 0]],
             # reachable poses with unconstrained mode
