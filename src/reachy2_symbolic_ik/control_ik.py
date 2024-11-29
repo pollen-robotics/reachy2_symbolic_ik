@@ -158,6 +158,7 @@ class ControlIK:
             )
             self.previous_theta[arm] = best_prev_theta
             self.last_call_t[arm] = 0.0
+            self.max_required_accelerations = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
     def symbolic_inverse_kinematics(  # noqa: C901
         self,
@@ -169,6 +170,9 @@ class ControlIK:
         current_pose: npt.NDArray[np.float64] = np.array([]),
         d_theta_max: float = 0.01,
         preferred_theta: float = -4 * np.pi / 6,
+        current_speeds: list[float] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        dt: float = 1/120.0,
+        max_acceleration: float = 5000.0,
     ) -> Tuple[npt.NDArray[np.float64], bool, str]:
         """
         Compute the inverse kinematics of the goal pose M.
@@ -253,6 +257,34 @@ class ControlIK:
         else:
             raise ValueError(f"Unknown type {control_type}")
 
+
+        # raw_vel = (np.array(sol) - current_position)
+        
+        # Calculate the desired speed to reach the goal
+        desired_speed = (np.array(ik_joints) - np.array(current_joints)) / dt
+
+        # Calculate the acceleration needed to achieve the desired speed
+        required_acceleration = (desired_speed - np.array(current_speeds)) / dt
+        
+        # For each of the 7 joints in required_acceleration, calculate the maximum acceleration since beginning of the movement. Reset every minute
+        if time.time()%60 < 0.1:
+            self.max_required_accelerations = np.zeros(7)
+            self.logger.info(f"Resetting max_required_accelerations")
+        self.max_required_accelerations = np.maximum(self.max_required_accelerations, np.abs(required_acceleration))
+        # max during daniel san [1629.39793168 1258.30596466 1539.46530992  548.3308635  4689.84828642 5511.35703132 3911.22672567]
+        
+        
+        self.logger.info(f"{name} required_acceleration: {required_acceleration}")
+        self.logger.info(f"{name} self.max_required_accelerations: {self.max_required_accelerations}")
+
+        # # Limit the acceleration to the maximum allowed acceleration
+        limited_acceleration = np.clip(required_acceleration, -max_acceleration, max_acceleration)
+
+        # # Update the speed based on the limited acceleration
+        goal_speed = current_speeds + limited_acceleration * dt 
+        
+        ik_joints = np.array(current_joints) + goal_speed * dt
+        
         # Test wrist joint limits
         ik_joints_raw = ik_joints
         ik_joints = limit_orbita3d_joints_wrist(ik_joints_raw, self.orbita3D_max_angle)
