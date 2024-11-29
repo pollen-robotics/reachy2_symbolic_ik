@@ -261,8 +261,8 @@ class ControlIK:
         # raw_vel = (np.array(sol) - current_position)
         
         # Calculate the desired speed to reach the goal
-        desired_speed = (np.array(ik_joints) - np.array(current_joints)) / dt
-
+        desired_speed = (np.array(ik_joints) - np.array(current_joints)) / dt # Hum, this is the average speed needed to reach the goal in dt seconds. But with a constant acceleration, the speed needs to be higher at the end of the movement.
+        # TODO Fix this.
         # Calculate the acceleration needed to achieve the desired speed
         required_acceleration = (desired_speed - np.array(current_speeds)) / dt
         
@@ -274,11 +274,16 @@ class ControlIK:
         # max during daniel san [1629.39793168 1258.30596466 1539.46530992  548.3308635  4689.84828642 5511.35703132 3911.22672567]
         
         
-        self.logger.info(f"{name} required_acceleration: {required_acceleration}")
-        self.logger.info(f"{name} self.max_required_accelerations: {self.max_required_accelerations}")
+        # self.logger.info(f"{name} required_acceleration: {required_acceleration}")
+        
+        # self.logger.info(f"{name} self.max_required_accelerations: {self.max_required_accelerations}")
 
         # # Limit the acceleration to the maximum allowed acceleration
         limited_acceleration = np.clip(required_acceleration, -max_acceleration, max_acceleration)
+        percent_limited_per_joint = 100*np.abs(limited_acceleration - required_acceleration) / np.abs(required_acceleration)
+        formatted_percent_limited_per_joint = np.array([float(f'{x:.0f}') for x in percent_limited_per_joint])
+
+        self.logger.info(f"{name} percent_limited_per_joint: {formatted_percent_limited_per_joint}")
 
         # # Update the speed based on the limited acceleration
         goal_speed = current_speeds + limited_acceleration * dt 
