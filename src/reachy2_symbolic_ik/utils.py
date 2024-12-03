@@ -221,7 +221,7 @@ def get_best_continuous_theta2(
     previous_theta: float,
     interval: npt.NDArray[np.float64],
     get_elbow_position: Any,
-    nb_search_points: int,
+    angle_granularity: int,
     d_theta_max: float,
     preferred_theta: float,
     arm: str,
@@ -237,7 +237,7 @@ def get_best_continuous_theta2(
         previous_theta,
         interval,
         get_elbow_position,
-        nb_search_points,
+        angle_granularity,
         preferred_theta,
         arm,
         singularity_offset,
@@ -335,7 +335,8 @@ def get_best_discrete_theta(
     previous_theta: float,
     interval: npt.NDArray[np.float64],
     get_elbow_position: Any,
-    nb_search_points: int,
+    # nb_search_points: int,
+    angle_granularity: float,
     preferred_theta: float,
     arm: str,
     singularity_offset: float,
@@ -362,16 +363,24 @@ def get_best_discrete_theta(
             best_distance = 0
             state += "\n" + "preferred_theta worked!"
             return True, best_theta, state
+        
+    # nb_search_points = int((interval[1] - interval[0]) / angle_granularity)
 
     if (abs(abs(interval[0]) + abs(interval[1]) - 2 * np.pi)) < epsilon:
         # The entire circle is possible, sampling with a vertical symmetry (instead of horizontal)
         # so that the results are symetric for both arms
+        nb_search_points = int(2 * np.pi / angle_granularity)
+        # print(f"1 - nb_search_points = {nb_search_points}")
         theta_points = np.linspace(np.pi / 2, np.pi / 2 + 2 * np.pi, nb_search_points)
     else:
         # Sampling the interval
         if interval[0] < interval[1]:
+            nb_search_points = int((interval[1] - interval[0]) / angle_granularity)
+            # print(f"2 - nb_search_points = {nb_search_points}")
             theta_points = np.linspace(interval[0], interval[1], nb_search_points)
         else:
+            nb_search_points = int((interval[1] - interval[0] + 2 * np.pi) / angle_granularity)
+            # print(f"3 - nb_search_points = {nb_search_points}")
             theta_points = np.linspace(interval[0], interval[1] + 2 * np.pi, nb_search_points)
 
     state += "\n" + f"theta_points: {theta_points}"

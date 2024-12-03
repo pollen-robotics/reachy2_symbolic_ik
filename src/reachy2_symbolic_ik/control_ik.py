@@ -61,7 +61,7 @@ class ControlIK:
         self.last_call_t = {}
         self.call_timeout = 0.2
 
-        self.nb_search_points = 20
+        self.angle_granularity = 0.3
         self.emergency_state = ""
         self.emergency_stop = False
         self.init = True
@@ -193,6 +193,7 @@ class ControlIK:
         # self.logger.info(f"{name} emergency_stop {self.emergency_stop}", throttle_duration_sec=0.)
         # self.previous_sol[name] = np.array(self.previous_sol[name])
         # print(f"goal_pose: {M}")
+        t1 = time.time()
         if self.emergency_stop:
             if self.logger is not None:
                 self.logger.info(f"{name} Emergency state: {self.emergency_state}", throttle_duration_sec=1.0)
@@ -267,14 +268,14 @@ class ControlIK:
 
         # Detect multiturns
         ik_joints_allowed = allow_multiturn(ik_joints, self.previous_sol[name], name)
-        if not np.allclose(ik_joints_allowed, ik_joints):
-            if self.logger is not None:
-                self.logger.info(
-                    f"{name} Multiturn joint limit reached. \nRaw joints: {ik_joints}\nLimited joints: {ik_joints_allowed}",
-                    throttle_duration_sec=0.1,
-                )
-            elif DEBUG:
-                print(f"{name} Multiturn joint limit reached. \nRaw joints: {ik_joints}\nLimited joints: {ik_joints_allowed}")
+        # if not np.allclose(ik_joints_allowed, ik_joints):
+            # if self.logger is not None:
+            #     self.logger.info(
+            #         f"{name} Multiturn joint limit reached. \nRaw joints: {ik_joints}\nLimited joints: {ik_joints_allowed}",
+            #         throttle_duration_sec=0.1,
+            #     )
+            # elif DEBUG:
+            #     print(f"{name} Multiturn joint limit reached. \nRaw joints: {ik_joints}\nLimited joints: {ik_joints_allowed}")
         ik_joints = ik_joints_allowed
 
         ik_joints, emergency_stop, self.emergency_state = multiturn_safety_check(
@@ -306,6 +307,11 @@ class ControlIK:
             print(f"{name} ik={ik_joints}")
 
         self.previous_pose[name] = M
+
+        # if name.startswith("l"):
+        #     self.logger.info(f" {name} symbolic_inverse_kinematics time: {time.time() - t1}", throttle_duration_sec=0.3)
+        # else: # r_arm
+        #     self.logger.info(f" {name} symbolic_inverse_kinematics time: {time.time() - t1}", throttle_duration_sec=0.3)
 
         return ik_joints, is_reachable, state
 
@@ -383,11 +389,12 @@ class ControlIK:
             #     self.singularity_limit_coeff,
             #     self.symbolic_ik_solver[name].elbow_singularity_position,
             # )
+            t2 = time.time()
             is_reachable, theta, state_theta = get_best_continuous_theta2(
                 self.previous_theta[name],
                 interval,
                 self.symbolic_ik_solver[name].get_elbow_position,
-                10,
+                0.6,
                 d_theta_max,
                 self.preferred_theta[name],
                 self.symbolic_ik_solver[name].arm,
@@ -395,6 +402,8 @@ class ControlIK:
                 self.singularity_limit_coeff,
                 self.symbolic_ik_solver[name].elbow_singularity_position,
             )
+            # print(f" {name} get_best_continuous_theta2 time: {time.time() - t2}")
+            # self.logger.info(f" {name} get_best_continuous_theta2 time: {time.time() - t2}", throttle_duration_sec=0.3)
             if not is_reachable:
                 state = "limited by shoulder"
             theta, state_interval = limit_theta_to_interval(theta, self.previous_theta[name], interval_limit)
@@ -462,7 +471,7 @@ class ControlIK:
                 self.previous_theta[name],
                 interval,
                 self.symbolic_ik_solver[name].get_elbow_position,
-                self.nb_search_points,
+                self.angle_granularity,
                 preferred_theta,
                 self.symbolic_ik_solver[name].arm,
                 self.singularity_offset,
