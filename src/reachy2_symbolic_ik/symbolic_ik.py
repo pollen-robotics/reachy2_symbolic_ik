@@ -28,7 +28,7 @@ class SymbolicIK:
         elbow_limit: int = 127,
         wrist_limit: np.float64 = np.float64(42.5),
         projection_margin: float = 1e-8,
-        backward_limit: float = 1e-10,
+        backward_limit: float = 0.02,
         normal_vector_margin: float = 1e-7,
         singularity_offset: float = 0.03,
         singularity_limit_coeff: float = 1.0,
@@ -82,6 +82,12 @@ class SymbolicIK:
 
         self.goal_pose = goal_pose
         self.wrist_position = self.get_wrist_position(goal_pose)
+        # experimental
+        if self.wrist_position[0] < self.backward_limit:
+            diff = self.backward_limit - self.wrist_position[0]
+            goal_pose = np.array([goal_pose[0] + np.array([diff, 0, 0]), goal_pose[1]])
+            self.wrist_position = self.get_wrist_position(goal_pose)
+            self.goal_pose = goal_pose
 
         # Check if the wrist is in the arm range and reduce the goal pose if not
         d_shoulder_wrist = np.linalg.norm(self.wrist_position - self.shoulder_position)
@@ -90,6 +96,10 @@ class SymbolicIK:
                 goal_pose, d_shoulder_wrist, self.upper_arm_size + self.forearm_size
             )
 
+        if d_shoulder_wrist < 0.25:
+            goal_pose = self.reduce_goal_pose_no_limits(goal_pose, d_shoulder_wrist, np.float64(0.25))
+            self.wrist_position = self.get_wrist_position(goal_pose)
+            self.goal_pose = goal_pose
         # Get the intersection circle -> with the previous condition we should always find one
         intersection_circle = self.get_intersection_circle(goal_pose)
         if intersection_circle is not None:
@@ -101,6 +111,7 @@ class SymbolicIK:
     def is_reachable(  # noqa C901
         self, goal_pose: npt.NDArray[np.float64]
     ) -> Tuple[bool, npt.NDArray[np.float64], Optional[Any], str]:
+        # print(f" goal pose debut : {goal_pose}")
         """Check if the goal pose is reachable taking into account the limits of the wrist and the elbow"""
         state = ""
         # Change goal pose if goal pose is out of reach or with x <= 0
@@ -122,6 +133,16 @@ class SymbolicIK:
         self.goal_pose = goal_pose
         self.wrist_position = self.get_wrist_position(goal_pose)
 
+        if self.wrist_position[0] < self.backward_limit:
+            diff = self.backward_limit - self.wrist_position[0]
+            # print(f'wrists position: {self.wrist_position}')
+            goal_pose = np.array([goal_pose[0] + np.array([diff, 0, 0]), goal_pose[1]])
+            self.wrist_position = self.wrist_position + np.array([diff, 0, 0])
+            # print("wrist position: ", self.wrist_position)
+
+            self.goal_pose = goal_pose
+        # print(f" foal gose : {goal_pose}")
+
         # Test if the wrist is in the arm range
         d_shoulder_wrist = np.linalg.norm(self.wrist_position - self.shoulder_position)
         if d_shoulder_wrist > self.upper_arm_size + self.forearm_size:
@@ -130,12 +151,20 @@ class SymbolicIK:
             return False, np.array([]), None, state
 
         # Test if the elbow is too much bent
-        to_asin1 = d_shoulder_wrist / (2 * self.upper_arm_size)
-        to_asin2 = d_shoulder_wrist / (2 * self.forearm_size)
-        alpha = np.arcsin(to_asin1) + np.arcsin(to_asin2) - np.pi
-        if alpha < np.radians(-self.elbow_limit) or alpha > np.radians(self.elbow_limit):
-            state = "limited by elbow"
-            return False, np.array([]), None, state
+
+        # experimental
+        if d_shoulder_wrist < 0.25:
+            goal_pose = self.reduce_goal_pose_no_limits(goal_pose, d_shoulder_wrist, np.float64(0.25))
+            self.wrist_position = self.get_wrist_position(goal_pose)
+            self.goal_pose = goal_pose
+
+        # print(f" goal pose __: {goal_pose}")
+        # to_asin1 = d_shoulder_wrist / (2 * self.upper_arm_size)
+        # to_asin2 = d_shoulder_wrist / (2 * self.forearm_size)
+        # alpha = np.arcsin(to_asin1) + np.arcsin(to_asin2) - np.pi
+        # if alpha < np.radians(-self.elbow_limit) or alpha > np.radians(self.elbow_limit):
+        #     state = "limited by elbow"
+        #     return False, np.array([]), None, state
 
         intersection_circle = self.get_intersection_circle(goal_pose)
         limitation_wrist_circle = self.get_limitation_wrist_circle(goal_pose)
@@ -306,6 +335,21 @@ class SymbolicIK:
         goal_position = pose[0] + diff_wrist
         self.wrist_position = new_wrist_position
         return np.array([goal_position, pose[1]])
+
+    # def reduce_goal_pose_no_limits_min(
+    #     self, pose: npt.NDArray[np.float64], d_shoulder_wrist: np.float64, d_shoulder_wrist_min: np.float64
+    # ) -> npt.NDArray[np.float64]:
+    #     """Reduce the goal pose if the wrist is out of reach"""
+    #     # Make projection of the wrist position on the reachable sphere of the wrist
+    #     # and apply the same projection to the goal position
+    #     direction = self.wrist_position - self.shoulder_position
+    #     direction = direction / (np.linalg.norm(d_shoulder_wrist) + self.projection_margin)
+    #     new_wrist_position = self.shoulder_position + direction * d_shoulder_wrist_min
+    #     diff_wrist = new_wrist_position - self.wrist_position
+    #     goal_position = pose[0] + diff_wrist
+    #     self.wrist_position = new_wrist_position
+    #     # print(f"new_wrist_position: {new_wrist_position}")
+    #     return np.array([goal_position, pose[1]])
 
     def get_intersection_circle(
         self, goal_pose: npt.NDArray[np.float64]
@@ -621,6 +665,7 @@ class SymbolicIK:
 
         diff = new_elbow_position - elbow_position
         new_goal_position = goal_pose[0] + diff
+        # print(f"new_goal_position: {new_goal_position}")
 
         return np.array([new_goal_position, goal_pose[1]]), new_elbow_position
 
@@ -644,6 +689,7 @@ class SymbolicIK:
         The previous joints is used to avoid the singularity of the elbow and the shoulder
         Return the joints cast between -pi and pi
         """
+        # print(f"goal pose: {self.goal_pose}")
         # Get the position of the elbow from theta
         self.elbow_position = self.get_elbow_position(theta)
 
@@ -656,7 +702,8 @@ class SymbolicIK:
             self.goal_pose, self.elbow_position = self.make_elbow_projection(
                 self.goal_pose, self.elbow_position[:3], self.singularity_limit_coeff
             )
-
+            # print("_____elbow projection______")
+            self.wrist_position = self.get_wrist_position(self.goal_pose)
         # print(f"post elbow projection: {self.goal_pose}")
         goal_orientation = self.goal_pose[1]
 
@@ -789,10 +836,16 @@ class SymbolicIK:
         wrist_yaw = -math.atan2(P_tip_point[1], P_tip_point[2])
 
         joints = np.array([shoulder_pitch, shoulder_roll, elbow_yaw, elbow_pitch, wrist_roll, -wrist_pitch, -wrist_yaw])
+        # if self.arm == "r_arm":
+        #     print(f"joints: {list(joints)}")
         elbow_limit = np.radians(self.elbow_limit)
         if joints[3] > elbow_limit:
+            # if self.arm == "r_arm":
+            #     print(f"joints: {joints}")
             joints[3] = elbow_limit
         if joints[3] < -elbow_limit:
+            # if self.arm == "r_arm":
+            #     print(f"joints: {joints}")
             joints[3] = -elbow_limit
 
         return joints, self.elbow_position
