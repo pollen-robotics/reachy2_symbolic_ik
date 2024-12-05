@@ -569,13 +569,16 @@ def multiturn_safety_check(
 
 
 def continuity_check(
-    joints: npt.NDArray[np.float64], previous_joints: npt.NDArray[np.float64], max_angulare_change: float, emergency_state: str
+    joints: npt.NDArray[np.float64],
+    previous_joints: npt.NDArray[np.float64],
+    max_angulare_change: list[float],
+    emergency_state: str,
 ) -> Tuple[npt.NDArray[np.float64], bool, str]:
     """Check the continuity of the joints"""
     discontinuity = False
     emergency_stop = False
     for i in range(len(joints)):
-        if abs(angle_diff(joints[i], previous_joints[i])) > max_angulare_change:
+        if abs(angle_diff(joints[i], previous_joints[i])) > max_angulare_change[i]:
             discontinuity = True
     if discontinuity:
         emergency_state += (
