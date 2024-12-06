@@ -63,12 +63,16 @@ class SymbolicIK:
                 self.max_arm_length = self.upper_arm_size + self.forearm_size + self.gripper_size
 
         self.torso_pose = np.array([0.0, 0.0, 0.0])
-        
+
         self.projection_margin = projection_margin
         self.normal_vector_margin = normal_vector_margin
         self.backward_limit = backward_limit
         self.elbow_limit = elbow_limit
-        self.shoulder_wrist_min_distance = np.sqrt(self.upper_arm_size**2 + self.forearm_size**2 - 2 * self.upper_arm_size * self.forearm_size * np.cos(np.radians(180- self.elbow_limit)))
+        self.shoulder_wrist_min_distance = np.sqrt(
+            self.upper_arm_size**2
+            + self.forearm_size**2
+            - 2 * self.upper_arm_size * self.forearm_size * np.cos(np.radians(180 - self.elbow_limit))
+        )
         self.wrist_limit = wrist_limit
         self.singularity_offset = singularity_offset
         self.singularity_limit_coeff = singularity_limit_coeff
@@ -99,7 +103,9 @@ class SymbolicIK:
             )
 
         if d_shoulder_wrist < self.shoulder_wrist_min_distance:
-            goal_pose = self.reduce_goal_pose_no_limits(goal_pose, d_shoulder_wrist, np.float64(self.shoulder_wrist_min_distance))
+            goal_pose = self.reduce_goal_pose_no_limits(
+                goal_pose, d_shoulder_wrist, np.float64(self.shoulder_wrist_min_distance)
+            )
             self.wrist_position = self.get_wrist_position(goal_pose)
             self.goal_pose = goal_pose
         # Get the intersection circle -> with the previous condition we should always find one
@@ -156,7 +162,9 @@ class SymbolicIK:
 
         # experimental
         if d_shoulder_wrist < self.shoulder_wrist_min_distance:
-            goal_pose = self.reduce_goal_pose_no_limits(goal_pose, d_shoulder_wrist, np.float64(self.shoulder_wrist_min_distance))
+            goal_pose = self.reduce_goal_pose_no_limits(
+                goal_pose, d_shoulder_wrist, np.float64(self.shoulder_wrist_min_distance)
+            )
             self.wrist_position = self.get_wrist_position(goal_pose)
             self.goal_pose = goal_pose
 
