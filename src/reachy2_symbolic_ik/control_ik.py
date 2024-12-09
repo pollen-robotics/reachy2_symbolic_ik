@@ -193,6 +193,15 @@ class ControlIK:
         # self.logger.info(f"{name} emergency_stop {self.emergency_stop}", throttle_duration_sec=0.)
         # self.previous_sol[name] = np.array(self.previous_sol[name])
         # print(f"goal_pose: {M}")
+        if control_type == "unfreeze":
+            self.emergency_stop = False
+            self.emergency_state = ""
+            self.init = True
+            if self.logger is not None:
+                self.logger.info(f"{name} Unfreeze", throttle_duration_sec=1.0)
+            else:
+                print(f"{name} Unfreeze")
+
         if self.emergency_stop:
             if self.logger is not None:
                 self.logger.info(f"{name} Emergency state: {self.emergency_state}", throttle_duration_sec=1.0)
@@ -242,7 +251,7 @@ class ControlIK:
             # interval_limit = [-np.pi, np.pi/2]
             preferred_theta = -np.pi - preferred_theta
 
-        if control_type == "continuous":
+        if control_type == "continuous" or control_type == "unfreeze":
             ik_joints, is_reachable, state = self.symbolic_inverse_kinematics_continuous(
                 name, goal_pose, interval_limit, current_joints, current_pose, preferred_theta, d_theta_max
             )
@@ -290,7 +299,7 @@ class ControlIK:
             if not self.init:
                 # self.logger.info(f"{name} Previous joints: {self.previous_sol[name]}, Current joints: {ik_joints}")
                 ik_joints, emergency_stop, self.emergency_state = continuity_check(
-                    ik_joints, self.previous_sol[name], 2.0, self.emergency_state
+                    ik_joints, self.previous_sol[name], [0.5, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0], self.emergency_state
                 )
                 self.emergency_stop = self.emergency_stop or emergency_stop
 
@@ -306,6 +315,7 @@ class ControlIK:
             print(f"{name} ik={ik_joints}")
 
         self.previous_pose[name] = M
+        # self.logger.info(f" ik_joints: {ik_joints}", throttle_duration_sec=0.1)
 
         return ik_joints, is_reachable, state
 
