@@ -184,9 +184,9 @@ def mobile_base_test(reachy: ReachySDK) -> None:
         time.sleep(2)
         reachy.mobile_base.translate_by(0.0, -0.30)
         time.sleep(2)
-        reachy.mobile_base.rotate_by(np.pi / 2)
+        reachy.mobile_base.rotate_by(90)
         time.sleep(2)
-        reachy.mobile_base.rotate_by(-np.pi / 2)
+        reachy.mobile_base.rotate_by(-90)
         time.sleep(2)
 
 
