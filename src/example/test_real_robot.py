@@ -14,10 +14,10 @@ def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> No
     pose = make_homogenous_matrix_from_rotation_matrix(pose[0], R.from_euler("xyz", pose[1]).as_matrix())
     if arm == "r_arm":
         ik = reachy.r_arm.inverse_kinematics(pose)
-        reachy.r_arm.goto_joints(ik, 4.0, degrees=True, interpolation_mode="minimum_jerk")
+        reachy.r_arm.goto(ik, 4.0, degrees=True, interpolation_mode="minimum_jerk")
     elif arm == "l_arm":
         ik = reachy.l_arm.inverse_kinematics(pose)
-        reachy.l_arm.goto_joints(ik, 4.0, degrees=True, interpolation_mode="minimum_jerk")
+        reachy.l_arm.goto(ik, 4.0, degrees=True, interpolation_mode="minimum_jerk")
 
 
 def test_movement(reachy: ReachySDK) -> None:

@@ -167,6 +167,8 @@ class SymbolicIK:
             )
             self.wrist_position = self.get_wrist_position(goal_pose)
             self.goal_pose = goal_pose
+            state = "Backward pose"
+            is_reachable = False
 
         # print(f" goal pose __: {goal_pose}")
         # to_asin1 = d_shoulder_wrist / (2 * self.upper_arm_size)
@@ -230,7 +232,7 @@ class SymbolicIK:
                     plt.show()
                 if state == "":
                     state = "reachable"
-                return True, interval, self.get_joints, state
+                return is_reachable, interval, self.get_joints, state
 
             if SHOW_GRAPH:
                 show_point(self.ax, goal_pose[0], "g")
@@ -694,7 +696,7 @@ class SymbolicIK:
 
     def get_joints(
         self, theta: float, previous_joints: list[float] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-    ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], bool]:
         """Get the joints from the angle theta
         The previous joints is used to avoid the singularity of the elbow and the shoulder
         Return the joints cast between -pi and pi
@@ -702,6 +704,7 @@ class SymbolicIK:
         # print(f"goal pose: {self.goal_pose}")
         # Get the position of the elbow from theta
         self.elbow_position = self.get_elbow_position(theta)
+        is_reachable = True
 
         if (
             self.elbow_position[2]
@@ -712,9 +715,8 @@ class SymbolicIK:
             self.goal_pose, self.elbow_position = self.make_elbow_projection(
                 self.goal_pose, self.elbow_position[:3], self.singularity_limit_coeff
             )
-            # print("_____elbow projection______")
+            is_reachable = False
             self.wrist_position = self.get_wrist_position(self.goal_pose)
-        # print(f"post elbow projection: {self.goal_pose}")
         goal_orientation = self.goal_pose[1]
 
         P_torso_shoulder = [self.shoulder_position[0], self.shoulder_position[1], self.shoulder_position[2], 1]
@@ -858,4 +860,4 @@ class SymbolicIK:
             #     print(f"joints: {joints}")
             joints[3] = -elbow_limit
 
-        return joints, self.elbow_position
+        return joints, self.elbow_position, is_reachable

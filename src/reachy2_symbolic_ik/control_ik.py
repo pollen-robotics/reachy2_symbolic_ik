@@ -62,7 +62,7 @@ class ControlIK:
         self.call_timeout = 0.2
 
         self.nb_search_points = 20
-        self.emergency_state = ""
+        self.emergency_state = ["", ""]
         self.emergency_stop = False
         self.init = True
 
@@ -195,7 +195,7 @@ class ControlIK:
         # print(f"goal_pose: {M}")
         if control_type == "unfreeze":
             self.emergency_stop = False
-            self.emergency_state = ""
+            self.emergency_state = ["", ""]
             self.init = True
             if self.logger is not None:
                 self.logger.info(f"{name} Unfreeze", throttle_duration_sec=1.0)
@@ -203,11 +203,19 @@ class ControlIK:
                 print(f"{name} Unfreeze")
 
         if self.emergency_stop:
+            RED = "\033[91m"
+            # GREEN = "\033[92m"
+            RESET = "\033[0m"
             if self.logger is not None:
-                self.logger.info(f"{name} Emergency state: {self.emergency_state}", throttle_duration_sec=1.0)
+                self.logger.info(
+                    f"{RED}{self.emergency_state[0]} {RESET} \n {self.emergency_state[1]}", throttle_duration_sec=3.0
+                )
+
             else:
-                print(f"{name} Emergency state: {self.emergency_state}")
-            return self.previous_sol[name], False, self.emergency_state
+                print(f"{self.emergency_state} \n {self.emergency_state[1]}")
+
+            # self.logger.info(f"{RED} {self.emergency_state[0]} {RESET}", throttle_duration_sec=1.0)
+            return self.previous_sol[name], False, self.emergency_state[0]
 
         if np.allclose(M[:3, :3], np.eye(3)):
             goal_position = M[:3, 3]
@@ -280,7 +288,7 @@ class ControlIK:
             if self.logger is not None:
                 self.logger.info(
                     f"{name} Multiturn joint limit reached. \nRaw joints: {ik_joints}\nLimited joints: {ik_joints_allowed}",
-                    throttle_duration_sec=0.1,
+                    throttle_duration_sec=1.0,
                 )
             elif DEBUG:
                 print(f"{name} Multiturn joint limit reached. \nRaw joints: {ik_joints}\nLimited joints: {ik_joints_allowed}")
@@ -288,10 +296,9 @@ class ControlIK:
 
         ik_joints, emergency_stop, self.emergency_state = multiturn_safety_check(
             ik_joints,
-            6 * np.pi,
-            6 * np.pi,
-            6 * np.pi,
-            self.emergency_state,
+            4 * np.pi,
+            4 * np.pi,
+            4 * np.pi,
         )
         self.emergency_stop = self.emergency_stop or emergency_stop
 
@@ -299,11 +306,14 @@ class ControlIK:
             if not self.init:
                 # self.logger.info(f"{name} Previous joints: {self.previous_sol[name]}, Current joints: {ik_joints}")
                 ik_joints, emergency_stop, self.emergency_state = continuity_check(
-                    ik_joints, self.previous_sol[name], [0.5, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0], self.emergency_state
+                    ik_joints, self.previous_sol[name], [0.5, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0]
                 )
                 self.emergency_stop = self.emergency_stop or emergency_stop
+                if self.emergency_stop:
+                    self.logger.info(f"{name} dt {self.last_call_t[name] - time.time()}")
 
         self.init = False
+        self.last_call_t[name] = time.time()
 
         if not self.emergency_stop:
             self.previous_sol[name] = copy.deepcopy(ik_joints)
@@ -317,6 +327,15 @@ class ControlIK:
         self.previous_pose[name] = M
         # self.logger.info(f" ik_joints: {ik_joints}", throttle_duration_sec=0.1)
 
+        # print is reachable in green or red
+        #
+        # RED = "\033[91m"
+        # GREEN = "\033[92m"
+        # RESET = "\033[0m"
+        # if is_reachable:
+        #     self.logger.info(f"{GREEN} Reacheable {RESET}", throttle_duration_sec=1.0)
+        # else:
+        #     self.logger.info(f"{RED} {state} {RESET}", throttle_duration_sec=1.0)
         return ik_joints, is_reachable, state
 
     def symbolic_inverse_kinematics_continuous(  # noqa: C901
@@ -347,7 +366,6 @@ class ControlIK:
                 print(f"{name} Timeout reached. Resetting previous_sol {t},  {self.last_call_t[name]}")
             # self.logger.info(f"{name} Timeout reached. Resetting previous_sol {t},  {self.last_call_t[name]}")
             self.init = True
-        self.last_call_t[name] = t
 
         if len(self.previous_sol[name]) == 0:
             # if the arm moved since last call, we need to update the previous_sol
@@ -381,7 +399,7 @@ class ControlIK:
         ) = self.symbolic_ik_solver[
             name
         ].is_reachable(goal_pose)
-        if is_reachable:
+        if len(interval) != 0:
             # is_reachable, theta, state_theta = get_best_continuous_theta(
             #     self.previous_theta[name],
             #     interval,
@@ -393,7 +411,7 @@ class ControlIK:
             #     self.singularity_limit_coeff,
             #     self.symbolic_ik_solver[name].elbow_singularity_position,
             # )
-            is_reachable, theta, state_theta = get_best_continuous_theta2(
+            is_reachable_shoulder_limits, theta, state_theta = get_best_continuous_theta2(
                 self.previous_theta[name],
                 interval,
                 self.symbolic_ik_solver[name].get_elbow_position,
@@ -405,11 +423,16 @@ class ControlIK:
                 self.singularity_limit_coeff,
                 self.symbolic_ik_solver[name].elbow_singularity_position,
             )
-            if not is_reachable:
+            if not is_reachable_shoulder_limits:
                 state = "limited by shoulder"
             theta, state_interval = limit_theta_to_interval(theta, self.previous_theta[name], interval_limit)
             self.previous_theta[name] = theta
-            ik_joints, elbow_position = theta_to_joints_func(theta, previous_joints=self.previous_sol[name])
+            ik_joints, elbow_position, is_reachable_singularity_limit = theta_to_joints_func(
+                theta, previous_joints=self.previous_sol[name]
+            )
+            if not is_reachable_singularity_limit:
+                state = "avoid singularity"
+            is_reachable = is_reachable and is_reachable_shoulder_limits and is_reachable_singularity_limit
 
         else:
             if DEBUG:
@@ -427,7 +450,7 @@ class ControlIK:
                 )
                 theta, state = limit_theta_to_interval(theta, self.previous_theta[name], interval_limit)
                 self.previous_theta[name] = theta
-                ik_joints, elbow_position = theta_to_joints_func(theta, previous_joints=self.previous_sol[name])
+                ik_joints, elbow_position, _ = theta_to_joints_func(theta, previous_joints=self.previous_sol[name])
             else:
                 print(f"{name} Pose not reachable, this has to be fixed by projecting far poses to reachable sphere")
                 raise RuntimeError("Pose not reachable in symbolic IK. We crash on purpose while we are on the debug sessions.")
@@ -485,7 +508,9 @@ class ControlIK:
 
         if is_reachable:
             theta, state_interval = limit_theta_to_interval(theta, self.previous_theta[name], interval_limit)
-            ik_joints, elbow_position = theta_to_joints_func(theta, previous_joints=self.previous_sol[name])
+            ik_joints, elbow_position, is_reachable = theta_to_joints_func(theta, previous_joints=self.previous_sol[name])
+            if not is_reachable:
+                state = "avoid singularity"
         else:
             ik_joints = current_joints
 
