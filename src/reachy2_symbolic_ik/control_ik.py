@@ -158,6 +158,8 @@ class ControlIK:
             )
             self.previous_theta[arm] = best_prev_theta
             self.last_call_t[arm] = 0.0
+        self.max_speed = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        self.count = 0
 
     def symbolic_inverse_kinematics(  # noqa: C901
         self,
@@ -302,18 +304,34 @@ class ControlIK:
         )
         self.emergency_stop = self.emergency_stop or emergency_stop
 
-        if control_type == "continuous":
-            if not self.init:
-                # self.logger.info(f"{name} Previous joints: {self.previous_sol[name]}, Current joints: {ik_joints}")
-                ik_joints, emergency_stop, self.emergency_state = continuity_check(
-                    ik_joints, self.previous_sol[name], [0.5, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0]
-                )
-                self.emergency_stop = self.emergency_stop or emergency_stop
-                if self.emergency_stop:
-                    self.logger.info(f"{name} dt {self.last_call_t[name] - time.time()}")
+        # if control_type == "continuous":
+        #     if not self.init:
+        #         # self.logger.info(f"{name} Previous joints: {self.previous_sol[name]}, Current joints: {ik_joints}")
+        #         ik_joints, emergency_stop, self.emergency_state = continuity_check(
+        #             ik_joints, self.previous_sol[name], [0.5, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0]
+        #         )
+        #         self.emergency_stop = self.emergency_stop or emergency_stop
+        #         if self.emergency_stop:
+        #             self.logger.info(f"{name} dt {self.last_call_t[name] - time.time()}")
 
         self.init = False
+
+
+        dt = time.time() - self.last_call_t[name]
+        desired_speed = (np.array(ik_joints) - np.array(self.previous_sol[name])) / dt # Hum, this is the average speed needed to reach the goal in dt seconds. But with a constant acceleration, the speed needs to be higher at the end of the movement.
+        # self.logger.info(f"{name} desired_speed: {desired_speed}")
+        if name == "r_arm" and self.count > 5:
+            # self.logger.info(f"{name} ik_joints: {ik_joints}")
+            # self.logger.info(f"{name} current_joints: {current_joints}")
+            # self.logger.info(f"{name} dt: {dt}")
+            # self.logger.info(f"{name} desired_speed: {desired_speed}")
+            for i in range(7):
+                if desired_speed[i] > self.max_speed[i]:
+                    self.max_speed[i] = desired_speed[i]
+            self.logger.info(f"{name} max_speed: {self.max_speed}", throttle_duration_sec=1)
+
         self.last_call_t[name] = time.time()
+
 
         if not self.emergency_stop:
             self.previous_sol[name] = copy.deepcopy(ik_joints)
@@ -325,6 +343,8 @@ class ControlIK:
             print(f"{name} ik={ik_joints}")
 
         self.previous_pose[name] = M
+
+        self.count += 1
         # self.logger.info(f" ik_joints: {ik_joints}", throttle_duration_sec=0.1)
 
         # print is reachable in green or red
