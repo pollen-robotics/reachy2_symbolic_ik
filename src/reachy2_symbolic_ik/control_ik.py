@@ -329,9 +329,8 @@ class ControlIK:
 
         self.init = False
 
-
         dt = time.time() - self.last_call_t[name]
-        # desired_speed = (np.array(ik_joints) - np.array(self.previous_sol[name])) / dt 
+        # desired_speed = (np.array(ik_joints) - np.array(self.previous_sol[name])) / dt
         desired_speed = (np.array(ik_joints) - np.array(current_joints)) / dt
         # self.logger.info(f"{name} desired_speed: {desired_speed}")
         if name == "r_arm" and self.count > 5:
@@ -350,7 +349,6 @@ class ControlIK:
             self.logger.info(f"{name} average_speed: {self.average_speed[6]}", throttle_duration_sec=1)
 
         self.last_call_t[name] = time.time()
-
 
         if not self.emergency_stop:
             self.previous_sol[name] = copy.deepcopy(ik_joints)

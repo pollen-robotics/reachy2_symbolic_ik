@@ -63,18 +63,13 @@ def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> No
     # reachy.send_goal_positions()
 
 
-def turn_wrist(
-    reachy: ReachySDK, duration: float = 10.0
-) -> None:
+def turn_wrist(reachy: ReachySDK, duration: float = 10.0) -> None:
     position = np.array([0.001, -0.2, -0.659])
     start_orientation = np.array([0.0, 0.0, 0.0])
     end_orientation = np.array([0.0, 0.0, 10])
 
     control_frequency = 100.0
     nbr_points = int(duration * control_frequency)
-
-    l_start_orientation = np.array([-start_orientation[0], start_orientation[1], -start_orientation[2]])
-    l_end_orientation = np.array([-end_orientation[0], end_orientation[1], -end_orientation[2]])
 
     for i in range(nbr_points):
         t = time.time()
