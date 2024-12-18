@@ -542,35 +542,35 @@ def multiturn_safety_check(
     # shoulder pitch
     if joints[0] > shoulder_pitch_limit:
         joints[0] = shoulder_pitch_limit
-        emergency_state[0] = "EMERGENCY STOP : multiturn"
+        emergency_state[0] = "CONTROL STOP : multiturn"
         emergency_state[1] = "shoulder pitch limit reached"
         emergency_stop = True
     if joints[0] < -shoulder_pitch_limit:
         joints[0] = -shoulder_pitch_limit
-        emergency_state[0] = "EMERGENCY STOP : multiturn"
+        emergency_state[0] = "CONTROL STOP : multiturn"
         emergency_state[1] = "shoulder pitch limit reached"
         emergency_stop = True
     # elbow yaw
     if joints[2] > elbow_yaw_limit:
         joints[2] = elbow_yaw_limit
-        emergency_state[0] = "EMERGENCY STOP : multiturn"
+        emergency_state[0] = "CONTROL STOP : multiturn"
         emergency_state[1] = "elbow yaw limit reached"
         emergency_stop = True
     if joints[2] < -elbow_yaw_limit:
         joints[2] = -elbow_yaw_limit
-        emergency_state[0] = "EMERGENCY STOP : multiturn"
+        emergency_state[0] = "CONTROL STOP : multiturn"
         emergency_state[1] = "elbow yaw limit reached"
         emergency_stop = True
     # wrist yaw
     if joints[6] > wrist_yaw_limit:
         joints[6] = wrist_yaw_limit
-        emergency_state[0] = "EMERGENCY STOP : multiturn"
+        emergency_state[0] = "CONTROL STOP : multiturn"
         emergency_state[1] = "wrist yaw limit reached"
         emergency_stop = True
     if joints[6] < -wrist_yaw_limit:
         joints[6] = -wrist_yaw_limit
 
-        emergency_state[0] = "EMERGENCY STOP : multiturn"
+        emergency_state[0] = "CONTROL STOP : multiturn"
         emergency_state[1] = "wrist yaw limit reached"
         emergency_stop = True
     return joints, emergency_stop, emergency_state
@@ -580,16 +580,16 @@ def continuity_check(
     joints: npt.NDArray[np.float64],
     previous_joints: npt.NDArray[np.float64],
     max_angulare_change: list[float],
+    emergency_state: list[str],
 ) -> Tuple[npt.NDArray[np.float64], bool, list[str]]:
     """Check the continuity of the joints"""
     discontinuity = False
     emergency_stop = False
-    emergency_state = ["", ""]
     for i in range(len(joints)):
         if abs(angle_diff(joints[i], previous_joints[i])) > max_angulare_change[i]:
             discontinuity = True
     if discontinuity:
-        emergency_state[0] = "EMERGENCY STOP : discontinuity"
+        emergency_state[0] = "CONTROL STOP : discontinuity"
         emergency_state[1] = f"previous_joints: {list(previous_joints)} \n joints: {list(joints)}"
         emergency_stop = True
         joints = np.array(previous_joints)

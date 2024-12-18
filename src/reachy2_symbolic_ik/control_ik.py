@@ -57,6 +57,17 @@ class ControlIK:
         reachy_model: str = "full_kit",
         is_dvt: bool = False,
     ) -> None:
+        """
+        Initialize the ControlIK class.
+        Args:
+            current_joints: list of the current joints of the arms
+            current_pose: list of the current pose of the arms
+            logger: logger object
+            urdf: URDF string
+            urdf_path: path to the URDF file
+            reachy_model: "full_kit", "headless", "starter_kit_right", "starter_kit_left", "mini"
+            is_dvt: True if DVT mode is activated
+        """
         self.symbolic_ik_solver = {}
         self.last_call_t = {}
         self.call_timeout = 0.2
@@ -159,6 +170,8 @@ class ControlIK:
             self.previous_theta[arm] = best_prev_theta
             self.last_call_t[arm] = 0.0
         self.max_speed = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        self.min_speed = [np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf]
+        self.average_speed = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         self.count = 0
 
     def symbolic_inverse_kinematics(  # noqa: C901
@@ -179,10 +192,10 @@ class ControlIK:
             M: 4x4 homogeneous matrix of the goal pose
             control_type: continuous or discrete
             current_joints: current joints of the arm
-            constrained_mode: unconstrained or low_elbow
+            constrained_mode: unconstrained or low_elbow (default: unconstrained)
             current_pose: current pose of the arm
-            d_theta_max: maximum angle difference between two consecutive theta
-            preferred_theta: preferred theta of the right arm
+            d_theta_max: maximum angle difference between two consecutive theta (default: 0.01)
+            preferred_theta: preferred theta of the right arm (default: -4 * np.pi / 6)
         Returns:
             ik_joints: list of the joints angles
             is_reachable: True if the goal pose is reachable
@@ -286,14 +299,14 @@ class ControlIK:
 
         # Detect multiturns
         ik_joints_allowed = allow_multiturn(ik_joints, self.previous_sol[name], name)
-        if not np.allclose(ik_joints_allowed, ik_joints):
-            if self.logger is not None:
-                self.logger.info(
-                    f"{name} Multiturn joint limit reached. \nRaw joints: {ik_joints}\nLimited joints: {ik_joints_allowed}",
-                    throttle_duration_sec=1.0,
-                )
-            elif DEBUG:
-                print(f"{name} Multiturn joint limit reached. \nRaw joints: {ik_joints}\nLimited joints: {ik_joints_allowed}")
+        # if not np.allclose(ik_joints_allowed, ik_joints):
+        #     if self.logger is not None:
+        #         self.logger.info(
+        #             f"{name} Multiturn joint limit reached. \nRaw joints: {ik_joints}\nLimited joints: {ik_joints_allowed}",
+        #             throttle_duration_sec=1.0,
+        #         )
+        #     elif DEBUG:
+        #         print(f"{name} Multiturn joint limit reached. \nRaw joints: {ik_joints}\nLimited joints: {ik_joints_allowed}")
         ik_joints = ik_joints_allowed
 
         ik_joints, emergency_stop, self.emergency_state = multiturn_safety_check(
@@ -304,31 +317,37 @@ class ControlIK:
         )
         self.emergency_stop = self.emergency_stop or emergency_stop
 
-        # if control_type == "continuous":
-        #     if not self.init:
-        #         # self.logger.info(f"{name} Previous joints: {self.previous_sol[name]}, Current joints: {ik_joints}")
-        #         ik_joints, emergency_stop, self.emergency_state = continuity_check(
-        #             ik_joints, self.previous_sol[name], [0.5, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0]
-        #         )
-        #         self.emergency_stop = self.emergency_stop or emergency_stop
-        #         if self.emergency_stop:
-        #             self.logger.info(f"{name} dt {self.last_call_t[name] - time.time()}")
+        if control_type == "continuous":
+            if not self.init:
+                # self.logger.info(f"{name} Previous joints: {self.previous_sol[name]}, Current joints: {ik_joints}")
+                ik_joints, emergency_stop, self.emergency_state = continuity_check(
+                    ik_joints, self.previous_sol[name], [0.5, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0], self.emergency_state
+                )
+                self.emergency_stop = self.emergency_stop or emergency_stop
+                if self.emergency_stop:
+                    self.logger.info(f"{name} dt {self.last_call_t[name] - time.time()}")
 
         self.init = False
 
 
         dt = time.time() - self.last_call_t[name]
-        desired_speed = (np.array(ik_joints) - np.array(self.previous_sol[name])) / dt # Hum, this is the average speed needed to reach the goal in dt seconds. But with a constant acceleration, the speed needs to be higher at the end of the movement.
+        # desired_speed = (np.array(ik_joints) - np.array(self.previous_sol[name])) / dt 
+        desired_speed = (np.array(ik_joints) - np.array(current_joints)) / dt
         # self.logger.info(f"{name} desired_speed: {desired_speed}")
         if name == "r_arm" and self.count > 5:
             # self.logger.info(f"{name} ik_joints: {ik_joints}")
             # self.logger.info(f"{name} current_joints: {current_joints}")
             # self.logger.info(f"{name} dt: {dt}")
-            # self.logger.info(f"{name} desired_speed: {desired_speed}")
+            # self.logger.info(f"{name} desired_speed: {desired_speed[6]}")
             for i in range(7):
                 if desired_speed[i] > self.max_speed[i]:
                     self.max_speed[i] = desired_speed[i]
-            self.logger.info(f"{name} max_speed: {self.max_speed}", throttle_duration_sec=1)
+                if desired_speed[i] < self.min_speed[i]:
+                    self.min_speed[i] = desired_speed[i]
+                self.average_speed[i] = (self.average_speed[i] * (self.count - 1) + desired_speed[i]) / self.count
+            self.logger.info(f"{name} max_speed: {self.max_speed[6]}", throttle_duration_sec=1)
+            self.logger.info(f"{name} min_speed: {self.min_speed[6]}", throttle_duration_sec=1)
+            self.logger.info(f"{name} average_speed: {self.average_speed[6]}", throttle_duration_sec=1)
 
         self.last_call_t[name] = time.time()
 
