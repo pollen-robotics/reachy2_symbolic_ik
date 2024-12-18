@@ -330,8 +330,8 @@ class ControlIK:
         self.init = False
 
         dt = time.time() - self.last_call_t[name]
-        # desired_speed = (np.array(ik_joints) - np.array(self.previous_sol[name])) / dt
-        desired_speed = (np.array(ik_joints) - np.array(current_joints)) / dt
+        desired_speed = (np.array(ik_joints) - np.array(self.previous_sol[name])) / dt
+        # desired_speed = (np.array(ik_joints) - np.array(current_joints)) / dt
         # self.logger.info(f"{name} desired_speed: {desired_speed}")
         if name == "r_arm" and self.count > 5:
             # self.logger.info(f"{name} ik_joints: {ik_joints}")

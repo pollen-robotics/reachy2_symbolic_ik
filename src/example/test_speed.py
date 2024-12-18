@@ -87,6 +87,29 @@ def turn_wrist(reachy: ReachySDK, duration: float = 10.0) -> None:
         time.sleep(max(1.0 / control_frequency - (time.time() - t), 0.0))
 
 
+def turn_shoulder(reachy: ReachySDK, duration: float = 10.0):
+    start_position = np.array([0.0, -0.2, -0.66])
+    end_position = np.array([0.0, -0.86, 0.0])
+    start_orientation = np.array([0.0, 0.0, 0.0])
+    end_orientation = np.array([-np.pi/2, 0.0, 0.0])
+    start_theta = 0.0
+    end_theta = np.pi / 2
+
+    control_frequency = 100.0
+    nbr_points = int(duration * control_frequency)
+
+    for i in range(nbr_points):
+        t = time.time()
+        theta = start_theta + (end_theta - start_theta) * (i / nbr_points)
+        position = [0.0, -np.sin(theta) * 0.66 - 0.2,- np.cos(theta) * 0.66]
+        orientation = start_orientation + (end_orientation - start_orientation) * (i / nbr_points)
+        rotation_matrix = R.from_euler("xyz", orientation).as_matrix()
+        pose = make_homogenous_matrix_from_rotation_matrix(position, rotation_matrix)
+        go_to_pose(reachy, pose, "r_arm")
+        time.sleep(max(1.0 / control_frequency - (time.time() - t), 0.0))
+
+
+
 if __name__ == "__main__":
     print("Trying to connect on localhost Reachy...")
     reachy = ReachySDK(host="localhost")
@@ -95,5 +118,19 @@ if __name__ == "__main__":
     if reachy._grpc_status == "disconnected":
         print("Failed to connect to Reachy, exiting...")
 
+
     reachy.turn_on()
-    turn_wrist(reachy, 10.0)
+
+    ik = [0.0, 15.0, -10.0, 0.0, 0.0, 0.0, 0.0]
+    reachy.r_arm.goto(ik, 3.0, degrees=True, interpolation_mode="minimum_jerk")
+    ik = [0.0, -15.0, 10.0, 0.0, 0.0, 0.0, 0.0]
+    reachy.l_arm.goto(ik, 3.0, degrees=True, interpolation_mode="minimum_jerk")
+    time.sleep(3.0)
+    turn_shoulder(reachy, 10.0)
+    time.sleep(3.0)
+    ik = [0.0, 15.0, -10.0, 0.0, 0.0, 0.0, 0.0]
+    reachy.r_arm.goto(ik, 3.0, degrees=True, interpolation_mode="minimum_jerk")
+    ik = [0.0, -15.0, 10.0, 0.0, 0.0, 0.0, 0.0]
+    reachy.l_arm.goto(ik, 3.0, degrees=True, interpolation_mode="minimum_jerk")
+    time.sleep(3.0)
+    # turn_wrist(reachy, 10.0)
