@@ -334,19 +334,12 @@ class ControlIK:
         # desired_speed = (np.array(ik_joints) - np.array(current_joints)) / dt
         # self.logger.info(f"{name} desired_speed: {desired_speed}")
         if name == "r_arm" and self.count > 5:
-            # self.logger.info(f"{name} ik_joints: {ik_joints}")
-            # self.logger.info(f"{name} current_joints: {current_joints}")
-            # self.logger.info(f"{name} dt: {dt}")
-            # self.logger.info(f"{name} desired_speed: {desired_speed[6]}")
             for i in range(7):
                 if desired_speed[i] > self.max_speed[i]:
                     self.max_speed[i] = desired_speed[i]
                 if desired_speed[i] < self.min_speed[i]:
                     self.min_speed[i] = desired_speed[i]
                 self.average_speed[i] = (self.average_speed[i] * (self.count - 1) + desired_speed[i]) / self.count
-            self.logger.info(f"{name} max_speed: {self.max_speed[6]}", throttle_duration_sec=1)
-            self.logger.info(f"{name} min_speed: {self.min_speed[6]}", throttle_duration_sec=1)
-            self.logger.info(f"{name} average_speed: {self.average_speed[6]}", throttle_duration_sec=1)
 
         self.last_call_t[name] = time.time()
 
