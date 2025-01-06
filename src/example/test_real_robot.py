@@ -147,6 +147,47 @@ def make_movement(
             time.sleep(0.5)
 
 
+def top_grasp_test(
+    reachy: ReachySDK,
+) -> None:
+    center = np.array([0.1, -0.3, -0.6])
+    orientation = np.array([0, 0, np.pi / 2])
+    radius = 0.1
+    duration = 5.0
+    number_of_turns = 7
+
+    control_frequency = 100.0
+    nbr_points = int(duration * control_frequency)
+
+    X = center[0] + radius * np.cos(np.linspace(0, 2 * np.pi, nbr_points))
+    Y_r = center[1] + radius * np.sin(np.linspace(0, 2 * np.pi, nbr_points))
+    z = center[2]
+    x_plus = 0.0
+    y_plus = 0.0
+
+    make_line(reachy, np.array([]), np.array([[X[0], Y_r[0], z], orientation]), 5.0)
+    time.sleep(2.0)
+
+    for _ in range(number_of_turns):
+        for i in range(nbr_points):
+            t = time.time()
+            z += 0.05 / nbr_points
+            print(f" X: {X[i]}")
+            x_plus += 0.005 / nbr_points
+            y_plus += 0.003 / nbr_points
+            X[i] += x_plus
+            Y_r[i] -= y_plus
+            print(f" X: {X[i]}")
+            position = np.array([X[i], Y_r[i], z])
+            print(position)
+            # rotation_matrix = R.from_euler("xyz", orientation).as_matrix()
+            pose = np.array([position, orientation])
+            # pose = make_homogenous_matrix_from_rotation_matrix(position, rotation_matrix)
+            go_to_pose(reachy, pose, "r_arm", goto_mode="teleop")
+            go_to_pose(reachy, pose, "l_arm", goto_mode="teleop")
+            time.sleep(max(1.0 / control_frequency - (time.time() - t), 0.0))
+
+
 def square_test(
     reachy: ReachySDK, goto_mode: str, interpolation_mode: str = "", number_of_turns: int = 2, duration: float = 3.0
 ) -> None:
@@ -295,6 +336,13 @@ def full_test() -> None:
         print("_____ Movement limit test _____")
         print("Fake teleop")
         movement_limit_test(reachy, 4.0, "teleop")
+
+        print("_____ Test top grasp _____")
+        top_grasp_test(reachy)
+        time.sleep(2)
+
+        go_to_zero(reachy)
+        time.sleep(3)
 
         print("_____ Mobile base test _____")
         mobile_base_test(reachy)
