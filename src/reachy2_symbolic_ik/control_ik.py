@@ -262,52 +262,6 @@ class ControlIK:
         else:
             raise ValueError(f"Unknown type {control_type}")
 
-        # Test wrist joint limits
-        ik_joints_raw = ik_joints
-        ik_joints = limit_orbita3d_joints_wrist(ik_joints_raw, self.orbita3D_max_angle)
-        # if not np.allclose(ik_joints, ik_joints_raw):
-        #     if self.logger is not None:
-        #         self.logger.info(
-        #             f"{name} Wrist joint limit reached. \nRaw joints: {ik_joints_raw}\nLimited joints: {ik_joints}",
-        #             throttle_duration_sec=0.1,
-        #         )
-        #     elif DEBUG:
-        #         print(f"{name} Wrist joint limit reached. \nRaw joints: {ik_joints_raw}\nLimited joints: {ik_joints}")
-
-        # Detect multiturns
-        ik_joints_allowed = allow_multiturn(ik_joints, self.previous_sol[name], name)
-        if not np.allclose(ik_joints_allowed, ik_joints):
-            if self.logger is not None:
-                self.logger.info(
-                    f"{name} Multiturn joint limit reached. \nRaw joints: {ik_joints}\nLimited joints: {ik_joints_allowed}",
-                    throttle_duration_sec=0.1,
-                )
-            elif DEBUG:
-                print(f"{name} Multiturn joint limit reached. \nRaw joints: {ik_joints}\nLimited joints: {ik_joints_allowed}")
-        ik_joints = ik_joints_allowed
-
-        ik_joints, emergency_stop, self.emergency_state = multiturn_safety_check(
-            ik_joints,
-            6 * np.pi,
-            6 * np.pi,
-            6 * np.pi,
-            self.emergency_state,
-        )
-        self.emergency_stop = self.emergency_stop or emergency_stop
-
-        if control_type == "continuous":
-            if not self.init:
-                # self.logger.info(f"{name} Previous joints: {self.previous_sol[name]}, Current joints: {ik_joints}")
-                ik_joints, emergency_stop, self.emergency_state = continuity_check(
-                    ik_joints, self.previous_sol[name], [0.5, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0], self.emergency_state
-                )
-                self.emergency_stop = self.emergency_stop or emergency_stop
-
-        self.init = False
-
-        if not self.emergency_stop:
-            self.previous_sol[name] = copy.deepcopy(ik_joints)
-
         # self.logger.info(f"{name} Joints: {ik_joints}", throttle_duration_sec=0.)
         # TODO reactivate a smoothing technique
 
@@ -436,6 +390,20 @@ class ControlIK:
         if DEBUG:
             print(f"State: {state}")
 
+        ik_joints = self.safety_checks(name, ik_joints)
+
+        if not self.init:
+            # self.logger.info(f"{name} Previous joints: {self.previous_sol[name]}, Current joints: {ik_joints}")
+            ik_joints, emergency_stop, self.emergency_state = continuity_check(
+                ik_joints, self.previous_sol[name], [0.5, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0], self.emergency_state
+            )
+            self.emergency_stop = self.emergency_stop or emergency_stop
+
+        self.init = False
+
+        if not self.emergency_stop:
+            self.previous_sol[name] = copy.deepcopy(ik_joints)
+
         return ik_joints, is_reachable, state
 
     def symbolic_inverse_kinematics_discrete(
@@ -489,4 +457,41 @@ class ControlIK:
         else:
             ik_joints = current_joints
 
+        ik_joints = self.safety_checks(name, ik_joints)
+
         return ik_joints, is_reachable, state
+
+    def safety_checks(self, name: str, ik_joints: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+        ik_joints_raw = ik_joints
+        ik_joints = limit_orbita3d_joints_wrist(ik_joints_raw, self.orbita3D_max_angle)
+        # if not np.allclose(ik_joints, ik_joints_raw):
+        #     if self.logger is not None:
+        #         self.logger.info(
+        #             f"{name} Wrist joint limit reached. \nRaw joints: {ik_joints_raw}\nLimited joints: {ik_joints}",
+        #             throttle_duration_sec=0.1,
+        #         )
+        #     elif DEBUG:
+        #         print(f"{name} Wrist joint limit reached. \nRaw joints: {ik_joints_raw}\nLimited joints: {ik_joints}")
+
+        # Detect multiturns
+        ik_joints_allowed = allow_multiturn(ik_joints, self.previous_sol[name], name)
+        if not np.allclose(ik_joints_allowed, ik_joints):
+            if self.logger is not None:
+                self.logger.info(
+                    f"{name} Multiturn joint limit reached. \nRaw joints: {ik_joints}\nLimited joints: {ik_joints_allowed}",
+                    throttle_duration_sec=0.1,
+                )
+            elif DEBUG:
+                print(f"{name} Multiturn joint limit reached. \nRaw joints: {ik_joints}\nLimited joints: {ik_joints_allowed}")
+        ik_joints = ik_joints_allowed
+
+        ik_joints, emergency_stop, self.emergency_state = multiturn_safety_check(
+            ik_joints,
+            6 * np.pi,
+            6 * np.pi,
+            6 * np.pi,
+            self.emergency_state,
+        )
+        self.emergency_stop = self.emergency_stop or emergency_stop
+
+        return ik_joints
