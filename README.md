@@ -5,7 +5,7 @@
 ![pytest](https://github.com/pollen-robotics/reachy2-sdk/actions/workflows/unit_tests.yml/badge.svg)
 
 ## About
-[![IK explained](https://i.sstatic.net/q3ceS.png)](https://youtu.be/FHZdJbMAmRA?si=wepM4vH2sNLo85QP&t=344 "IK explained")
+[![IK explained](./docs/img/thumbnail.jpeg)](https://youtu.be/FHZdJbMAmRA?si=wepM4vH2sNLo85QP&t=344 "IK explained")
 
 
 
