@@ -76,7 +76,7 @@ if is_reachable:
 else:
     print("Pose not reachable")
 ```
-Check the /src/example folder for complete examples.
+Check the `/src/example` folder for complete examples.
 
 ## Unit tests
 
