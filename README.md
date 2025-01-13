@@ -4,28 +4,39 @@
 ![linter](https://github.com/pollen-robotics/reachy2_symbolic_ik/actions/workflows/lint.yml/badge.svg) 
 ![pytest](https://github.com/pollen-robotics/reachy2-sdk/actions/workflows/unit_tests.yml/badge.svg)
 
-A kinematics library that provides two core features for Reachy2:
-- A **symbolic inverse kinematics solver**. Handles joint limits, it's precise, solves reachability questions and provides complete knowledge of the nullspace.
-- A **control algorithm** to follow trajectories in task space. e.g., during teleoperation.
+**A kinematics library for Reachy2 7 DoF robotic arms**, providing precise and reliable tools for motion control.
 
-<div style="display: flex; justify-content: space-around;">
+## Key Features
+1. **Symbolic Inverse Kinematics Solver**:
+   - Provides exact solutions, avoids local minima, and requires no initial seed.
+   - Handles joint limits.
+   - Solves reachability questions.
+   - Offers symbolic expressions for the null space, allowing flexible elbow positioning.
+2. **Task-Space Control Algorithm**:
+   - Ensures joint-space continuity, even for multi-turn joints (e.g., wrist_yaw).
+   - Handles unreachable poses gracefully within trajectories.
+   - Customizable workspace and configuration parameters.
 
-<div>
-  <img src="./docs/img/topgrasp.gif " alt="First GIF" width="90%">
-  <p style="text-align: center;">Reachy2 things</p>
-</div>
 
-<div>
-  <img src="./docs/img/nullspace.gif" alt="Second GIF" width="100%">
-  <p style="text-align: center;">Null space visualisation</p>
-</div>
+| <p align="center"><img src="./docs/img/topgrasp.gif" alt="Top Grasp Demo" width="90%"></p> | <p align="center"><img src="./docs/img/nullspace.gif" alt="Null Space Visualization" width="100%"></p> |
+|--------------------------------------------|-----------------------------------------------------|
 
-</div>
+## Table of Contents
+- [Reachy2 symbolic inverse kinematics](#reachy2-symbolic-inverse-kinematics)
+  - [Key Features](#key-features)
+  - [Table of Contents](#table-of-contents)
+  - [Understanding how it works](#understanding-how-it-works)
+  - [Install](#install)
+  - [Usage](#usage)
+  - [Unit tests](#unit-tests)
+  - [URDF](#urdf)
+  - [License](#license)
+
 
 
 
 ## Understanding how it works
-The main ideas behind the symbolic solution are fairly straightforward. We made a video explaining the concepts below (in French with English subtitles):
+Learn the core concepts behind our symbolic inverse kinematics approach (French with English subtitles):
 
 <p align="center">
   <a href="https://youtu.be/FHZdJbMAmRA?si=wepM4vH2sNLo85QP&t=344" title="IK explained">
@@ -43,8 +54,29 @@ Use the following command to install:
 ```console
 $ pip install -e .[dev]
 ```
-The *[dev]* option includes tools for developers.
+The optional *[dev]* option includes tools for developers.
 
+## Usage
+Basic example of an inverse kinematics call. The input is a Pose of dimension 6, the output is the 7 joints of the arm:
+```python
+symbolic_ik = SymbolicIK(arm="l_arm")
+
+# The input is a Pose = [position, orientation]
+goal_position = [0.55, -0.3, -0.15]
+goal_orientation = [0, -np.pi / 2, 0]
+goal_pose = np.array([goal_position, goal_orientation])
+
+# Check if the goal pose is reachable
+is_reachable, interval, get_joints, _ = symbolic_ik_r.is_reachable(goal_pose)
+
+if is_reachable:
+    # Choose the elbow position inside the valid interval
+    theta = interval[0]
+    joints, elbow_position = get_joints(theta)
+else:
+    print("Pose not reachable")
+```
+Check the /src/example folder for complete examples.
 
 ## Unit tests
 
@@ -76,3 +108,7 @@ To regenerate the URDF file, you can use the following command from the root of 
 ```console
 $ xacro ../../reachy_ws/src/reachy2_core/reachy_description/urdf/reachy.urdf.xacro "use_fake_hardware:=true" > src/config_files/reachy2.urdf
 ```
+
+## License
+
+This project is licensed under the [Apache 2.0 License](LICENSE). See the LICENSE file for details.
