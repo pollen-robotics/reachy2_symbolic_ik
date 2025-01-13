@@ -4,59 +4,36 @@
 ![linter](https://github.com/pollen-robotics/reachy2_symbolic_ik/actions/workflows/lint.yml/badge.svg) 
 ![pytest](https://github.com/pollen-robotics/reachy2-sdk/actions/workflows/unit_tests.yml/badge.svg)
 
-## About
+A kinematics library that provides two core features for Reachy2:
+- A **symbolic inverse kinematics solver**. Handles joint limits, it's precise, solves reachability questions and provides complete knowledge of the nullspace.
+- A **control algorithm** to follow trajectories in task space. e.g., during teleoperation.
 
-<!-- Row 1: Text on the left, GIF 1 on the right -->
-<div style="display: flex; align-items: center; margin-bottom: 20px;">
-  <div style="flex: 1; padding-right: 10px;">
-    <p>Top grasp is a fundamental robotic manipulation technique used to grip objects securely. 
-    This demonstration shows its practical application on the real robot.</p>
-  </div>
-  <div style="flex: 1;">
-    <img src="./docs/img/topgrasp.gif" alt="Top grasp demo" style="width: 100%; border: 1px solid #ddd;">
-  </div>
+<div style="display: flex; justify-content: space-around;">
+
+<div>
+  <img src="./docs/img/topgrasp.gif " alt="First GIF" width="90%">
+  <p style="text-align: center;">Reachy2 things</p>
 </div>
 
-<!-- Row 2: GIF 2 on the left, Text on the right -->
-<div style="display: flex; align-items: center; margin-bottom: 20px;">
-  <div style="flex: 1;">
-    <img src="./docs/img/nullspace.gif" alt="Null space demo" style="width: 100%; border: 1px solid #ddd;">
-  </div>
-  <div style="flex: 1; padding-left: 10px;">
-    <p>The null space control demo showcases how redundant degrees of freedom in a robot arm 
-    can be exploited to achieve multiple objectives simultaneously.</p>
-  </div>
+<div>
+  <img src="./docs/img/nullspace.gif" alt="Second GIF" width="100%">
+  <p style="text-align: center;">Null space visualisation</p>
 </div>
 
-<!-- Row 3: Text on the left, Thumbnail of Video on the right -->
-<div style="display: flex; align-items: center; margin-bottom: 20px;">
-  <div style="flex: 1; padding-right: 10px;">
-    <p>This video explains the principles of inverse kinematics (IK) and how it is implemented in the Reachy2 robot.</p>
-  </div>
-  <div style="flex: 1;">
-    <a href="https://youtu.be/FHZdJbMAmRA?si=wepM4vH2sNLo85QP&t=344" title="IK explained">
-      <img src="./docs/img/thumbnail.jpeg" alt="IK explained" style="width: 100%; border: 1px solid #ddd;">
-    </a>
-  </div>
 </div>
 
-xxxxxxxx
 
 
-<!-- Row 1: Text on the left, GIF 1 on the right -->
-| Text | GIF |
-|------|-----|
-| Top grasp is a fundamental robotic manipulation technique used to grip objects securely. This demonstration shows its practical application on the real robot. | ![Top grasp demo](./docs/img/topgrasp.gif) |
+## Understanding how it works
+The main ideas behind the symbolic solution are fairly straightforward. We made a video explaining the concepts below (in French with English subtitles):
 
-<!-- Row 2: GIF 2 on the left, Text on the right -->
-| GIF | Text |
-|-----|------|
-| ![Null space demo](./docs/img/nullspace.gif) | The null space control demo showcases how redundant degrees of freedom in a robot arm can be exploited to achieve multiple objectives simultaneously. |
+<p align="center">
+  <a href="https://youtu.be/FHZdJbMAmRA?si=wepM4vH2sNLo85QP&t=344" title="IK explained">
+    <img src="./docs/img/thumbnail.jpeg" alt="IK explained" width="60%">
+  </a>
+</p>
 
-<!-- Row 3: Text on the left, Thumbnail of Video on the right -->
-| Text | Image |
-|------|-------|
-| This video explains the principles of inverse kinematics (IK) and how it is implemented in the Reachy2 robot. | [![IK explained](./docs/img/thumbnail.jpeg)](https://youtu.be/FHZdJbMAmRA?si=wepM4vH2sNLo85QP&t=344 "IK explained") |
+
 
 
 ## Install
