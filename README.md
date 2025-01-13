@@ -8,10 +8,10 @@
 
 ## Key Features
 1. **Symbolic Inverse Kinematics Solver**:
-   - Provides exact solutions, avoids local minima, and requires no initial seed.
+   - Provides exact solutions, free from numerical solver pitfalls like initial seed dependence or local minima.
    - Handles joint limits.
    - Solves reachability questions.
-   - Offers symbolic expressions for the null space, allowing flexible elbow positioning.
+   - Provides symbolic expressions for the null space — a fancy way of saying we can choose where to place the elbow on a circle.
 2. **Task-Space Control Algorithm**:
    - Ensures joint-space continuity, even for multi-turn joints (e.g., wrist_yaw).
    - Handles unreachable poses gracefully within trajectories.
