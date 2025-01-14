@@ -64,7 +64,7 @@ def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> No
 
 
 def make_line(
-    reachy: ReachySDK, start_pose: npt.NDArray[np.float64], end_pose: npt.NDArray[np.float64], duration: float = 5.0
+    reachy: ReachySDK, start_pose: npt.NDArray[np.float64], end_pose: npt.NDArray[np.float64], duration: float = 10.0
 ) -> None:
     start_position = start_pose[0]
     end_position = end_pose[0]
@@ -186,53 +186,84 @@ def main_test() -> None:
 
     print("Making a line")
     start_pose = np.array([[0.0001, -0.2, -0.6599], [0, 0, 0]])
-    end_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
+    end_pose = np.array([[0.1, -0.2, 0.50], [0, -np.pi, 0]])
     make_line(reachy, start_pose, end_pose)
-    start_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
+
+    # start_pose = np.array([[0.2, -0.2, 0.50], [0, -np.pi, 0]])
+    # end_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
+    # make_line(reachy, start_pose, end_pose)
+
+    # start_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
+    # end_pose = np.array([[0.0001, -0.2, -0.6599], [0, 0, 0]])
+    # make_line(reachy, start_pose, end_pose)
+    start_pose = np.array([[0.0001, -0.2, -0.6599], [0, 0, 0]])
     end_pose = np.array([[0.38, -0.2, 0.28], [0, -np.pi, 0]])
     make_line(reachy, start_pose, end_pose)
-    start_pose = np.array([[0.38, -0.2, 0.28], [0, -np.pi, 0]])
-    end_pose = np.array([[0.0001, -0.2, 0.6599], [0, -np.pi, 0]])
+    rotation_matrix = R.from_euler("xyz", start_pose[1]).as_matrix()
+    pose = make_homogenous_matrix_from_rotation_matrix(start_pose[0], rotation_matrix)
+    request = ArmCartesianGoal(
+        id=reachy.r_arm._part_id,
+        goal_pose=Matrix4x4(data=pose.flatten().tolist()),
+        continuous_mode=IKContinuousMode.UNFREEZE,
+        constrained_mode=IKConstrainedMode.UNCONSTRAINED,
+        preferred_theta=FloatValue(
+            value=-4 * np.pi / 6,
+        ),
+        d_theta_max=FloatValue(value=0.05),
+        order_id=Int32Value(value=5),
+    )
+    reachy.r_arm._stub.SendArmCartesianGoal(request)
+    start_pose = np.array([[0.0001, -0.2, -0.6599], [0, 0, 0]])
+    end_pose = np.array([[0.38, -0.2, 0.28], [0, -np.pi, 0]])
     make_line(reachy, start_pose, end_pose)
-    start_pose = np.array([[0.0001, -0.2, 0.6599], [0, -np.pi, 0]])
-    end_pose = np.array([[0.0001, -0.859, 0.0], [-np.pi / 2, 0, 0]])
-    make_line(reachy, start_pose, end_pose)
-    start_pose = np.array([[0.0001, -0.859, 0.0], [-np.pi / 2, 0, 0]])
-    end_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
-    make_line(reachy, start_pose, end_pose)
-
-    start_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
-    end_pose = np.array([[0.15, -0.4, -0.30], [0, 0, np.pi / 2]])
-    make_line(reachy, start_pose, end_pose)
-    start_pose = np.array([[0.15, -0.4, -0.30], [0, 0, np.pi / 2]])
-    end_pose = np.array([[0.15, -0.4, -0.25], [0, 0, np.pi / 2]])
-    make_line(reachy, start_pose, end_pose)
-    # start_pose = np.array([[0.18, -0.4, -0.30], [0, 0, np.pi / 2]])
-    # end_pose = np.array([[0.08, -0.4, -0.30], [0, 0, np.pi / 2]])
-    # make_line(reachy, start_pose, end_pose)
-    # start_pose = np.array([[0.08, -0.4, -0.30], [0, 0, np.pi / 2]])
-    # end_pose = np.array([[0.18, -0.4, -0.30], [0, 0, np.pi / 2]])
-    # make_line(reachy, start_pose, end_pose)
-    start_pose = np.array([[0.15, -0.4, -0.25], [0, 0, np.pi / 2]])
-    end_pose = np.array([[0.15, -0.4, -0.20], [0, 0, np.pi / 2]])
-    make_line(reachy, start_pose, end_pose)
-    start_pose = np.array([[0.15, -0.4, -0.20], [0, 0, np.pi / 2]])
-    end_pose = np.array([[0.15, -0.4, -0.20], [0, 0, np.pi / 2]])
-    make_line(reachy, start_pose, end_pose)
-    start_pose = np.array([[0.15, -0.4, -0.20], [0, 0, np.pi / 2]])
-    end_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
-    make_line(reachy, start_pose, end_pose)
-    start_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
-    end_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
-    make_line(reachy, start_pose, end_pose)
-    start_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
-    end_pose = np.array([[0.0001, -0.2, -0.6599], [0, 0, 0]])
-    make_line(reachy, start_pose, end_pose)
-
-    # start_pose = np.array([[0.18, -0.4, -0.30], [0, 0, np.pi / 2]])
+    # start_pose = np.array([[0.0001, -0.2, -0.6599], [0, 0, 0]])
     # end_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
     # make_line(reachy, start_pose, end_pose)
     # start_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
+    # end_pose = np.array([[0.38, -0.2, 0.28], [0, -np.pi, 0]])
+    # make_line(reachy, start_pose, end_pose)
+    # start_pose = np.array([[0.38, -0.2, 0.28], [0, -np.pi, 0]])
+    # end_pose = np.array([[0.0001, -0.2, 0.6599], [0, -np.pi, 0]])
+    # make_line(reachy, start_pose, end_pose)
+    # start_pose = np.array([[0.0001, -0.2, 0.6599], [0, -np.pi, 0]])
+    # end_pose = np.array([[0.0001, -0.859, 0.0], [-np.pi / 2, 0, 0]])
+    # make_line(reachy, start_pose, end_pose)
+    # start_pose = np.array([[0.0001, -0.859, 0.0], [-np.pi / 2, 0, 0]])
+    # end_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
+    # make_line(reachy, start_pose, end_pose)
+
+    # start_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
+    # end_pose = np.array([[0.15, -0.4, -0.30], [0, 0, np.pi / 2]])
+    # make_line(reachy, start_pose, end_pose)
+    # start_pose = np.array([[0.15, -0.4, -0.30], [0, 0, np.pi / 2]])
+    # end_pose = np.array([[0.15, -0.4, -0.25], [0, 0, np.pi / 2]])
+    # make_line(reachy, start_pose, end_pose)
+    # # start_pose = np.array([[0.18, -0.4, -0.30], [0, 0, np.pi / 2]])
+    # # end_pose = np.array([[0.08, -0.4, -0.30], [0, 0, np.pi / 2]])
+    # # make_line(reachy, start_pose, end_pose)
+    # # start_pose = np.array([[0.08, -0.4, -0.30], [0, 0, np.pi / 2]])
+    # # end_pose = np.array([[0.18, -0.4, -0.30], [0, 0, np.pi / 2]])
+    # # make_line(reachy, start_pose, end_pose)
+    # start_pose = np.array([[0.15, -0.4, -0.25], [0, 0, np.pi / 2]])
+    # end_pose = np.array([[0.15, -0.4, -0.20], [0, 0, np.pi / 2]])
+    # make_line(reachy, start_pose, end_pose)
+    # start_pose = np.array([[0.15, -0.4, -0.20], [0, 0, np.pi / 2]])
+    # end_pose = np.array([[0.15, -0.4, -0.20], [0, 0, np.pi / 2]])
+    # make_line(reachy, start_pose, end_pose)
+    # start_pose = np.array([[0.15, -0.4, -0.20], [0, 0, np.pi / 2]])
+    # end_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
+    # make_line(reachy, start_pose, end_pose)
+    # start_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
+    # end_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
+    # make_line(reachy, start_pose, end_pose)
+    # start_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
+    # end_pose = np.array([[0.0001, -0.2, -0.6599], [0, 0, 0]])
+    # make_line(reachy, start_pose, end_pose)
+
+    # # start_pose = np.array([[0.18, -0.4, -0.30], [0, 0, np.pi / 2]])
+    # # end_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
+    # # make_line(reachy, start_pose, end_pose)
+    # # start_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
 
     time.sleep(5.0)
 
