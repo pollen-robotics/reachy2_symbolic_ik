@@ -2,7 +2,7 @@
 
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 ![linter](https://github.com/pollen-robotics/reachy2_symbolic_ik/actions/workflows/lint.yml/badge.svg) 
-![pytest](https://github.com/pollen-robotics/reachy2-sdk/actions/workflows/unit_tests.yml/badge.svg)
+![pytest](https://github.com/pollen-robotics/reachy2_symbolic_ik/actions/workflows/pytest.yml/badge.svg)
 
 **A kinematics library for Reachy2 7 DoF robotic arms**, providing precise and reliable tools for motion control.
 
@@ -34,7 +34,6 @@
 
 
 
-
 ## Understanding how it works
 Learn the core concepts behind our symbolic inverse kinematics approach (French with English subtitles):
 
@@ -57,25 +56,109 @@ $ pip install -e .[dev]
 The optional *[dev]* option includes tools for developers.
 
 ## Usage
-Basic example of an inverse kinematics call. The input is a Pose of dimension 6, the output is the 7 joints of the arm:
-```python
-symbolic_ik = SymbolicIK(arm="l_arm")
+Basics examples of an inverse kinematics call. The input is a Pose of dimension 6, the output is the 7 joints of the arm:
 
-# The input is a Pose = [position, orientation]
+<details>
+  <summary>Example with SymbolicIK</summary>
+
+
+ ```python
+import numpy as np
+from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
+
+#Create the symbolic IK for the right arm
+symbolic_ik = SymbolicIK(arm="r_arm")
+
+# Define the goal position and orientation
 goal_position = [0.55, -0.3, -0.15]
 goal_orientation = [0, -np.pi / 2, 0]
 goal_pose = np.array([goal_position, goal_orientation])
 
 # Check if the goal pose is reachable
-is_reachable, interval, get_joints, _ = symbolic_ik_r.is_reachable(goal_pose)
+is_reachable, theta_interval, theta_to_joints_func, state = symbolic_ik.is_reachable(goal_pose)
 
+# Get the joints for one elbow position, defined by the angle theta
 if is_reachable:
-    # Choose the elbow position inside the valid interval
-    theta = interval[0]
-    joints, elbow_position = get_joints(theta)
+    # Choose a theta in the interval
+    # if theta_interval[0] < theta_interval[1], theta can be any value in the interval
+    # else theta can be in the intervals [-np.pi, theta_interval[1]] or [theta_interval[0], np.pi]
+    theta = theta_interval[0]
+
+    # Get the joints 
+    joints, elbow_position = theta_to_joints_func(theta)
+    print(f"Pose is reachable \nJoints: {joints}")
 else:
     print("Pose not reachable")
 ```
+</details>
+
+<details>
+  <summary>Example with ControlIK</summary>
+
+```python
+import numpy as np
+from reachy2_symbolic_ik.control_ik import ControlIK
+from reachy2_symbolic_ik.utils import make_homogenous_matrix_from_rotation_matrix
+from scipy.spatial.transform import Rotation as R
+
+# Create the control IK for the right arm
+control = ControlIK(urdf_path="../config_files/reachy2.urdf")
+
+# Define the goal position and orientation
+goal_position = [0.55, -0.3, -0.15]
+goal_orientation = [0, -np.pi / 2, 0]
+goal_pose = np.array([goal_position, goal_orientation])
+goal_pose = make_homogenous_matrix_from_rotation_matrix(goal_position, R.from_euler("xyz", goal_orientation).as_matrix())
+
+# Get joints for the goal pose
+# The control type can be "discrete" or "continuous"
+# If the control type is "discrete", the control will choose the best elbow position for the goal pose
+# If the control type is "continuous", the control will choose a elbow position that insure continuity in the joints
+control_type = "discrete"
+joints, is_reachable, state = control.symbolic_inverse_kinematics("r_arm", goal_pose, control_type)
+if is_reachable:
+    print(f"Pose is reachable \nJoints: {joints}")
+else:
+    print("Pose not reachable")
+```
+</details>
+
+<details>
+  <summary>Example with SDK</summary>
+
+For this example, you will need [Reachy2 SDK](https://github.com/pollen-robotics/reachy2-sdk)
+```python
+import time
+import numpy as np
+from reachy2_sdk import ReachySDK
+from scipy.spatial.transform import Rotation as R
+from reachy2_symbolic_ik.utils import make_homogenous_matrix_from_rotation_matrix
+
+# Create the ReachySDK object
+print("Trying to connect on localhost Reachy...")
+reachy = ReachySDK(host="localhost")
+
+time.sleep(1.0)
+if reachy._grpc_status == "disconnected":
+    print("Failed to connect to Reachy, exiting...")
+    return
+
+reachy.turn_on()
+
+# Define the goal pose
+goal_position = [0.55, -0.3, -0.15]
+goal_orientation = [0, -np.pi / 2, 0]
+goal_pose = np.array([goal_position, goal_orientation])
+goal_pose = make_homogenous_matrix_from_rotation_matrix(goal_position, R.from_euler("xyz", goal_orientation).as_matrix())
+
+# Get joints for the goal pose
+joints = reachy.r_arm.inverse_kinematics(goal_pose)
+
+# Go to the goal pose
+reachy.r_arm.goto(joints, duration=4.0, degrees=True, interpolation_mode="minimum_jerk", wait=True)
+```
+</details>
+
 Check the `/src/example` folder for complete examples.
 
 ## Unit tests
@@ -86,17 +169,20 @@ To ensure everything is functioning correctly, run the unit tests.
 $ pytest 
 ```
 
-Some unit tests need [Placo](https://github.com/pollen-robotics/reachy_placo) and some need reachy2_sdk.
+Some unit tests need [Reachy2 SDK](https://github.com/pollen-robotics/reachy2-sdk).
 
 You can decide which test you want to run with a flag.
 - sdk : run tests with sdk
-- placo : run tests with placo
 - cicd : run tests using only reachy2_symbolic_ik
 
 Example :
 
 ```console
 $ pytest -m cicd
+```
+or 
+```console
+$ python3 -m pytest -m cicd
 ```
 
 ## URDF
