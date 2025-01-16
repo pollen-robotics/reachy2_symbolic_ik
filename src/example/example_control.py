@@ -1,10 +1,8 @@
-import time
-
 import numpy as np
+from scipy.spatial.transform import Rotation as R
 
 from reachy2_symbolic_ik.control_ik import ControlIK
 from reachy2_symbolic_ik.utils import make_homogenous_matrix_from_rotation_matrix
-from scipy.spatial.transform import Rotation as R
 
 
 def control_basics() -> None:
@@ -24,7 +22,7 @@ def control_basics() -> None:
     control_type = "discrete"
     joints, is_reachable, state = control.symbolic_inverse_kinematics("r_arm", goal_pose, control_type)
     if is_reachable:
-        print(f"Joints: {joints}")
+        print(f"Pose is reachable \nJoints: {joints}")
     else:
         print("Pose not reachable")
 

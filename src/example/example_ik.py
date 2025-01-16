@@ -2,8 +2,9 @@ import numpy as np
 
 from reachy2_symbolic_ik.symbolic_ik import SymbolicIK
 
+
 def ik_basics() -> None:
-    #Create the symbolic IK for the right arm
+    # Create the symbolic IK for the right arm
     symbolic_ik = SymbolicIK(arm="r_arm")
 
     # Define the goal position and orientation
@@ -21,7 +22,7 @@ def ik_basics() -> None:
         # else theta can be in the intervals [-np.pi, theta_interval[1]] or [theta_interval[0], np.pi]
         theta = theta_interval[0]
 
-        # Get the joints 
+        # Get the joints
         joints, elbow_position = theta_to_joints_func(theta)
         print(f"Pose is reachable \nJoints: {joints}")
     else:

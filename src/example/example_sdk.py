@@ -3,7 +3,9 @@ import time
 import numpy as np
 from reachy2_sdk import ReachySDK
 from scipy.spatial.transform import Rotation as R
+
 from reachy2_symbolic_ik.utils import make_homogenous_matrix_from_rotation_matrix
+
 
 def sdk_basics() -> None:
     # Create the ReachySDK object
@@ -32,5 +34,3 @@ def sdk_basics() -> None:
 
 if __name__ == "__main__":
     sdk_basics()
-
-
