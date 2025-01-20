@@ -144,7 +144,6 @@ def make_movement(
     elif goto_mode == "linear_cartesian":
         for pose in poses:
             go_to_pose(reachy, pose, "r_arm", duration, goto_mode)
-            time.sleep(0.5)
 
 
 def top_grasp_test(
@@ -200,13 +199,9 @@ def square_test(
         time.sleep(0.5)
         for _ in range(number_of_turns):
             go_to_pose(reachy, B, "r_arm", duration, "circular_cartesian", arc_direction="below", elliptic_radius=0.1)
-            time.sleep(0.5)
             go_to_pose(reachy, C, "r_arm", duration, "circular_cartesian", arc_direction="left", elliptic_radius=0.1)
-            time.sleep(0.5)
             go_to_pose(reachy, D, "r_arm", duration, "circular_cartesian", arc_direction="above", elliptic_radius=0.1)
-            time.sleep(0.5)
             go_to_pose(reachy, A, "r_arm", duration, "circular_cartesian", arc_direction="right", elliptic_radius=0.1)
-            time.sleep(0.5)
     else:
         for _ in range(number_of_turns):
             poses = np.array([A, B, C, D])

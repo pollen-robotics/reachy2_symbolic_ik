@@ -40,7 +40,7 @@ def test_class() -> None:
 
     assert len(joints) == 7
 
-    goal_position = [0.0001, -0.2, -0.65]
+    goal_position = [0.02, -0.2, -0.65]
     goal_orientation = [0.0, 0.0, 0.0]
     goal_pose = [goal_position, goal_orientation]
 

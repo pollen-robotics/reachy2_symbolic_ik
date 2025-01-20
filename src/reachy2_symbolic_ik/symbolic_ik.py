@@ -2,7 +2,6 @@ import copy
 import math
 from typing import Any, Optional, Tuple
 
-import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 from scipy.spatial.transform import Rotation as R
@@ -18,6 +17,9 @@ from reachy2_symbolic_ik.utils import (
 )
 
 SHOW_GRAPH = False
+
+if SHOW_GRAPH:
+    import matplotlib.pyplot as plt
 
 
 class SymbolicIK:
