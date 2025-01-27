@@ -97,6 +97,7 @@ class SymbolicIK:
             self.wrist_position = self.get_wrist_position(goal_pose)
             self.goal_pose = goal_pose
 
+
         # Check if the wrist is in the arm range and reduce the goal pose if not
         d_shoulder_wrist = np.linalg.norm(self.wrist_position - self.shoulder_position)
         if d_shoulder_wrist > self.upper_arm_size + self.forearm_size:
@@ -110,6 +111,7 @@ class SymbolicIK:
             )
             self.wrist_position = self.get_wrist_position(goal_pose)
             self.goal_pose = goal_pose
+
         # Get the intersection circle -> with the previous condition we should always find one
         intersection_circle = self.get_intersection_circle(goal_pose)
         if intersection_circle is not None:
@@ -169,7 +171,7 @@ class SymbolicIK:
             )
             self.wrist_position = self.get_wrist_position(goal_pose)
             self.goal_pose = goal_pose
-            state = "Backward pose"
+            state = "limited by elbow"
             is_reachable = False
 
         # print(f" goal pose __: {goal_pose}")
@@ -707,6 +709,10 @@ class SymbolicIK:
         # Get the position of the elbow from theta
         self.elbow_position = self.get_elbow_position(theta)
         is_reachable = True
+        print(f"elbow_position: {self.elbow_position}")
+        print((self.elbow_position[0] - self.elbow_singularity_position[0]) * self.singularity_limit_coeff
+            + self.elbow_singularity_position[2]
+            - self.singularity_offset)
 
         if (
             self.elbow_position[2]
@@ -714,6 +720,7 @@ class SymbolicIK:
             + self.elbow_singularity_position[2]
             - self.singularity_offset
         ):
+            print(" PROJECT ELBOW")
             self.goal_pose, self.elbow_position = self.make_elbow_projection(
                 self.goal_pose, self.elbow_position[:3], self.singularity_limit_coeff
             )

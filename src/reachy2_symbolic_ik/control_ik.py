@@ -442,6 +442,8 @@ class ControlIK:
         if not self.emergency_stop:
             self.previous_sol[name] = copy.deepcopy(ik_joints)
 
+        print(f" is_reachable: {is_reachable}")
+        print(f" state: {state}")
         return ik_joints, is_reachable, state
 
     def symbolic_inverse_kinematics_discrete(

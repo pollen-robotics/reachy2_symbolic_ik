@@ -533,12 +533,11 @@ def limit_orbita3d_joints_wrist(joints: list[float], orbita3D_max_angle: float) 
 
 
 def multiturn_safety_check(
-    joints: list[float], shoulder_pitch_limit: float, elbow_yaw_limit: float, wrist_yaw_limit: float
+    joints: list[float], shoulder_pitch_limit: float, elbow_yaw_limit: float, wrist_yaw_limit: float, emergency_state: list[str]
 ) -> Tuple[list[float], bool, list[str]]:
     """Limit the number of turns allowed on the joints"""
     joints = copy.deepcopy(joints)
     emergency_stop = False
-    emergency_state = ["", ""]
     # shoulder pitch
     if joints[0] > shoulder_pitch_limit:
         joints[0] = shoulder_pitch_limit
