@@ -57,6 +57,17 @@ class ControlIK:
         reachy_model: str = "full_kit",
         is_dvt: bool = False,
     ) -> None:
+        """
+        Args:
+            current_joints: list of the current joints of the arms (rad)
+            current_pose: list of the current pose of the arms (4x4 homogeneous matrix)
+            logger
+            urdf: URDF string (optional)
+            urdf_path: path to the URDF file (optional)
+            reachy_model: full_kit, starter_kit_right, starter_kit_left, mini (default: full_kit)
+            is_dvt: True if the robot is a DVT or PVT
+        """
+
         self.symbolic_ik_solver = {}
         self.last_call_t = {}
         self.call_timeout = 0.2
@@ -176,14 +187,14 @@ class ControlIK:
             name: r_arm or l_arm
             M: 4x4 homogeneous matrix of the goal pose
             control_type: continuous or discrete
-            current_joints: current joints of the arm
+            current_joints: current joints of the arm (rad)
             constrained_mode: unconstrained or low_elbow
-            current_pose: current pose of the arm
-            d_theta_max: maximum angle difference between two consecutive theta
-            preferred_theta: preferred theta of the right arm
+            current_pose: current pose of the arm (4x4 homogeneous matrix)
+            d_theta_max: maximum angle difference between two consecutive theta (rad)
+            preferred_theta: preferred theta of the right arm (rad)
         Returns:
-            ik_joints: list of the joints angles
-            is_reachable: True if the goal pose is reachable
+            ik_joints: list of the joints angles (rad)
+            is_reachable: boolean
             state: if not reachable, the reason why
         """
         # print(M[:3, :3])
