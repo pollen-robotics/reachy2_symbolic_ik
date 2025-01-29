@@ -43,8 +43,20 @@ Learn the core concepts behind our symbolic inverse kinematics approach (French 
   </a>
 </p>
 
+To better understand the frame conventions used in the IK, the following figure illustrates the torso frame and the end-effector frame:
 
+<table>
+  <tr>
+    <td align="center">
+      <img src="./docs/img/reachy_frames1.png" alt="Top Grasp Demo" width="100%">
+    </td>
+    <td align="center">
+      <img src="./docs/img/reachy_frames2.png" alt="Null Space Visualization" width="100%">
+    </td>
+  </tr>
+</table>
 
+For more detailed explanations, benchmarks, and discussions on specific issues, you can refer to our Notion page: [Notion IK Documentation](https://www.notion.so/pollen-robotics/Symbol-IK-27a420dfc4404c52a02fe93c10142229) (in French).
 
 ## Install
 
@@ -184,6 +196,15 @@ or
 ```console
 $ python3 -m pytest -m cicd
 ```
+
+## Documentation
+
+The Documentation can be generated locally via pdoc with:
+
+```console
+pdoc reachy2_symbolic_ik --output-dir docs --logo "https://pollen-robotics.github.io/reachy2-sdk/pollen_logo.png" --logo-link "https://www.pollen-robotics.com" --docformat google
+```
+
 
 ## URDF
 
