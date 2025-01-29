@@ -216,6 +216,25 @@ To regenerate the URDF file, you can use the following command from the root of 
 $ xacro ../../reachy_ws/src/reachy2_core/reachy_description/urdf/reachy.urdf.xacro "use_fake_hardware:=true" > src/config_files/reachy2.urdf
 ```
 
+## Contributing
+
+We welcome contributions! Here’s how you can help:
+
+- **Report Issues**: Found a bug or have a feature request? Open an issue here.
+
+- **Fix Bugs & Add Features**: Check out our open issues tagged as good first issue or help wanted.
+
+### Some Key Issues to Tackle
+- [Optimize control compute time](https://github.com/pollen-robotics/reachy2_symbolic_ik/issues/94)
+- [Improve pytest tests](https://github.com/pollen-robotics/reachy2_symbolic_ik/issues/93)
+
+Make sure your code:
+- Follows the Black code style.
+- Respects the isort import order.
+- Passes mypy type checking.
+- Passes all unit tests (pytest).
+
 ## License
 
 This project is licensed under the [Apache 2.0 License](LICENSE). See the LICENSE file for details.
+
