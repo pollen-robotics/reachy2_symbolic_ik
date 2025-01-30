@@ -205,6 +205,7 @@ The Documentation can be generated locally via pdoc with:
 pdoc reachy2_symbolic_ik --output-dir docs --logo "https://pollen-robotics.github.io/reachy2-sdk/pollen_logo.png" --logo-link "https://www.pollen-robotics.com" --docformat google
 ```
 
+*You maybe have to install pdoc first by running* `pip install pdoc`.
 
 ## URDF
 
