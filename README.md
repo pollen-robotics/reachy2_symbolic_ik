@@ -43,8 +43,20 @@ Learn the core concepts behind our symbolic inverse kinematics approach (French 
   </a>
 </p>
 
+To better understand the frame conventions used in the IK, the following figure illustrates the torso frame and the end-effector frame:
 
+<table>
+  <tr>
+    <td align="center">
+      <img src="./docs/img/reachy_frames1.png" alt="Top Grasp Demo" width="100%">
+    </td>
+    <td align="center">
+      <img src="./docs/img/reachy_frames2.png" alt="Null Space Visualization" width="100%">
+    </td>
+  </tr>
+</table>
 
+For more detailed explanations, benchmarks, and discussions on specific issues, you can refer to our Notion page: [Notion IK Documentation](https://www.notion.so/pollen-robotics/Symbol-IK-27a420dfc4404c52a02fe93c10142229) (in French).
 
 ## Install
 
@@ -185,6 +197,16 @@ or
 $ python3 -m pytest -m cicd
 ```
 
+## Documentation
+
+The Documentation can be generated locally via pdoc with:
+
+```console
+pdoc reachy2_symbolic_ik --output-dir docs --logo "https://pollen-robotics.github.io/reachy2-sdk/pollen_logo.png" --logo-link "https://www.pollen-robotics.com" --docformat google
+```
+
+*You maybe have to install pdoc first by running* `pip install pdoc`.
+
 ## URDF
 
 A URDF file is provided in 'src/config_files/reachy2.urdf'. This file is used if the user does not provide a URDF file when initializing the ControlIK class.
@@ -195,6 +217,25 @@ To regenerate the URDF file, you can use the following command from the root of 
 $ xacro ../../reachy_ws/src/reachy2_core/reachy_description/urdf/reachy.urdf.xacro "use_fake_hardware:=true" > src/config_files/reachy2.urdf
 ```
 
+## Contributing
+
+We welcome contributions! Here’s how you can help:
+
+- **Report Issues**: Found a bug or have a feature request? Open an issue here.
+
+- **Fix Bugs & Add Features**: Check out our open issues tagged as good first issue or help wanted.
+
+### Some Key Issues to Tackle
+- [Optimize control compute time](https://github.com/pollen-robotics/reachy2_symbolic_ik/issues/94)
+- [Improve pytest tests](https://github.com/pollen-robotics/reachy2_symbolic_ik/issues/93)
+
+Make sure your code:
+- Follows the Black code style.
+- Respects the isort import order.
+- Passes mypy type checking.
+- Passes all unit tests (pytest).
+
 ## License
 
 This project is licensed under the [Apache 2.0 License](LICENSE). See the LICENSE file for details.
+

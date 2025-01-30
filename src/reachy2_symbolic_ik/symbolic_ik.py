@@ -35,6 +35,28 @@ class SymbolicIK:
         singularity_offset: float = 0.03,
         singularity_limit_coeff: float = 1.0,
     ) -> None:
+        """Create a symbolic IK object
+        Args:
+            arm (str): 'r_arm' or 'l_arm'
+            ik_parameters (dict[str, Any]): dictionnary with the following keys
+                - r_shoulder_position (np.array): shoulder position of the right arm (meters)
+                - r_shoulder_orientation (list): shoulder orientation of the right arm (degrees)
+                - r_upper_arm_size (np.float64): upper arm size of the right arm (meters)
+                - r_forearm_size (np.float64): forearm size of the right arm (meters)
+                - r_tip_position (np.array): right tip position in wrist frame (meters)
+                - l_shoulder_position (np.array): shoulder position of the left arm (meters)
+                - l_shoulder_orientation (list): shoulder orientation of the left arm (degrees)
+                - l_upper_arm_size (np.float64): upper arm size of the left arm (meters)
+                - l_forearm_size (np.float64): forearm size of the left arm (meters)
+                - l_tip_position (np.array): left tip position in wrist frame (meters)
+            elbow_limit (int) : elbow limit in degrees
+            wrist_limit (np.float64): wrist limit in degrees
+            projection_margin (float): margin for the projection of the goal position on the reachable sphere
+            backward_limit (float): limit for the wrist and the tip to go backward
+            normal_vector_margin (float): margin for the normal vector of the wrist and the tip
+            singularity_offset (float): minimal distance between the elbow position and the singularity position
+            singularity_limit_coeff (float): coefficient for the plane of the singularity limit
+        """
         if ik_parameters == {}:
             print("Using default parameters")
             ik_parameters = {
@@ -122,7 +144,15 @@ class SymbolicIK:
         self, goal_pose: npt.NDArray[np.float64]
     ) -> Tuple[bool, npt.NDArray[np.float64], Optional[Any], str]:
         # print(f" goal pose debut : {goal_pose}")
-        """Check if the goal pose is reachable taking into account the limits of the wrist and the elbow"""
+        """Check if the goal pose is reachable taking into account the limits of the wrist and the elbow
+        Args:
+            goal_pose : a 2D array with position [x,y,z] and Euler orientation [roll,pitch,yaw] (deg)
+        Returns:
+            bool: True if the goal pose is reachable
+            np.array: interval of the valid angles for the elbow
+            Optional[Callable]: function to get the joints from the angle of the elbow
+            str: if the goal is not reachable, the reason why
+        """
         state = ""
         # Change goal pose if goal pose is out of reach or with x <= 0
         is_reachable, goal_pose, reach_state = self.is_pose_in_robot_reach(goal_pose)
