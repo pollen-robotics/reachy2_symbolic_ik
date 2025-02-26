@@ -234,7 +234,7 @@ class ControlIK:
         if len(current_pose) == 0:
             current_pose = self.previous_pose[name]
 
-        if current_joints == []:
+        if len(current_joints) == 0:
             current_joints = self.previous_sol[name].tolist()
 
         if name.startswith("l"):
