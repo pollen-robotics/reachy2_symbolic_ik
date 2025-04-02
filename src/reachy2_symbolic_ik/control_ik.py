@@ -54,7 +54,7 @@ class ControlIK:
         logger: Any = None,
         urdf: str = "",
         urdf_path: str = "",
-        orbita3D_max_angle: list[float] = [0.7417649320975901, 0.7417649320975901], #42.5°
+        orbita3D_max_angle: list[float] = [0.7417649320975901, 0.7417649320975901],  # 42.5°
         reachy_model: str = "full_kit",
         is_dvt: bool = False,
     ) -> None:
@@ -120,7 +120,7 @@ class ControlIK:
                 self.symbolic_ik_solver[arm] = SymbolicIK(
                     arm=arm,
                     ik_parameters=ik_parameters,
-                    wrist_limit = np.rad2deg(self.orbita3D_max_angle[arm]),
+                    wrist_limit=np.rad2deg(self.orbita3D_max_angle[arm]),
                     singularity_offset=self.singularity_offset,
                     singularity_limit_coeff=self.singularity_limit_coeff,
                 )
