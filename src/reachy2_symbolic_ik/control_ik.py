@@ -54,6 +54,7 @@ class ControlIK:
         logger: Any = None,
         urdf: str = "",
         urdf_path: str = "",
+        orbita3D_max_angle: list[float] = [0.7417649320975901, 0.7417649320975901], #42.5°
         reachy_model: str = "full_kit",
         is_dvt: bool = False,
     ) -> None:
@@ -81,7 +82,7 @@ class ControlIK:
         self.previous_theta: Dict[str, float] = {}
         self.previous_sol: Dict[str, npt.NDArray[np.float64]] = {}
         self.previous_pose: Dict[str, npt.NDArray[np.float64]] = {}
-        self.orbita3D_max_angle = np.deg2rad(42.5)
+        self.orbita3D_max_angle = {"r_arm": orbita3D_max_angle[0], "l_arm": orbita3D_max_angle[1]}
 
         if urdf_path == "" and urdf == "":
             raise ValueError("No URDF provided")
@@ -119,13 +120,14 @@ class ControlIK:
                 self.symbolic_ik_solver[arm] = SymbolicIK(
                     arm=arm,
                     ik_parameters=ik_parameters,
+                    wrist_limit = np.rad2deg(self.orbita3D_max_angle[arm]),
                     singularity_offset=self.singularity_offset,
                     singularity_limit_coeff=self.singularity_limit_coeff,
                 )
             else:
                 self.symbolic_ik_solver[arm] = SymbolicIK(
                     arm=arm,
-                    wrist_limit=np.rad2deg(self.orbita3D_max_angle),
+                    wrist_limit=np.rad2deg(self.orbita3D_max_angle[arm]),
                     singularity_offset=self.singularity_offset,
                     singularity_limit_coeff=self.singularity_limit_coeff,
                 )
@@ -271,6 +273,7 @@ class ControlIK:
         self.previous_pose[name] = M
         # self.logger.info(f" ik_joints: {ik_joints}", throttle_duration_sec=0.1)
 
+        self.logger.info(f"{name} is_reachable: {is_reachable}, state: {state}", throttle_duration_sec=0.1)
         return ik_joints, is_reachable, state
 
     def symbolic_inverse_kinematics_continuous(  # noqa: C901
@@ -463,7 +466,7 @@ class ControlIK:
 
     def safety_checks(self, name: str, ik_joints: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
         ik_joints_raw = ik_joints
-        ik_joints = limit_orbita3d_joints_wrist(ik_joints_raw, self.orbita3D_max_angle)
+        ik_joints = limit_orbita3d_joints_wrist(ik_joints_raw, self.orbita3D_max_angle[name])
         # if not np.allclose(ik_joints, ik_joints_raw):
         #     if self.logger is not None:
         #         self.logger.info(
