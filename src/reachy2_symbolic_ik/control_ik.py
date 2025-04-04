@@ -390,7 +390,7 @@ class ControlIK:
         if DEBUG:
             print(f"State: {state}")
 
-        ik_joints = self.safety_checks(name, ik_joints)
+        ik_joints = self.safety_checks(name, ik_joints, self.previous_sol[name])
 
         if not self.init:
             # self.logger.info(f"{name} Previous joints: {self.previous_sol[name]}, Current joints: {ik_joints}")
@@ -457,11 +457,13 @@ class ControlIK:
         else:
             ik_joints = current_joints
 
-        ik_joints = self.safety_checks(name, ik_joints)
+        ik_joints = self.safety_checks(name, ik_joints, current_joints)
 
         return ik_joints, is_reachable, state
 
-    def safety_checks(self, name: str, ik_joints: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+    def safety_checks(
+        self, name: str, ik_joints: npt.NDArray[np.float64], previous_joints: npt.NDArray[np.float64]
+    ) -> npt.NDArray[np.float64]:
         ik_joints_raw = ik_joints
         ik_joints = limit_orbita3d_joints_wrist(ik_joints_raw, self.orbita3D_max_angle)
         # if not np.allclose(ik_joints, ik_joints_raw):
@@ -474,7 +476,7 @@ class ControlIK:
         #         print(f"{name} Wrist joint limit reached. \nRaw joints: {ik_joints_raw}\nLimited joints: {ik_joints}")
 
         # Detect multiturns
-        ik_joints_allowed = allow_multiturn(ik_joints, self.previous_sol[name], name)
+        ik_joints_allowed = allow_multiturn(ik_joints, previous_joints, name)
         if not np.allclose(ik_joints_allowed, ik_joints):
             if self.logger is not None:
                 self.logger.info(
