@@ -273,7 +273,6 @@ class ControlIK:
         self.previous_pose[name] = M
         # self.logger.info(f" ik_joints: {ik_joints}", throttle_duration_sec=0.1)
 
-        self.logger.info(f"{name} is_reachable: {is_reachable}, state: {state}", throttle_duration_sec=0.1)
         return ik_joints, is_reachable, state
 
     def symbolic_inverse_kinematics_continuous(  # noqa: C901
