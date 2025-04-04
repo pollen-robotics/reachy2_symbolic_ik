@@ -457,7 +457,7 @@ class ControlIK:
         else:
             ik_joints = current_joints
 
-        ik_joints = self.safety_checks(name, ik_joints, current_joints)
+        ik_joints = self.safety_checks(name, ik_joints, np.array(current_joints))
 
         return ik_joints, is_reachable, state
 
