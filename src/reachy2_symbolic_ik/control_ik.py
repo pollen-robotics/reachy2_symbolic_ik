@@ -54,6 +54,7 @@ class ControlIK:
         logger: Any = None,
         urdf: str = "",
         urdf_path: str = "",
+        orbita3D_max_angle: list[float] = [0.7417649320975901, 0.7417649320975901],  # 42.5°
         reachy_model: str = "full_kit",
         is_dvt: bool = False,
     ) -> None:
@@ -92,7 +93,7 @@ class ControlIK:
         self.previous_theta: Dict[str, float] = {}
         self.previous_sol: Dict[str, npt.NDArray[np.float64]] = {}
         self.previous_pose: Dict[str, npt.NDArray[np.float64]] = {}
-        self.orbita3D_max_angle = np.deg2rad(42.5)
+        self.orbita3D_max_angle = {"r_arm": orbita3D_max_angle[0], "l_arm": orbita3D_max_angle[1]}
 
         if urdf_path == "" and urdf == "":
             raise ValueError("No URDF provided")
@@ -130,13 +131,14 @@ class ControlIK:
                 self.symbolic_ik_solver[arm] = SymbolicIK(
                     arm=arm,
                     ik_parameters=ik_parameters,
+                    wrist_limit=np.rad2deg(self.orbita3D_max_angle[arm]),
                     singularity_offset=self.singularity_offset,
                     singularity_limit_coeff=self.singularity_limit_coeff,
                 )
             else:
                 self.symbolic_ik_solver[arm] = SymbolicIK(
                     arm=arm,
-                    wrist_limit=np.rad2deg(self.orbita3D_max_angle),
+                    wrist_limit=np.rad2deg(self.orbita3D_max_angle[arm]),
                     singularity_offset=self.singularity_offset,
                     singularity_limit_coeff=self.singularity_limit_coeff,
                 )
@@ -257,7 +259,7 @@ class ControlIK:
         if len(current_pose) == 0:
             current_pose = self.previous_pose[name]
 
-        if current_joints == []:
+        if len(current_joints) == 0:
             current_joints = self.previous_sol[name].tolist()
 
         if name.startswith("l"):
@@ -428,7 +430,7 @@ class ControlIK:
         if DEBUG:
             print(f"State: {state}")
 
-        ik_joints = self.safety_checks(name, ik_joints)
+        ik_joints = self.safety_checks(name, ik_joints, self.previous_sol[name])
 
         if not self.init:
             # self.logger.info(f"{name} Previous joints: {self.previous_sol[name]}, Current joints: {ik_joints}")
@@ -499,13 +501,15 @@ class ControlIK:
         else:
             ik_joints = current_joints
 
-        ik_joints = self.safety_checks(name, ik_joints)
+        ik_joints = self.safety_checks(name, ik_joints, np.array(current_joints))
 
         return ik_joints, is_reachable, state
 
-    def safety_checks(self, name: str, ik_joints: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+    def safety_checks(
+        self, name: str, ik_joints: npt.NDArray[np.float64], previous_joints: npt.NDArray[np.float64]
+    ) -> npt.NDArray[np.float64]:
         ik_joints_raw = ik_joints
-        ik_joints = limit_orbita3d_joints_wrist(ik_joints_raw, self.orbita3D_max_angle)
+        ik_joints = limit_orbita3d_joints_wrist(ik_joints_raw, self.orbita3D_max_angle[name])
         # if not np.allclose(ik_joints, ik_joints_raw):
         #     if self.logger is not None:
         #         self.logger.info(
@@ -516,7 +520,7 @@ class ControlIK:
         #         print(f"{name} Wrist joint limit reached. \nRaw joints: {ik_joints_raw}\nLimited joints: {ik_joints}")
 
         # Detect multiturns
-        ik_joints_allowed = allow_multiturn(ik_joints, self.previous_sol[name], name)
+        ik_joints_allowed = allow_multiturn(ik_joints, previous_joints, name)
         if not np.allclose(ik_joints_allowed, ik_joints):
             if self.logger is not None:
                 self.logger.info(
