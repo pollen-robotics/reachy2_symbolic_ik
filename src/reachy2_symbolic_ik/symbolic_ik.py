@@ -709,10 +709,10 @@ class SymbolicIK:
         # Get the position of the elbow from theta
         self.elbow_position = self.get_elbow_position(theta)
         is_reachable = True
-        print(f"elbow_position: {self.elbow_position}")
-        print((self.elbow_position[0] - self.elbow_singularity_position[0]) * self.singularity_limit_coeff
-            + self.elbow_singularity_position[2]
-            - self.singularity_offset)
+        # print(f"elbow_position: {self.elbow_position}")
+        # print((self.elbow_position[0] - self.elbow_singularity_position[0]) * self.singularity_limit_coeff
+            # + self.elbow_singularity_position[2]
+            # - self.singularity_offset)
 
         if (
             self.elbow_position[2]
@@ -720,7 +720,7 @@ class SymbolicIK:
             + self.elbow_singularity_position[2]
             - self.singularity_offset
         ):
-            print(" PROJECT ELBOW")
+            # print(" PROJECT ELBOW")
             self.goal_pose, self.elbow_position = self.make_elbow_projection(
                 self.goal_pose, self.elbow_position[:3], self.singularity_limit_coeff
             )

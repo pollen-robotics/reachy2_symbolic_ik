@@ -370,6 +370,9 @@ class ControlIK:
         ) = self.symbolic_ik_solver[
             name
         ].is_reachable(goal_pose)
+        print(f" is_reachable: {is_reachable}")
+        print(f" state_reachable: {state_reachable}")
+
         if len(interval) != 0:
             # is_reachable, theta, state_theta = get_best_continuous_theta(
             #     self.previous_theta[name],
@@ -444,8 +447,8 @@ class ControlIK:
         if not self.emergency_stop:
             self.previous_sol[name] = copy.deepcopy(ik_joints)
 
-        print(f" is_reachable: {is_reachable}")
-        print(f" state: {state}")
+        # print(f" is_reachable: {is_reachable}")
+        # print(f" state: {state}")
         return ik_joints, is_reachable, state
 
     def symbolic_inverse_kinematics_discrete(
