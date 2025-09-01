@@ -160,7 +160,6 @@ def show_graph(symbolic_ik: SymbolicIK, goal_pose: npt.NDArray[np.float64]) -> N
     T_shoulder_torso = make_homogenous_matrix_from_rotation_matrix(P_shoulder_torso, R_shoulder_torso)
     P_shoulder_elbow = np.dot(T_shoulder_torso, P_torso_elbow)
 
-
     if P_shoulder_elbow[0] == 0 and P_shoulder_elbow[2] == 0:
         # raise ValueError("Shoulder singularity")
         shoulder_pitch = previous_joints[0]
@@ -229,7 +228,6 @@ def show_graph(symbolic_ik: SymbolicIK, goal_pose: npt.NDArray[np.float64]) -> N
 
     T_tip_torso = T_wristPitch_torso
     T_tip_torso[0][3] -= symbolic_ik.gripper_size
-
 
     ####
 
@@ -385,7 +383,7 @@ def show_circle2(
 def main() -> None:
     symbolic_ik = SymbolicIK()
     goal_position = [0.55, -0.3, -0.2]
-    goal_orientation = [0, -np.pi/2, 0]
+    goal_orientation = [0, -np.pi / 2, 0]
     goal_pose = np.array([goal_position, goal_orientation])
     show_graph(symbolic_ik, goal_pose)
 
