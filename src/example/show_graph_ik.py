@@ -19,16 +19,16 @@ from reachy2_symbolic_ik.utils import (
 
 def show_graph(symbolic_ik: SymbolicIK, goal_pose: npt.NDArray[np.float64]) -> None:
     result = symbolic_ik.is_reachable(goal_pose)
+    if not result[0]:
+        raise ValueError("The goal pose is not reachable")
     if result[0]:
         if result[1][0] > result[1][1]:
             theta_middle = (result[1][0] + result[1][1]) / 2 - np.pi
         else:
             theta_middle = (result[1][0] + result[1][1]) / 2
         joints, elbow_position = result[2](theta_middle)
-    # SymbolicIK
 
     intersection_circle = symbolic_ik.get_intersection_circle(goal_pose)
-    print(intersection_circle)
     limitation_wrist_circle = symbolic_ik.get_limitation_wrist_circle(goal_pose)
 
     fig = plt.figure()
@@ -110,7 +110,6 @@ def show_graph(symbolic_ik: SymbolicIK, goal_pose: npt.NDArray[np.float64]) -> N
         np.array(result[1]),
         "g",
     )
-    # plt.show()
     plt.draw()
     plt.pause(2)
     if result[1][0] > result[1][1]:
@@ -146,8 +145,6 @@ def show_graph(symbolic_ik: SymbolicIK, goal_pose: npt.NDArray[np.float64]) -> N
     plt.pause(2)
 
     previous_joints = np.array([0, 0, 0, 0, 0, 0, 0])
-    # self.elbow_position = self.get_coordinate_circle(self.intersection_circle, theta)
-    # goal_orientation = symbolic_ik.goal_pose[1]
 
     P_torso_shoulder = [symbolic_ik.shoulder_position[0], symbolic_ik.shoulder_position[1], symbolic_ik.shoulder_position[2], 1]
     P_torso_elbow = [symbolic_ik.elbow_position[0], symbolic_ik.elbow_position[1], symbolic_ik.elbow_position[2], 1]
@@ -163,14 +160,6 @@ def show_graph(symbolic_ik: SymbolicIK, goal_pose: npt.NDArray[np.float64]) -> N
     T_shoulder_torso = make_homogenous_matrix_from_rotation_matrix(P_shoulder_torso, R_shoulder_torso)
     P_shoulder_elbow = np.dot(T_shoulder_torso, P_torso_elbow)
 
-    # Case where the elbow is aligned with the shoulder
-    # With current arm configuration this has two impacts:
-    # - the shoulder alone is in cinematic singularity -> loose controllability around this point
-    # -> in this case the upperarm might rotate quickly even if the elbow displacement is small
-    # -> not  this library's responsability
-    # - the elbow and the shoulder are aligned -> there is an infinite number of solutions
-    # -> this is the library's responsability
-    # -> we chose the joints of the previous pose based on the user input in previous_joints
 
     if P_shoulder_elbow[0] == 0 and P_shoulder_elbow[2] == 0:
         # raise ValueError("Shoulder singularity")
@@ -202,8 +191,6 @@ def show_graph(symbolic_ik: SymbolicIK, goal_pose: npt.NDArray[np.float64]) -> N
         elbow_yaw = previous_joints[2]
     else:
         elbow_yaw = -np.pi / 2 + math.atan2(P_elbow_wrist[2], -P_elbow_wrist[1])
-    # if elbow_yaw < -np.pi:
-    #     elbow_yaw = elbow_yaw + 2 * np.pi
 
     R_elbowYaw_elbow = R.from_euler("xyz", np.array([elbow_yaw, 0.0, 0.0])).as_matrix()
     T_elbowYaw_elbow = make_homogenous_matrix_from_rotation_matrix(np.array([0.0, 0.0, 0.0]), R_elbowYaw_elbow)
@@ -243,7 +230,6 @@ def show_graph(symbolic_ik: SymbolicIK, goal_pose: npt.NDArray[np.float64]) -> N
     T_tip_torso = T_wristPitch_torso
     T_tip_torso[0][3] -= symbolic_ik.gripper_size
 
-    elbow_yaw -= np.radians(symbolic_ik.elbow_orientation_offset[2])
 
     ####
 
@@ -259,8 +245,6 @@ def show_graph(symbolic_ik: SymbolicIK, goal_pose: npt.NDArray[np.float64]) -> N
     R_grasp_goal_pose = R.from_euler("xyz", goal_pose[1]).as_matrix()
     R_torso_grasp = np.dot(R_grasp_goal_pose, R.from_euler("xyz", [0, np.pi / 2, 0]).as_matrix())
     show_frame(ax, goal_pose[0], R_torso_grasp, alpha=0.5)
-    # plt.draw()
-    # plt.pause(1)
     ax.plot(
         [goal_pose[0][0], symbolic_ik.wrist_position[0]],
         [goal_pose[0][1], symbolic_ik.wrist_position[1]],
@@ -400,10 +384,8 @@ def show_circle2(
 
 def main() -> None:
     symbolic_ik = SymbolicIK()
-    # goal_position = [0.55, -0.3, -0.2]
-    goal_position = [0.0001, -0.2, -0.65]
-    goal_orientation = [0, 0, 0]
-    # goal_orientation = [0, -np.pi / 3, np.pi / 5]
+    goal_position = [0.55, -0.3, -0.2]
+    goal_orientation = [0, -np.pi/2, 0]
     goal_pose = np.array([goal_position, goal_orientation])
     show_graph(symbolic_ik, goal_pose)
 
